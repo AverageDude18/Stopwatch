@@ -110,7 +110,6 @@
   let encourageIndex = 0;
   let elevenVoiceId = null;
   let elevenReady = false;
-  let currentAudio = null;
 
   const ENCOURAGE_AFTER = 20;
   const CUE_INTERVAL = 15;
@@ -148,6 +147,22 @@
   const exerciseSelect = document.getElementById('exerciseSelect');
   const status = document.getElementById('status');
 
+  // ====== Mobile audio unlock ======
+  const audioPlayer = new Audio();
+  const SILENT_WAV = 'data:audio/wav;base64,UklGRiQAAABXQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YQAAAAA=';
+
+  function unlockAudio() {
+    // Playing audio synchronously inside a real tap unlocks programmatic
+    // playback later (from setInterval, which mobile browsers otherwise block).
+    audioPlayer.src = SILENT_WAV;
+    audioPlayer.play().catch(() => {});
+    if ('speechSynthesis' in window) {
+      const unlockUtter = new SpeechSynthesisUtterance(' ');
+      unlockUtter.volume = 0;
+      window.speechSynthesis.speak(unlockUtter);
+    }
+  }
+
   // ====== ElevenLabs setup ======
   async function initEleven() {
     try {
@@ -166,16 +181,11 @@
     } catch (e) {
       elevenReady = false;
       status.textContent = 'ElevenLabs fout: ' + (e && e.message ? e.message : e);
-
     }
   }
   initEleven();
 
   async function speakEleven(text) {
-    if (currentAudio) {
-      currentAudio.pause();
-      currentAudio = null;
-    }
     const res = await fetch('https://api.elevenlabs.io/v1/text-to-speech/' + elevenVoiceId, {
       method: 'POST',
       headers: {
@@ -191,8 +201,8 @@
     if (!res.ok) throw new Error('HTTP ' + res.status);
     const blob = await res.blob();
     const url = URL.createObjectURL(blob);
-    currentAudio = new Audio(url);
-    await currentAudio.play();
+    audioPlayer.src = url;
+    await audioPlayer.play();
   }
 
   function speakBrowser(text) {
@@ -251,6 +261,7 @@
   }
 
   startBtn.addEventListener('click', () => {
+    unlockAudio();
     speak('Start');
     startTime = Date.now() - elapsed * 1000;
     lastAnnounced = elapsed - (elapsed % parseInt(intervalSelect.value, 10));
@@ -265,7 +276,7 @@
   stopBtn.addEventListener('click', () => {
     clearInterval(timerId);
     window.speechSynthesis.cancel();
-    if (currentAudio) currentAudio.pause();
+    audioPlayer.pause();
     startBtn.disabled = false;
     stopBtn.disabled = true;
     intervalSelect.disabled = false;
@@ -276,7 +287,7 @@
   resetBtn.addEventListener('click', () => {
     clearInterval(timerId);
     window.speechSynthesis.cancel();
-    if (currentAudio) currentAudio.pause();
+    audioPlayer.pause();
     elapsed = 0;
     lastAnnounced = 0;
     lastCueAt = -Infinity;
