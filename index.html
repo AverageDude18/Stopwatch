@@ -154,6 +154,24 @@
   const audioPlayer = new Audio();
   const SILENT_WAV = 'data:audio/wav;base64,UklGRiQAAABXQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YQAAAAA=';
 
+  // Converts numbers to Dutch words (e.g. 25 -> "vijfentwintig"). Spoken numerals
+  // are more glitch-prone in TTS than spelled-out words, especially around "vijf".
+  function numberToDutchWords(n) {
+    const ones = ['nul','een','twee','drie','vier','vijf','zes','zeven','acht','negen',
+                  'tien','elf','twaalf','dertien','veertien','vijftien','zestien',
+                  'zeventien','achttien','negentien'];
+    const tens = ['', '', 'twintig', 'dertig', 'veertig', 'vijftig', 'zestig', 'zeventig', 'tachtig', 'negentig'];
+    if (n < 20) return ones[n];
+    if (n < 100) {
+      const t = Math.floor(n / 10);
+      const o = n % 10;
+      return o === 0 ? tens[t] : ones[o] + 'en' + tens[t];
+    }
+    const h = Math.floor(n / 100);
+    const rest = n % 100;
+    return (h > 1 ? ones[h] + 'honderd' : 'honderd') + (rest ? numberToDutchWords(rest) : '');
+  }
+
   function unlockAudio() {
     // Playing audio synchronously inside a real tap unlocks programmatic
     // playback later (from setInterval, which mobile browsers otherwise block).
@@ -198,7 +216,7 @@
       body: JSON.stringify({
         text: text,
         model_id: ELEVEN_MODEL,
-        voice_settings: { stability: 0.5, similarity_boost: 0.75 }
+        voice_settings: { stability: 0.65, similarity_boost: 0.75 }
       })
     });
     if (!res.ok) throw new Error('HTTP ' + res.status);
@@ -250,7 +268,7 @@
       lastAnnounced = elapsed;
       lastCueAt = elapsed;
       const minutes = elapsed / 60;
-      speak(minutes + (minutes === 1 ? ' minuut' : ' minuten'));
+      speak(numberToDutchWords(minutes) + (minutes === 1 ? ' minuut' : ' minuten'));
     } else if (cueIsDue) {
       lastCueAt = elapsed;
       if (timeIsDue) lastAnnounced = elapsed - (elapsed % step);
@@ -259,7 +277,7 @@
       encourageIndex++;
     } else if (timeIsDue) {
       lastAnnounced = elapsed - (elapsed % step);
-      speak(lastAnnounced + ' seconden');
+      speak(numberToDutchWords(lastAnnounced) + ' seconden');
     }
   }
 
