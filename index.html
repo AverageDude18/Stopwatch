@@ -1,0 +1,293 @@
+<!DOCTYPE html>
+<html lang="nl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Trainingspartner">
+<meta name="theme-color" content="#14171c">
+<title>Trainingspartner</title>
+<style>
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: #14171c;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    color: #f2f2f2;
+  }
+  .card {
+    text-align: center;
+    padding: 40px 32px;
+    width: min(90vw, 380px);
+  }
+  .time {
+    font-size: 4.5rem;
+    font-weight: 700;
+    font-variant-numeric: tabular-nums;
+    margin: 16px 0 28px;
+    color: #7fdba8;
+  }
+  .controls { display: flex; gap: 12px; justify-content: center; flex-wrap: wrap; }
+  button {
+    font-size: 1.05rem;
+    padding: 14px 22px;
+    border-radius: 12px;
+    border: none;
+    cursor: pointer;
+    font-weight: 600;
+    transition: transform 0.1s ease;
+  }
+  button:active { transform: scale(0.96); }
+  #startBtn { background: #2e7d4f; color: white; }
+  #stopBtn { background: #b3413a; color: white; }
+  #resetBtn { background: #3a3f47; color: #f2f2f2; }
+  button:disabled { opacity: 0.4; cursor: not-allowed; }
+  .settings {
+    margin-top: 22px;
+    font-size: 0.9rem;
+    color: #9aa0a8;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+  }
+  select {
+    background: #1f232b;
+    color: #f2f2f2;
+    border: 1px solid #3a3f47;
+    border-radius: 6px;
+    padding: 4px 8px;
+  }
+  .status { margin-top: 14px; font-size: 0.85rem; color: #6b7077; min-height: 1.2em; }
+</style>
+</head>
+<body>
+  <div class="card">
+    <div class="time" id="display">0:00</div>
+    <div class="controls">
+      <button id="startBtn">Start</button>
+      <button id="stopBtn" disabled>Stop</button>
+      <button id="resetBtn">Reset</button>
+    </div>
+    <div class="settings">
+      Oefening
+      <select id="exerciseSelect">
+        <option value="plank">Plank</option>
+        <option value="deadhang">Deadhang</option>
+        <option value="lsit">L-sit deadhang</option>
+      </select>
+    </div>
+    <div class="settings">
+      Meld elke
+      <select id="interval">
+        <option value="5">5</option>
+        <option value="10">10</option>
+        <option value="15">15</option>
+        <option value="30">30</option>
+      </select>
+      seconden
+    </div>
+    <div class="status" id="status">Stem laden...</div>
+  </div>
+
+<script>
+  // ====== CONFIG ======
+  const ELEVEN_API_KEY = 'REDACTED_ELEVENLABS_KEY';
+  const ELEVEN_MODEL = 'eleven_multilingual_v2';
+
+  // ====== State ======
+  let startTime = null;
+  let elapsed = 0;
+  let timerId = null;
+  let lastAnnounced = 0;
+  let lastCueAt = -Infinity;
+  let lastMinuteAt = -Infinity;
+  let encourageIndex = 0;
+  let elevenVoiceId = null;
+  let elevenReady = false;
+  let currentAudio = null;
+
+  const ENCOURAGE_AFTER = 20;
+  const CUE_INTERVAL = 15;
+  const encouragementsByExercise = {
+    plank: [
+      'Hou je rug mooi recht.',
+      'Laat je heupen niet zakken.',
+      'Core strak houden, dat gaat goed.',
+      'Rustig doorademen.',
+      'Knijp je billen even aan.',
+      'Nek ontspannen, kijk naar de grond.'
+    ],
+    deadhang: [
+      'Schouders actief, niet helemaal hangen.',
+      'Grip vasthouden, je doet het goed.',
+      'Rustig doorademen.',
+      'Nek lekker los laten hangen.',
+      'Kom op, nog even volhouden.'
+    ],
+    lsit: [
+      'Houd die benen mooi hoog.',
+      'Knieën strak, tenen gespannen.',
+      'Core aanspannen, je zit er goed bij.',
+      'Schouders naar beneden, weg bij je oren.',
+      'Sterk blijven, nog even.'
+    ]
+  };
+
+  // ====== Elements ======
+  const display = document.getElementById('display');
+  const startBtn = document.getElementById('startBtn');
+  const stopBtn = document.getElementById('stopBtn');
+  const resetBtn = document.getElementById('resetBtn');
+  const intervalSelect = document.getElementById('interval');
+  const exerciseSelect = document.getElementById('exerciseSelect');
+  const status = document.getElementById('status');
+
+  // ====== ElevenLabs setup ======
+  async function initEleven() {
+    try {
+      const res = await fetch('https://api.elevenlabs.io/v1/voices', {
+        headers: { 'xi-api-key': ELEVEN_API_KEY }
+      });
+      if (!res.ok) throw new Error('HTTP ' + res.status);
+      const data = await res.json();
+      if (data.voices && data.voices.length) {
+        elevenVoiceId = data.voices[0].voice_id;
+        elevenReady = true;
+        status.textContent = '';
+      } else {
+        throw new Error('Geen stemmen gevonden');
+      }
+    } catch (e) {
+      elevenReady = false;
+      status.textContent = 'ElevenLabs niet bereikbaar, gebruik systeemstem als terugval.';
+    }
+  }
+  initEleven();
+
+  async function speakEleven(text) {
+    if (currentAudio) {
+      currentAudio.pause();
+      currentAudio = null;
+    }
+    const res = await fetch('https://api.elevenlabs.io/v1/text-to-speech/' + elevenVoiceId, {
+      method: 'POST',
+      headers: {
+        'xi-api-key': ELEVEN_API_KEY,
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({
+        text: text,
+        model_id: ELEVEN_MODEL,
+        voice_settings: { stability: 0.5, similarity_boost: 0.75 }
+      })
+    });
+    if (!res.ok) throw new Error('HTTP ' + res.status);
+    const blob = await res.blob();
+    const url = URL.createObjectURL(blob);
+    currentAudio = new Audio(url);
+    await currentAudio.play();
+  }
+
+  function speakBrowser(text) {
+    if (!('speechSynthesis' in window)) return;
+    window.speechSynthesis.cancel();
+    const utter = new SpeechSynthesisUtterance(text);
+    utter.lang = 'nl-NL';
+    utter.rate = 1;
+    window.speechSynthesis.speak(utter);
+  }
+
+  async function speak(text) {
+    if (elevenReady) {
+      try {
+        await speakEleven(text);
+        return;
+      } catch (e) {
+        // silently fall back to browser voice for this utterance
+      }
+    }
+    speakBrowser(text);
+  }
+
+  // ====== Timer logic ======
+  function format(sec) {
+    const m = Math.floor(sec / 60);
+    const s = sec % 60;
+    return m + ':' + String(s).padStart(2, '0');
+  }
+
+  function tick() {
+    elapsed = Math.floor((Date.now() - startTime) / 1000);
+    display.textContent = format(elapsed);
+
+    const step = parseInt(intervalSelect.value, 10);
+    const timeIsDue = elapsed > 0 && elapsed - lastAnnounced >= step;
+    const cueIsDue = elapsed >= ENCOURAGE_AFTER && elapsed - lastCueAt >= CUE_INTERVAL;
+    const minuteIsDue = elapsed > 0 && elapsed % 60 === 0 && elapsed !== lastMinuteAt;
+
+    if (minuteIsDue) {
+      lastMinuteAt = elapsed;
+      lastAnnounced = elapsed;
+      lastCueAt = elapsed;
+      const minutes = elapsed / 60;
+      speak(minutes + (minutes === 1 ? ' minuut' : ' minuten'));
+    } else if (cueIsDue) {
+      lastCueAt = elapsed;
+      if (timeIsDue) lastAnnounced = elapsed - (elapsed % step);
+      const list = encouragementsByExercise[exerciseSelect.value] || encouragementsByExercise.plank;
+      speak(list[encourageIndex % list.length]);
+      encourageIndex++;
+    } else if (timeIsDue) {
+      lastAnnounced = elapsed - (elapsed % step);
+      speak(lastAnnounced + ' seconden');
+    }
+  }
+
+  startBtn.addEventListener('click', () => {
+    speak('Start');
+    startTime = Date.now() - elapsed * 1000;
+    lastAnnounced = elapsed - (elapsed % parseInt(intervalSelect.value, 10));
+    timerId = setInterval(tick, 200);
+    startBtn.disabled = true;
+    stopBtn.disabled = false;
+    intervalSelect.disabled = true;
+    exerciseSelect.disabled = true;
+    status.textContent = 'Loopt...';
+  });
+
+  stopBtn.addEventListener('click', () => {
+    clearInterval(timerId);
+    window.speechSynthesis.cancel();
+    if (currentAudio) currentAudio.pause();
+    startBtn.disabled = false;
+    stopBtn.disabled = true;
+    intervalSelect.disabled = false;
+    exerciseSelect.disabled = false;
+    status.textContent = 'Gestopt op ' + format(elapsed);
+  });
+
+  resetBtn.addEventListener('click', () => {
+    clearInterval(timerId);
+    window.speechSynthesis.cancel();
+    if (currentAudio) currentAudio.pause();
+    elapsed = 0;
+    lastAnnounced = 0;
+    lastCueAt = -Infinity;
+    lastMinuteAt = -Infinity;
+    encourageIndex = 0;
+    display.textContent = '0:00';
+    startBtn.disabled = false;
+    stopBtn.disabled = true;
+    intervalSelect.disabled = false;
+    exerciseSelect.disabled = false;
+    status.textContent = '';
+  });
+</script>
+</body>
+</html>
