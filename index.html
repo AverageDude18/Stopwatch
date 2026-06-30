@@ -165,7 +165,8 @@
       }
     } catch (e) {
       elevenReady = false;
-      status.textContent = 'ElevenLabs niet bereikbaar, gebruik systeemstem als terugval.';
+      status.textContent = 'ElevenLabs fout: ' + (e && e.message ? e.message : e);
+
     }
   }
   initEleven();
