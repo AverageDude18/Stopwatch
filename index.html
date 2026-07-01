@@ -96,6 +96,8 @@
   #stopBtn { background: #b3413a; color: white; }
   #resetBtn { background: var(--border); color: var(--text); }
   #muteBtn { background: var(--border); color: var(--text); padding: 13px 15px; font-size: 1.1rem; }
+  #voiceBtn { background: var(--border); color: var(--text); padding: 13px 15px; font-size: 1.1rem; }
+  #voiceBtn.listening { background: #2e7d4f; color: white; }
   button:disabled { opacity: 0.4; cursor: not-allowed; }
 
   .mode-row { display: flex; gap: 8px; justify-content: center; margin-top: 16px; }
@@ -140,17 +142,161 @@
     z-index: 50; transition: opacity 0.15s ease;
   }
   .flash-overlay.active { opacity: 0.22; }
+
+  .top-row .icon-group { display: flex; gap: 4px; }
+  .icon-btn { background: none; border: none; font-size: 1.1rem; cursor: pointer; padding: 4px; }
+  .today-line { font-size: 0.78rem; color: var(--muted2); margin-top: 2px; }
+
+  .settings-panel {
+    display: none; text-align: left; background: var(--panel); border-radius: 12px;
+    padding: 14px 16px; margin-top: 14px; font-size: 0.85rem;
+  }
+  .settings-panel label { display: block; color: var(--muted); margin-bottom: 6px; }
+  .settings-panel input[type="text"] {
+    width: 100%; background: var(--panel-alt); color: var(--text); border: 1px solid var(--border);
+    border-radius: 8px; padding: 8px 10px; font-size: 0.9rem; margin-bottom: 14px;
+  }
+  .swatch-row { display: flex; gap: 10px; }
+  .swatch {
+    width: 30px; height: 30px; border-radius: 50%; border: 2px solid transparent;
+    cursor: pointer; padding: 0;
+  }
+  .swatch.selected { border-color: var(--text); }
+
+  .heatmap { display: grid; grid-template-columns: repeat(14, 1fr); gap: 3px; margin-bottom: 12px; }
+  .heatmap-cell { aspect-ratio: 1; border-radius: 3px; background: var(--panel-alt); }
+
+  /* Gym mode: hide everything except the giant timer */
+  body.gym-mode .top-row, body.gym-mode .controls, body.gym-mode .mode-row,
+  body.gym-mode .ex-picker, body.gym-mode .settings, body.gym-mode #intervalSettings,
+  body.gym-mode .record-line, body.gym-mode .status, body.gym-mode .settings-panel,
+  body.gym-mode #historySection,
+  body.gym-mode .controls + .controls { display: none !important; }
+  body.gym-mode .ring-wrap { width: 90vw; height: 90vw; max-width: 420px; max-height: 420px; }
+  body.gym-mode .time { font-size: 5rem; }
+  body.gym-mode .card { width: 100vw; }
+
+  .confetti-piece {
+    position: fixed; top: -20px; width: 8px; height: 14px; z-index: 60; pointer-events: none;
+    animation: confetti-fall linear forwards;
+  }
+  @keyframes confetti-fall {
+    to { transform: translateY(110vh) rotate(540deg); opacity: 0.2; }
+  }
+
+  .splash {
+    position: fixed; inset: 0; z-index: 100; background: var(--bg);
+    display: flex; flex-direction: column; align-items: center; justify-content: center;
+    transition: opacity 0.5s ease, visibility 0.5s ease;
+  }
+  .splash.hidden { opacity: 0; visibility: hidden; pointer-events: none; }
+  .splash-icon-wrap {
+    position: relative; width: 130px; height: 130px;
+    display: flex; align-items: center; justify-content: center;
+    animation: splash-pop 0.7s cubic-bezier(.34,1.56,.64,1) both,
+               splash-pulse 2.2s ease-in-out 0.7s infinite,
+               splash-icon-move 1.8s ease-in-out 0.7s infinite;
+  }
+  .splash-glow {
+    position: absolute; inset: -30px; border-radius: 50%;
+    background: radial-gradient(circle, rgba(127,219,168,0.35), rgba(127,219,168,0) 70%);
+    animation: splash-glow-pulse 2.2s ease-in-out 0.7s infinite;
+  }
+  .splash-icon { position: relative; width: 100px; height: 100px; border-radius: 24px; display: block; z-index: 2; }
+  .splash-ring {
+    position: absolute; inset: -14px; border-radius: 50%;
+    border: 3px solid transparent; border-top-color: var(--accent); border-right-color: var(--accent);
+    opacity: 0.55; animation: splash-spin 3s linear infinite;
+  }
+  .splash-ring-outer {
+    position: absolute; inset: -30px; border-radius: 50%;
+    border: 2px solid transparent; border-bottom-color: var(--accent); border-left-color: var(--accent);
+    opacity: 0.3; animation: splash-spin-reverse 5s linear infinite;
+  }
+  @keyframes splash-pop {
+    0% { transform: scale(0.3); opacity: 0; }
+    60% { transform: scale(1.12); opacity: 1; }
+    100% { transform: scale(1); opacity: 1; }
+  }
+  @keyframes splash-pulse { 0%, 100% { transform: scale(1); } 50% { transform: scale(1.07); } }
+  @keyframes splash-icon-move {
+    0%, 100% { translate: 0 0; rotate: -5deg; }
+    50% { translate: 0 -8px; rotate: 5deg; }
+  }
+  @keyframes splash-glow-pulse { 0%, 100% { transform: scale(0.9); opacity: 0.6; } 50% { transform: scale(1.15); opacity: 1; } }
+  @keyframes splash-spin { to { transform: rotate(360deg); } }
+  @keyframes splash-spin-reverse { to { transform: rotate(-360deg); } }
+
+  .splash-wave { display: flex; align-items: flex-end; gap: 5px; height: 20px; margin-top: 22px; }
+  .splash-wave span {
+    display: block; width: 5px; border-radius: 3px; background: var(--accent);
+    animation: splash-wave-bounce 1s ease-in-out infinite;
+  }
+  .splash-wave span:nth-child(1) { height: 8px; animation-delay: 0s; }
+  .splash-wave span:nth-child(2) { height: 16px; animation-delay: 0.12s; }
+  .splash-wave span:nth-child(3) { height: 20px; animation-delay: 0.24s; }
+  .splash-wave span:nth-child(4) { height: 14px; animation-delay: 0.36s; }
+  .splash-wave span:nth-child(5) { height: 8px; animation-delay: 0.48s; }
+  @keyframes splash-wave-bounce {
+    0%, 100% { transform: scaleY(0.4); opacity: 0.5; }
+    50% { transform: scaleY(1); opacity: 1; }
+  }
+
+  .splash-title {
+    margin-top: 18px; font-size: 1.3rem; font-weight: 700; color: var(--text);
+    opacity: 0; transform: translateY(10px);
+    animation: splash-fade-up 0.6s ease 0.5s forwards;
+  }
+  .splash-sub {
+    margin-top: 6px; font-size: 0.9rem; color: var(--muted);
+    opacity: 0; transform: translateY(10px);
+    animation: splash-fade-up 0.6s ease 0.7s forwards;
+  }
+  @keyframes splash-fade-up { to { opacity: 1; transform: translateY(0); } }
 </style>
 </head>
 <body>
+  <div class="splash" id="splashScreen">
+    <div class="splash-icon-wrap">
+      <div class="splash-glow"></div>
+      <div class="splash-ring-outer"></div>
+      <div class="splash-ring"></div>
+      <img src="icon-512.png" alt="" class="splash-icon">
+    </div>
+    <div class="splash-wave">
+      <span></span><span></span><span></span><span></span><span></span>
+    </div>
+    <div class="splash-title" id="splashTitle">Trainingspartner</div>
+    <div class="splash-sub" id="splashSub"></div>
+  </div>
   <div class="flash-overlay" id="flashOverlay"></div>
   <div class="card">
     <div class="top-row">
-      <div class="streak" id="streakDisplay"></div>
-      <button class="theme-toggle" id="themeBtn" aria-label="Thema wisselen">🌙</button>
+      <div>
+        <div class="streak" id="streakDisplay"></div>
+        <div class="today-line" id="todayDisplay"></div>
+      </div>
+      <div class="icon-group">
+        <button class="icon-btn" id="settingsBtn" aria-label="Instellingen">⚙️</button>
+        <button class="icon-btn" id="gymBtn" aria-label="Gym-modus">⛶</button>
+        <button class="theme-toggle" id="themeBtn" aria-label="Thema wisselen">🌙</button>
+      </div>
     </div>
 
-    <div class="ring-wrap">
+    <div class="settings-panel" id="settingsPanel">
+      <label for="nameInput">Jouw naam (voor persoonlijke aanmoedigingen)</label>
+      <input type="text" id="nameInput" placeholder="bijv. Ids">
+      <label>Accentkleur</label>
+      <div class="swatch-row">
+        <button class="swatch selected" data-color="127,219,168" style="background:#7fdba8"></button>
+        <button class="swatch" data-color="94,158,219" style="background:#5e9edb"></button>
+        <button class="swatch" data-color="176,141,255" style="background:#b08dff"></button>
+        <button class="swatch" data-color="255,111,97" style="background:#ff6f61"></button>
+        <button class="swatch" data-color="255,184,92" style="background:#ffb85c"></button>
+      </div>
+    </div>
+
+    <div class="ring-wrap" id="ringWrap">
       <svg class="progress-ring" viewBox="0 0 230 230">
         <circle class="ring-bg" cx="115" cy="115" r="100"></circle>
         <circle class="ring-fill" id="ringFill" cx="115" cy="115" r="100"></circle>
@@ -167,6 +313,7 @@
       <button id="stopBtn" disabled>Stop</button>
       <button id="resetBtn">Reset</button>
       <button id="muteBtn" aria-label="Geluid aan/uit">🔊</button>
+      <button id="voiceBtn" aria-label="Stembediening" style="display:none;">🎤</button>
     </div>
 
     <div class="mode-row">
@@ -222,17 +369,23 @@
     </div>
 
     <div class="controls" style="margin-top: 10px;">
-      <button class="small-btn" id="historyToggle">Geschiedenis</button>
+      <button class="small-btn" id="historyToggle">Statistieken</button>
     </div>
     <div class="history" id="historySection" style="display:none;">
+      <div class="heatmap" id="heatmap"></div>
       <div id="historyList" class="history-empty">Nog geen sessies</div>
     </div>
   </div>
+
+  <div id="confettiContainer"></div>
 
 <script>
   // ====== CONFIG ======
   const ELEVEN_API_KEY = 'sk_d375daf6d7952008627591b6167351d0d7a4814d3d44b4d3';
   const ELEVEN_MODEL = 'eleven_turbo_v2_5';
+  // Leave empty to auto-pick the first voice in your account. Fill in a specific
+  // ElevenLabs voice_id (from the Voice Library) to always use that exact voice.
+  const FIXED_VOICE_ID = '';
   const EX_KEYS = ['plank', 'deadhang', 'lsit'];
   const EX_NAMES = { plank: 'Plank', deadhang: 'Deadhang', lsit: 'L-sit deadhang' };
 
@@ -300,6 +453,15 @@
   const workSecSelect = document.getElementById('workSec');
   const restSecSelect = document.getElementById('restSec');
   const roundsSelect = document.getElementById('rounds');
+  const todayDisplay = document.getElementById('todayDisplay');
+  const settingsBtn = document.getElementById('settingsBtn');
+  const settingsPanel = document.getElementById('settingsPanel');
+  const nameInput = document.getElementById('nameInput');
+  const swatches = document.querySelectorAll('.swatch');
+  const gymBtn = document.getElementById('gymBtn');
+  const ringWrap = document.getElementById('ringWrap');
+  const heatmapEl = document.getElementById('heatmap');
+  const confettiContainer = document.getElementById('confettiContainer');
 
   // ====== Ring ======
   const RING_R = 100;
@@ -307,9 +469,58 @@
   ringFill.style.strokeDasharray = RING_CIRC;
   ringFill.style.strokeDashoffset = RING_CIRC;
 
+  // ====== Accent color ======
+  let accentRGB = [127, 219, 168];
+  function applyAccentCSS() {
+    const [r, g, b] = accentRGB;
+    document.documentElement.style.setProperty('--accent', `rgb(${r},${g},${b})`);
+  }
+  (() => {
+    try {
+      const saved = localStorage.getItem('accentColor');
+      if (saved) {
+        accentRGB = saved.split(',').map(Number);
+        swatches.forEach(sw => sw.classList.toggle('selected', sw.dataset.color === saved));
+      }
+    } catch (e) {}
+    applyAccentCSS();
+  })();
+  swatches.forEach(sw => {
+    sw.addEventListener('click', () => {
+      accentRGB = sw.dataset.color.split(',').map(Number);
+      swatches.forEach(s => s.classList.remove('selected'));
+      sw.classList.add('selected');
+      applyAccentCSS();
+      try { localStorage.setItem('accentColor', sw.dataset.color); } catch (e) {}
+      if (!timerId) resetRing();
+    });
+  });
+
+  // ====== Personalized name ======
+  let userName = '';
+  (() => {
+    try { userName = localStorage.getItem('userName') || ''; } catch (e) {}
+    nameInput.value = userName;
+  })();
+  nameInput.addEventListener('input', () => {
+    userName = nameInput.value.trim();
+    try { localStorage.setItem('userName', userName); } catch (e) {}
+  });
+  function withName(text) { return userName ? text + ' ' + userName : text; }
+
+  settingsBtn.addEventListener('click', () => {
+    settingsPanel.style.display = settingsPanel.style.display === 'block' ? 'none' : 'block';
+  });
+
+  // ====== Gym mode (big-screen focus view) ======
+  gymBtn.addEventListener('click', () => document.body.classList.add('gym-mode'));
+  ringWrap.addEventListener('click', () => {
+    if (document.body.classList.contains('gym-mode')) document.body.classList.remove('gym-mode');
+  });
+
   function colorForElapsed(sec) {
     const t = Math.min(sec / 180, 1);
-    const c1 = [127, 219, 168], c2 = [255, 159, 92];
+    const c1 = accentRGB, c2 = [255, 159, 92];
     const r = Math.round(c1[0] + (c2[0]-c1[0])*t);
     const g = Math.round(c1[1] + (c2[1]-c1[1])*t);
     const b = Math.round(c1[2] + (c2[2]-c1[2])*t);
@@ -320,7 +531,7 @@
     ringFill.style.stroke = color;
     display.style.color = color;
   }
-  function resetRing() { setRingFraction(0, '#7fdba8'); }
+  function resetRing() { setRingFraction(0, `rgb(${accentRGB.join(',')})`); }
 
   function triggerBreathing() {
     breathingCircle.classList.remove('active');
@@ -358,7 +569,7 @@
   // ====== Mobile audio unlock ======
   const audioPlayer = new Audio();
   const SILENT_WAV = 'data:audio/wav;base64,UklGRiQAAABXQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YQAAAAA=';
-  function unlockAudio() {
+  async function unlockAudio() {
     audioPlayer.src = SILENT_WAV;
     audioPlayer.play().catch(() => {});
     if ('speechSynthesis' in window) {
@@ -366,7 +577,41 @@
       u.volume = 0;
       window.speechSynthesis.speak(u);
     }
+    const ctx = getAudioCtx();
+    if (ctx && ctx.state === 'suspended') {
+      try { await ctx.resume(); } catch (e) {}
+    }
   }
+
+  // ====== Sound design (synthesized locally, no extra assets or quota) ======
+  let audioCtx = null;
+  function getAudioCtx() {
+    if (!audioCtx) {
+      try { audioCtx = new (window.AudioContext || window.webkitAudioContext)(); } catch (e) {}
+    }
+    return audioCtx;
+  }
+  function playTone(freq, duration = 0.12, type = 'sine', volume = 0.16, startDelay = 0) {
+    const ctx = getAudioCtx();
+    if (!ctx || ctx.state !== 'running') return;
+    const t0 = ctx.currentTime + startDelay;
+    const osc = ctx.createOscillator();
+    const gain = ctx.createGain();
+    osc.type = type;
+    osc.frequency.setValueAtTime(freq, t0);
+    gain.gain.setValueAtTime(0, t0);
+    gain.gain.linearRampToValueAtTime(volume, t0 + 0.01);
+    gain.gain.exponentialRampToValueAtTime(0.001, t0 + duration);
+    osc.connect(gain).connect(ctx.destination);
+    osc.start(t0);
+    osc.stop(t0 + duration + 0.02);
+  }
+  function playChime(freqs, gap = 0.1) {
+    freqs.forEach((f, i) => playTone(f, 0.18, 'sine', 0.18, i * gap));
+  }
+  function playTick() { playTone(1000, 0.05, 'square', 0.08); }
+  function playMilestoneChime() { playChime([659.25, 880]); }
+  function playRecordFanfare() { playChime([523.25, 659.25, 783.99, 1046.5], 0.09); }
 
   // ====== Wake lock ======
   async function requestWakeLock() {
@@ -421,6 +666,8 @@
       const trimmed = list.slice(0, 30);
       localStorage.setItem('sessions', JSON.stringify(trimmed));
       renderHistory(trimmed);
+      updateTodayOverview(trimmed);
+      renderHeatmap(trimmed);
       updateStreak(trimmed);
     } catch (e) {}
   }
@@ -432,6 +679,38 @@
       return `<div class="history-item"><span>${EX_NAMES[s.ex] || s.ex}</span><span>${format(s.dur)} · ${dateStr}</span></div>`;
     }).join('');
   }
+  function updateTodayOverview(list) {
+    const todayStr = new Date().toDateString();
+    const todays = list.filter(s => new Date(s.ts).toDateString() === todayStr);
+    if (!todays.length) { todayDisplay.textContent = ''; return; }
+    const total = todays.reduce((sum, s) => sum + s.dur, 0);
+    todayDisplay.textContent = `Vandaag: ${todays.length} ${todays.length === 1 ? 'sessie' : 'sessies'}, ${format(total)} totaal`;
+  }
+
+  function renderHeatmap(list) {
+    const days = 84; // 12 weeks
+    const totals = {};
+    list.forEach(s => {
+      const key = new Date(s.ts).toDateString();
+      totals[key] = (totals[key] || 0) + s.dur;
+    });
+    let cellsHtml = '';
+    const today = new Date();
+    for (let i = days - 1; i >= 0; i--) {
+      const d = new Date(today);
+      d.setDate(d.getDate() - i);
+      const dur = totals[d.toDateString()] || 0;
+      let bg = 'var(--panel-alt)';
+      if (dur > 0) {
+        const level = Math.min(Math.floor(dur / 30) + 1, 4); // 4 intensity steps
+        const alpha = 0.25 + level * 0.18;
+        bg = `rgba(${accentRGB.join(',')},${alpha})`;
+      }
+      cellsHtml += `<div class="heatmap-cell" style="background:${bg}" title="${d.toLocaleDateString('nl-NL')}"></div>`;
+    }
+    heatmapEl.innerHTML = cellsHtml;
+  }
+
   function updateStreak(list) {
     const days = new Set(list.map(s => new Date(s.ts).toDateString()));
     let streak = 0;
@@ -441,18 +720,47 @@
     streakDisplay.textContent = streak > 0 ? '🔥 ' + streak + (streak === 1 ? ' dag op rij' : ' dagen op rij') : '';
   }
 
+  // Converts a duration in seconds to a natural spoken Dutch phrase, e.g.
+  // "een minuut en vijftien seconden" — used for the end-of-session summary.
+  function spokenDuration(sec) {
+    if (sec < 60) return numberToDutchWords(sec) + ' seconden';
+    const m = Math.floor(sec / 60), s = sec % 60;
+    let out = numberToDutchWords(m) + (m === 1 ? ' minuut' : ' minuten');
+    if (s > 0) out += ' en ' + numberToDutchWords(s) + ' seconden';
+    return out;
+  }
+
   let lastRecordEx = null, lastRecordDur = 0;
+  function spawnConfetti() {
+    const colors = ['#7fdba8', '#5e9edb', '#b08dff', '#ff6f61', '#ffb85c'];
+    for (let i = 0; i < 28; i++) {
+      const piece = document.createElement('div');
+      piece.className = 'confetti-piece';
+      piece.style.left = Math.random() * 100 + 'vw';
+      piece.style.background = colors[Math.floor(Math.random() * colors.length)];
+      piece.style.animationDuration = (1.6 + Math.random() * 1.2) + 's';
+      piece.style.opacity = String(0.7 + Math.random() * 0.3);
+      confettiContainer.appendChild(piece);
+      setTimeout(() => piece.remove(), 3000);
+    }
+  }
+
   async function checkRecord(ex, dur) {
     const rec = await getRecord(ex);
+    let isNewRecord = false, improvement = 0;
     if (dur > rec) {
       await setRecord(ex, dur);
+      isNewRecord = true;
+      improvement = rec > 0 ? dur - rec : 0;
       status.textContent = 'Nieuw record! 🎉 ' + format(dur);
       pulseFeedback([100, 60, 100, 60, 200]);
-      if (!isMuted) speak('Nieuw record! Geweldig gedaan!');
+      playRecordFanfare();
+      spawnConfetti();
       lastRecordEx = ex; lastRecordDur = dur;
       shareBtn.style.display = 'inline-block';
     }
     updateRecordDisplay();
+    return { isNewRecord, improvement };
   }
 
   // ---- Share record as an image ----
@@ -492,7 +800,7 @@
   historyToggle.addEventListener('click', () => {
     const showing = historySection.style.display !== 'none';
     historySection.style.display = showing ? 'none' : 'block';
-    historyToggle.textContent = showing ? 'Geschiedenis' : 'Verberg geschiedenis';
+    historyToggle.textContent = showing ? 'Statistieken' : 'Verberg statistieken';
   });
 
   // ====== Exercise picker (swipe + chevrons) ======
@@ -517,6 +825,43 @@
     touchStartX = null;
   }, { passive: true });
 
+  // ====== Voice control ("stop" to stop the timer hands-free) ======
+  // Not supported in iOS Safari — the button simply stays hidden there.
+  // The mic button only toggles a saved preference; actual listening starts
+  // and stops automatically with the timer, since your hands are busy mid-hold.
+  const voiceBtn = document.getElementById('voiceBtn');
+  const SRClass = window.SpeechRecognition || window.webkitSpeechRecognition;
+  let recognition = null;
+  let voiceControlEnabled = false;
+  let isListeningSession = false;
+  if (SRClass) {
+    voiceBtn.style.display = 'inline-block';
+    try { voiceControlEnabled = localStorage.getItem('voiceControlEnabled') === 'true'; } catch (e) {}
+    voiceBtn.classList.toggle('listening', voiceControlEnabled);
+    recognition = new SRClass();
+    recognition.lang = 'nl-NL';
+    recognition.continuous = true;
+    recognition.interimResults = false;
+    recognition.onresult = (e) => {
+      const transcript = e.results[e.results.length - 1][0].transcript.toLowerCase();
+      if (transcript.includes('stop') && !stopBtn.disabled) stopBtn.click();
+    };
+    recognition.onerror = () => {};
+    recognition.onend = () => { if (isListeningSession) { try { recognition.start(); } catch (e) {} } };
+    voiceBtn.addEventListener('click', () => {
+      voiceControlEnabled = !voiceControlEnabled;
+      voiceBtn.classList.toggle('listening', voiceControlEnabled);
+      try { localStorage.setItem('voiceControlEnabled', String(voiceControlEnabled)); } catch (e) {}
+    });
+  }
+  function startVoiceListening() {
+    if (SRClass && voiceControlEnabled) { isListeningSession = true; try { recognition.start(); } catch (e) {} }
+  }
+  function stopVoiceListening() {
+    isListeningSession = false;
+    if (SRClass) { try { recognition.stop(); } catch (e) {} }
+  }
+
   // ====== Mute ======
   muteBtn.addEventListener('click', () => {
     isMuted = !isMuted;
@@ -528,6 +873,12 @@
   let elevenVoiceId = null;
   let elevenReady = false;
   async function initEleven() {
+    if (FIXED_VOICE_ID) {
+      elevenVoiceId = FIXED_VOICE_ID;
+      elevenReady = true;
+      status.textContent = '';
+      return;
+    }
     try {
       const res = await fetch('https://api.elevenlabs.io/v1/voices', { headers: { 'xi-api-key': ELEVEN_API_KEY } });
       if (!res.ok) throw new Error('HTTP ' + res.status);
@@ -544,18 +895,44 @@
   }
   initEleven();
 
+  // ---- Audio cache: repeated phrases (numbers, cues) are reused instead of
+  // re-generated every time. More stable (no risk of a fresh glitch on a phrase
+  // that already sounded fine) and saves ElevenLabs credits.
+  const TTS_CACHE_NAME = 'tts-cache-v1';
+  async function getCachedAudio(text) {
+    try {
+      const cache = await caches.open(TTS_CACHE_NAME);
+      const match = await cache.match('/tts/' + encodeURIComponent(elevenVoiceId + ':' + text));
+      if (match) return URL.createObjectURL(await match.blob());
+    } catch (e) {}
+    return null;
+  }
+  async function putCachedAudio(text, blob) {
+    try {
+      const cache = await caches.open(TTS_CACHE_NAME);
+      await cache.put('/tts/' + encodeURIComponent(elevenVoiceId + ':' + text), new Response(blob, { headers: { 'Content-Type': 'audio/mpeg' } }));
+    } catch (e) {}
+  }
+
   async function speakEleven(text) {
+    const cachedUrl = await getCachedAudio(text);
+    if (cachedUrl) {
+      audioPlayer.src = cachedUrl;
+      await audioPlayer.play();
+      return;
+    }
     const res = await fetch('https://api.elevenlabs.io/v1/text-to-speech/' + elevenVoiceId, {
       method: 'POST',
       headers: { 'xi-api-key': ELEVEN_API_KEY, 'Content-Type': 'application/json' },
       body: JSON.stringify({
         text: text, model_id: ELEVEN_MODEL, language_code: 'nl',
-        voice_settings: { stability: 0.72, similarity_boost: 0.75 }
+        voice_settings: { stability: 0.88, similarity_boost: 0.75, style: 0.2, use_speaker_boost: true }
       })
     });
     if (!res.ok) throw new Error('HTTP ' + res.status);
     const blob = await res.blob();
     audioPlayer.src = URL.createObjectURL(blob);
+    putCachedAudio(text, blob);
     await audioPlayer.play();
   }
   function speakBrowser(text) {
@@ -637,6 +1014,7 @@
       minuteCount++;
       lastAnnounced = elapsed; lastCueAt = elapsed;
       pulseFeedback(200);
+      playMilestoneChime();
       speak(numberToDutchWords(minuteCount) + (minuteCount === 1 ? ' minuut' : ' minuten'));
     } else if (cueIsDue) {
       lastCueAt = elapsed;
@@ -661,9 +1039,21 @@
     timerId = setInterval(freeTick, 200);
   }
   function stopFree() { status.textContent = 'Gestopt op ' + format(elapsed); }
-  function resetFree() {
+  async function resetFree() {
     breathingCircle.classList.remove('active');
-    if (elapsed > 0) { saveSession(currentEx(), elapsed); checkRecord(currentEx(), elapsed); }
+    if (elapsed > 0) {
+      const ex = currentEx();
+      const finalElapsed = elapsed;
+      saveSession(ex, finalElapsed);
+      const { isNewRecord, improvement } = await checkRecord(ex, finalElapsed);
+      let summary = (userName ? userName + ', j' : 'J') + 'e hield het ' + spokenDuration(finalElapsed) + ' vol!';
+      if (isNewRecord) {
+        summary += improvement > 0
+          ? ' Nieuw record, ' + spokenDuration(improvement) + ' langer dan daarvoor!'
+          : ' Dat is meteen je eerste record!';
+      }
+      speak(summary);
+    }
     elapsed = 0; lastAnnounced = 0; lastCueAt = -Infinity; minuteCount = 0; encourageIndex = 0;
     display.textContent = '0:00';
     resetRing();
@@ -718,8 +1108,9 @@
     clearInterval(timerId);
     timerId = null;
     releaseWakeLock();
+    stopVoiceListening();
     pulseFeedback([120, 60, 120, 60, 250]);
-    speak('Training voltooid! Goed gedaan!');
+    speak(userName ? 'Training voltooid, ' + userName + '! Goed gedaan!' : 'Training voltooid! Goed gedaan!');
     display.textContent = '0:00';
     phaseLabel.textContent = 'Klaar — ' + totalRounds + ' rondes voltooid';
     resetRing();
@@ -754,22 +1145,47 @@
   }
 
   // ====== Start / Stop / Reset (shared) ======
-  startBtn.addEventListener('click', () => {
-    unlockAudio();
+  let countdownCancelled = false;
+  async function runCountdown() {
+    countdownCancelled = false;
+    const seq = [['3', 'drie'], ['2', 'twee'], ['1', 'een']];
+    for (const [digit, word] of seq) {
+      if (countdownCancelled) return false;
+      display.textContent = digit;
+      playTick();
+      speak(word);
+      await new Promise((r) => setTimeout(r, 650));
+    }
+    if (countdownCancelled) return false;
+    display.textContent = 'Start!';
+    playTone(880, 0.18, 'sine', 0.2);
+    speak(userName ? 'Kom op, ' + userName + '!' : 'Start!');
+    await new Promise((r) => setTimeout(r, 350));
+    return !countdownCancelled;
+  }
+
+  startBtn.addEventListener('click', async () => {
+    await unlockAudio();
     requestWakeLock();
     startBtn.disabled = true;
     stopBtn.disabled = false;
     setControlsLockedForRun(true);
-    status.textContent = intervalMode ? '' : 'Loopt...';
     shareBtn.style.display = 'none';
-    if (intervalMode) startInterval(); else { speak('Start'); startFree(); }
+    status.textContent = '';
+    const proceeded = await runCountdown();
+    if (!proceeded) return;
+    status.textContent = intervalMode ? '' : 'Loopt...';
+    startVoiceListening();
+    if (intervalMode) startInterval(); else startFree();
   });
 
   stopBtn.addEventListener('click', () => {
+    countdownCancelled = true;
     clearInterval(timerId); timerId = null;
     window.speechSynthesis.cancel();
     audioPlayer.pause();
     releaseWakeLock();
+    stopVoiceListening();
     startBtn.disabled = false;
     stopBtn.disabled = true;
     setControlsLockedForRun(false);
@@ -782,6 +1198,7 @@
     window.speechSynthesis.cancel();
     audioPlayer.pause();
     releaseWakeLock();
+    stopVoiceListening();
     startBtn.disabled = false;
     stopBtn.disabled = true;
     setControlsLockedForRun(false);
@@ -797,9 +1214,37 @@
   });
 
   // ====== Init ======
-  renderExName();
-  updateRecordDisplay();
-  loadSessions().then((list) => { renderHistory(list); updateStreak(list); });
+  // ====== Init ======
+  const splashScreen = document.getElementById('splashScreen');
+  const splashTitle = document.getElementById('splashTitle');
+  const splashSub = document.getElementById('splashSub');
+
+  function hideSplash() { splashScreen.classList.add('hidden'); }
+  splashScreen.addEventListener('click', () => {
+    hideSplash();
+    const ctx = getAudioCtx();
+    if (!ctx) return;
+    if (ctx.state === 'suspended') {
+      ctx.resume().then(() => playChime([392, 523.25], 0.16)).catch(() => {});
+    } else {
+      playChime([392, 523.25], 0.16);
+    }
+  });
+
+  async function initApp() {
+    renderExName();
+    updateRecordDisplay();
+    const list = await loadSessions();
+    renderHistory(list);
+    updateStreak(list);
+    updateTodayOverview(list);
+    renderHeatmap(list);
+
+    splashTitle.textContent = userName ? 'Welkom terug, ' + userName + '!' : 'Trainingspartner';
+    splashSub.textContent = streakDisplay.textContent || 'Klaar om te trainen?';
+    setTimeout(hideSplash, 2200);
+  }
+  initApp();
 </script>
 </body>
 </html>
