@@ -51,9 +51,6 @@
     margin-bottom: 6px; min-height: 22px;
   }
   .streak { font-size: 0.85rem; color: var(--muted); }
-  .theme-toggle {
-    background: none; border: none; font-size: 1.1rem; cursor: pointer; padding: 4px;
-  }
 
   .ring-wrap {
     position: relative; width: 230px; height: 230px; margin: 6px auto 18px;
@@ -96,8 +93,6 @@
   #stopBtn { background: #b3413a; color: white; }
   #resetBtn { background: var(--border); color: var(--text); }
   #muteBtn { background: var(--border); color: var(--text); padding: 13px 15px; font-size: 1.1rem; }
-  #voiceBtn { background: var(--border); color: var(--text); padding: 13px 15px; font-size: 1.1rem; }
-  #voiceBtn.listening { background: #2e7d4f; color: white; }
   button:disabled { opacity: 0.4; cursor: not-allowed; }
 
   .mode-row { display: flex; gap: 8px; justify-content: center; margin-top: 16px; }
@@ -143,7 +138,6 @@
   }
   .flash-overlay.active { opacity: 0.22; }
 
-  .top-row .icon-group { display: flex; gap: 4px; }
   .icon-btn { background: none; border: none; font-size: 1.1rem; cursor: pointer; padding: 4px; }
   .today-line { font-size: 0.78rem; color: var(--muted2); margin-top: 2px; }
 
@@ -163,8 +157,52 @@
   }
   .swatch.selected { border-color: var(--text); }
 
-  .heatmap { display: grid; grid-template-columns: repeat(14, 1fr); gap: 3px; margin-bottom: 12px; }
-  .heatmap-cell { aspect-ratio: 1; border-radius: 3px; background: var(--panel-alt); }
+  .toggle-row {
+    display: flex; align-items: center; justify-content: space-between;
+    margin: 14px 0; color: var(--text);
+  }
+  .toggle-switch { position: relative; display: inline-block; width: 42px; height: 24px; flex-shrink: 0; }
+  .toggle-switch input { opacity: 0; width: 0; height: 0; }
+  .toggle-slider {
+    position: absolute; inset: 0; background: var(--border); border-radius: 999px;
+    cursor: pointer; transition: background 0.2s ease;
+  }
+  .toggle-slider::before {
+    content: ''; position: absolute; width: 18px; height: 18px; left: 3px; top: 3px;
+    background: white; border-radius: 50%; transition: transform 0.2s ease;
+  }
+  .toggle-switch input:checked + .toggle-slider { background: #2e7d4f; }
+  .toggle-switch input:checked + .toggle-slider::before { transform: translateX(18px); }
+
+  .goal-bar-wrap { margin-bottom: 14px; }
+  .goal-bar { height: 8px; background: var(--panel-alt); border-radius: 999px; overflow: hidden; }
+  .goal-bar-fill { height: 100%; background: var(--accent); border-radius: 999px; transition: width 0.3s ease; }
+  .goal-bar-label { margin-top: 4px; font-size: 0.75rem; color: var(--muted2); }
+
+  .badge-row { display: flex; gap: 10px; flex-wrap: wrap; margin-bottom: 14px; }
+  .badge {
+    display: flex; flex-direction: column; align-items: center; gap: 4px;
+    width: 60px; font-size: 0.65rem; color: var(--muted2); text-align: center;
+  }
+  .badge-icon {
+    width: 42px; height: 42px; border-radius: 50%; background: var(--panel-alt);
+    display: flex; align-items: center; justify-content: center; font-size: 1.3rem;
+    filter: grayscale(1); opacity: 0.35;
+  }
+  .badge.unlocked .badge-icon { filter: none; opacity: 1; background: rgba(var(--accent-rgb, 127,219,168), 0.18); }
+  .badge.unlocked { color: var(--text); }
+
+  .week-chart {
+    display: flex; align-items: flex-end; justify-content: space-between;
+    gap: 8px; height: 90px; margin-bottom: 14px; padding: 0 4px;
+  }
+  .week-bar-col { display: flex; flex-direction: column; align-items: center; flex: 1; height: 100%; justify-content: flex-end; }
+  .week-bar {
+    width: 100%; max-width: 22px; border-radius: 6px 6px 3px 3px;
+    background: var(--panel-alt); min-height: 4px; transition: height 0.3s ease;
+  }
+  .week-bar.has-data { background: var(--accent); }
+  .week-label { margin-top: 6px; font-size: 0.65rem; color: var(--muted2); }
 
   /* Gym mode: hide everything except the giant timer */
   body.gym-mode .top-row, body.gym-mode .controls, body.gym-mode .mode-row,
@@ -276,16 +314,13 @@
         <div class="streak" id="streakDisplay"></div>
         <div class="today-line" id="todayDisplay"></div>
       </div>
-      <div class="icon-group">
-        <button class="icon-btn" id="settingsBtn" aria-label="Instellingen">⚙️</button>
-        <button class="icon-btn" id="gymBtn" aria-label="Gym-modus">⛶</button>
-        <button class="theme-toggle" id="themeBtn" aria-label="Thema wisselen">🌙</button>
-      </div>
+      <button class="icon-btn" id="settingsBtn" aria-label="Instellingen">⚙️</button>
     </div>
 
     <div class="settings-panel" id="settingsPanel">
       <label for="nameInput">Jouw naam (voor persoonlijke aanmoedigingen)</label>
       <input type="text" id="nameInput" placeholder="bijv. Ids">
+
       <label>Accentkleur</label>
       <div class="swatch-row">
         <button class="swatch selected" data-color="127,219,168" style="background:#7fdba8"></button>
@@ -294,6 +329,55 @@
         <button class="swatch" data-color="255,111,97" style="background:#ff6f61"></button>
         <button class="swatch" data-color="255,184,92" style="background:#ffb85c"></button>
       </div>
+
+      <label for="toneSelect">Coach-toon</label>
+      <select id="toneSelect" style="width:100%; margin-bottom:14px;">
+        <option value="motiverend">Motiverend</option>
+        <option value="streng">Streng</option>
+        <option value="chill">Chill</option>
+      </select>
+
+      <label for="goalSelect">Weekdoel (sessies per week)</label>
+      <select id="goalSelect" style="width:100%; margin-bottom:6px;">
+        <option value="0">Geen doel</option>
+        <option value="2">2 per week</option>
+        <option value="3" selected>3 per week</option>
+        <option value="4">4 per week</option>
+        <option value="5">5 per week</option>
+        <option value="7">Elke dag</option>
+      </select>
+      <div class="goal-bar-wrap" id="goalBarWrap" style="display:none;">
+        <div class="goal-bar"><div class="goal-bar-fill" id="goalBarFill"></div></div>
+        <div class="goal-bar-label" id="goalBarLabel"></div>
+      </div>
+
+      <label for="speedSelect">Spreeksnelheid van de stem</label>
+      <select id="speedSelect" style="width:100%; margin-bottom:14px;">
+        <option value="0.85">Langzaam</option>
+        <option value="1" selected>Normaal</option>
+        <option value="1.2">Snel</option>
+      </select>
+
+      <label for="volumeSlider">Stemvolume</label>
+      <input type="range" id="volumeSlider" min="0" max="100" value="100" style="width:100%; margin-bottom:14px;">
+
+      <div class="toggle-row">
+        <span>Licht thema</span>
+        <label class="toggle-switch">
+          <input type="checkbox" id="themeToggleInput">
+          <span class="toggle-slider"></span>
+        </label>
+      </div>
+
+      <div class="toggle-row" id="voiceToggleRow" style="display:none;">
+        <span>Stembediening ("stop" zeggen)</span>
+        <label class="toggle-switch">
+          <input type="checkbox" id="voiceToggleInput">
+          <span class="toggle-slider"></span>
+        </label>
+      </div>
+
+      <button class="small-btn" id="gymModeBtn" style="width:100%;">Gym-modus (groot scherm)</button>
     </div>
 
     <div class="ring-wrap" id="ringWrap">
@@ -313,7 +397,6 @@
       <button id="stopBtn" disabled>Stop</button>
       <button id="resetBtn">Reset</button>
       <button id="muteBtn" aria-label="Geluid aan/uit">🔊</button>
-      <button id="voiceBtn" aria-label="Stembediening" style="display:none;">🎤</button>
     </div>
 
     <div class="mode-row">
@@ -372,7 +455,8 @@
       <button class="small-btn" id="historyToggle">Statistieken</button>
     </div>
     <div class="history" id="historySection" style="display:none;">
-      <div class="heatmap" id="heatmap"></div>
+      <div class="badge-row" id="badgeRow"></div>
+      <div class="week-chart" id="heatmap"></div>
       <div id="historyList" class="history-empty">Nog geen sessies</div>
     </div>
   </div>
@@ -398,29 +482,43 @@
   let elapsed = 0; // free-hold mode elapsed seconds
 
   const BREATHING_CUE = 'Rustig doorademen.';
-  const encouragementsByExercise = {
-    plank: [
-      'Hou je rug mooi recht!',
-      'Laat je heupen niet zakken!',
-      'Span je buikspieren aan, jij kan dit!',
-      BREATHING_CUE,
-      'Nek ontspannen, kijk naar de grond.'
-    ],
-    deadhang: [
-      'Schouders actief, niet helemaal hangen!',
-      'Grip vasthouden, je doet het goed!',
-      BREATHING_CUE,
-      'Nek lekker los laten hangen.',
-      'Kom op, nog even volhouden!'
-    ],
-    lsit: [
-      'Houd die benen mooi hoog!',
-      'Knieën strak, tenen gespannen!',
-      'Core aanspannen, je zit er goed bij!',
-      'Schouders naar beneden, weg bij je oren.',
-      'Sterk blijven, nog even!'
-    ]
+  const TONE_PHRASES = {
+    motiverend: {
+      plank: [
+        'Hou je rug mooi recht!',
+        'Laat je heupen niet zakken!',
+        'Span je buikspieren aan, jij kan dit!',
+        BREATHING_CUE,
+        'Nek ontspannen, kijk naar de grond.'
+      ],
+      deadhang: [
+        'Schouders actief, niet helemaal hangen!',
+        'Grip vasthouden, je doet het goed!',
+        BREATHING_CUE,
+        'Nek lekker los laten hangen.',
+        'Kom op, nog even volhouden!'
+      ],
+      lsit: [
+        'Houd die benen mooi hoog!',
+        'Knieën strak, tenen gespannen!',
+        'Core aanspannen, je zit er goed bij!',
+        'Schouders naar beneden, weg bij je oren.',
+        'Sterk blijven, nog even!'
+      ]
+    },
+    streng: {
+      plank: ['Rug recht. Nu!', 'Heupen omhoog!', 'Buik strak!', BREATHING_CUE, 'Focus.'],
+      deadhang: ['Grip vast! Niet loslaten!', 'Schouders actief!', BREATHING_CUE, 'Doorzetten!', 'Niet verslappen!'],
+      lsit: ['Benen omhoog! Nu!', 'Knieën op slot!', 'Core aan!', 'Doorademen.', 'Volhouden!']
+    },
+    chill: {
+      plank: ['Lekker bezig, rustig aan.', 'Voel je core, geen paniek.', BREATHING_CUE, 'Je doet het prima zo.', 'Nog even chillen in de plank.'],
+      deadhang: ['Relax je schouders, hang lekker.', 'Grip losjes maar stevig.', BREATHING_CUE, 'Rustig aan, het komt goed.', 'Je bent lekker bezig.'],
+      lsit: ['Benen omhoog, geen stress.', BREATHING_CUE, 'Focus op je ademhaling.', 'Je zit er goed bij, rustig aan.', 'Nog even volhouden, relaxed.']
+    }
   };
+  let currentTone = 'motiverend';
+  function encouragementsByExerciseNow() { return TONE_PHRASES[currentTone] || TONE_PHRASES.motiverend; }
 
   function currentEx() { return EX_KEYS[exerciseIndex]; }
 
@@ -431,7 +529,7 @@
   const stopBtn = document.getElementById('stopBtn');
   const resetBtn = document.getElementById('resetBtn');
   const muteBtn = document.getElementById('muteBtn');
-  const themeBtn = document.getElementById('themeBtn');
+  const themeToggleInput = document.getElementById('themeToggleInput');
   const intervalSelect = document.getElementById('interval');
   const exName = document.getElementById('exName');
   const exPrev = document.getElementById('exPrev');
@@ -458,7 +556,17 @@
   const settingsPanel = document.getElementById('settingsPanel');
   const nameInput = document.getElementById('nameInput');
   const swatches = document.querySelectorAll('.swatch');
-  const gymBtn = document.getElementById('gymBtn');
+  const gymModeBtn = document.getElementById('gymModeBtn');
+  const voiceToggleRow = document.getElementById('voiceToggleRow');
+  const voiceToggleInput = document.getElementById('voiceToggleInput');
+  const toneSelect = document.getElementById('toneSelect');
+  const goalSelect = document.getElementById('goalSelect');
+  const goalBarWrap = document.getElementById('goalBarWrap');
+  const goalBarFill = document.getElementById('goalBarFill');
+  const goalBarLabel = document.getElementById('goalBarLabel');
+  const speedSelect = document.getElementById('speedSelect');
+  const volumeSlider = document.getElementById('volumeSlider');
+  const badgeRow = document.getElementById('badgeRow');
   const ringWrap = document.getElementById('ringWrap');
   const heatmapEl = document.getElementById('heatmap');
   const confettiContainer = document.getElementById('confettiContainer');
@@ -513,7 +621,10 @@
   });
 
   // ====== Gym mode (big-screen focus view) ======
-  gymBtn.addEventListener('click', () => document.body.classList.add('gym-mode'));
+  gymModeBtn.addEventListener('click', () => {
+    document.body.classList.add('gym-mode');
+    settingsPanel.style.display = 'none';
+  });
   ringWrap.addEventListener('click', () => {
     if (document.body.classList.contains('gym-mode')) document.body.classList.remove('gym-mode');
   });
@@ -628,12 +739,11 @@
   // ====== Theme ======
   async function applyTheme(mode, persist) {
     document.body.classList.toggle('light', mode === 'light');
-    themeBtn.textContent = mode === 'light' ? '🌙' : '☀️';
+    themeToggleInput.checked = mode === 'light';
     if (persist) { try { localStorage.setItem('theme', mode); } catch (e) {} }
   }
-  themeBtn.addEventListener('click', () => {
-    const next = document.body.classList.contains('light') ? 'dark' : 'light';
-    applyTheme(next, true);
+  themeToggleInput.addEventListener('change', () => {
+    applyTheme(themeToggleInput.checked ? 'light' : 'dark', true);
   });
   (() => {
     try {
@@ -667,7 +777,7 @@
       localStorage.setItem('sessions', JSON.stringify(trimmed));
       renderHistory(trimmed);
       updateTodayOverview(trimmed);
-      renderHeatmap(trimmed);
+      renderWeekChart(trimmed);
       updateStreak(trimmed);
     } catch (e) {}
   }
@@ -687,28 +797,30 @@
     todayDisplay.textContent = `Vandaag: ${todays.length} ${todays.length === 1 ? 'sessie' : 'sessies'}, ${format(total)} totaal`;
   }
 
-  function renderHeatmap(list) {
-    const days = 84; // 12 weeks
+  function renderWeekChart(list) {
     const totals = {};
     list.forEach(s => {
       const key = new Date(s.ts).toDateString();
       totals[key] = (totals[key] || 0) + s.dur;
     });
-    let cellsHtml = '';
+    const dayLabels = ['Zo', 'Ma', 'Di', 'Wo', 'Do', 'Vr', 'Za'];
     const today = new Date();
-    for (let i = days - 1; i >= 0; i--) {
+    const days = [];
+    for (let i = 6; i >= 0; i--) {
       const d = new Date(today);
       d.setDate(d.getDate() - i);
-      const dur = totals[d.toDateString()] || 0;
-      let bg = 'var(--panel-alt)';
-      if (dur > 0) {
-        const level = Math.min(Math.floor(dur / 30) + 1, 4); // 4 intensity steps
-        const alpha = 0.25 + level * 0.18;
-        bg = `rgba(${accentRGB.join(',')},${alpha})`;
-      }
-      cellsHtml += `<div class="heatmap-cell" style="background:${bg}" title="${d.toLocaleDateString('nl-NL')}"></div>`;
+      days.push({ date: d, dur: totals[d.toDateString()] || 0 });
     }
-    heatmapEl.innerHTML = cellsHtml;
+    const maxDur = Math.max(...days.map(d => d.dur), 60);
+    heatmapEl.innerHTML = days.map(d => {
+      const heightPct = d.dur > 0 ? Math.max((d.dur / maxDur) * 100, 8) : 3;
+      const isToday = d.date.toDateString() === today.toDateString();
+      const label = isToday ? 'Nu' : dayLabels[d.date.getDay()];
+      return `<div class="week-bar-col">
+        <div class="week-bar ${d.dur > 0 ? 'has-data' : ''}" style="height:${heightPct}%" title="${format(d.dur)}"></div>
+        <div class="week-label">${label}</div>
+      </div>`;
+    }).join('');
   }
 
   function updateStreak(list) {
@@ -826,18 +938,17 @@
   }, { passive: true });
 
   // ====== Voice control ("stop" to stop the timer hands-free) ======
-  // Not supported in iOS Safari — the button simply stays hidden there.
-  // The mic button only toggles a saved preference; actual listening starts
-  // and stops automatically with the timer, since your hands are busy mid-hold.
-  const voiceBtn = document.getElementById('voiceBtn');
+  // Not supported in iOS Safari — the toggle simply stays hidden there.
+  // It only sets a saved preference; actual listening starts and stops
+  // automatically with the timer, since your hands are busy mid-hold.
   const SRClass = window.SpeechRecognition || window.webkitSpeechRecognition;
   let recognition = null;
   let voiceControlEnabled = false;
   let isListeningSession = false;
   if (SRClass) {
-    voiceBtn.style.display = 'inline-block';
+    voiceToggleRow.style.display = 'flex';
     try { voiceControlEnabled = localStorage.getItem('voiceControlEnabled') === 'true'; } catch (e) {}
-    voiceBtn.classList.toggle('listening', voiceControlEnabled);
+    voiceToggleInput.checked = voiceControlEnabled;
     recognition = new SRClass();
     recognition.lang = 'nl-NL';
     recognition.continuous = true;
@@ -848,9 +959,8 @@
     };
     recognition.onerror = () => {};
     recognition.onend = () => { if (isListeningSession) { try { recognition.start(); } catch (e) {} } };
-    voiceBtn.addEventListener('click', () => {
-      voiceControlEnabled = !voiceControlEnabled;
-      voiceBtn.classList.toggle('listening', voiceControlEnabled);
+    voiceToggleInput.addEventListener('change', () => {
+      voiceControlEnabled = voiceToggleInput.checked;
       try { localStorage.setItem('voiceControlEnabled', String(voiceControlEnabled)); } catch (e) {}
     });
   }
@@ -1006,7 +1116,7 @@
       matchRecordAnnounced = true;
       lastAnnounced = elapsed; lastCueAt = elapsed;
       pulseFeedback(150);
-      speak('Je evenaart je record! Ga ervoor!');
+      speak('Je zit nu op je record! Kom op, ga door!');
       return;
     }
 
@@ -1148,7 +1258,7 @@
   let countdownCancelled = false;
   async function runCountdown() {
     countdownCancelled = false;
-    const seq = [['3', 'drie'], ['2', 'twee'], ['1', 'een']];
+    const seq = [['3', 'drie'], ['2', 'twee'], ['1', 'één']];
     for (const [digit, word] of seq) {
       if (countdownCancelled) return false;
       display.textContent = digit;
@@ -1238,7 +1348,7 @@
     renderHistory(list);
     updateStreak(list);
     updateTodayOverview(list);
-    renderHeatmap(list);
+    renderWeekChart(list);
 
     splashTitle.textContent = userName ? 'Welkom terug, ' + userName + '!' : 'Trainingspartner';
     splashSub.textContent = streakDisplay.textContent || 'Klaar om te trainen?';
