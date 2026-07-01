@@ -101,7 +101,7 @@
 <script>
   // ====== CONFIG ======
   const ELEVEN_API_KEY = 'sk_d375daf6d7952008627591b6167351d0d7a4814d3d44b4d3';
-  const ELEVEN_MODEL = 'eleven_multilingual_v2';
+  const ELEVEN_MODEL = 'eleven_turbo_v2_5';
 
   // ====== State ======
   let startTime = null;
@@ -216,7 +216,8 @@
       body: JSON.stringify({
         text: text,
         model_id: ELEVEN_MODEL,
-        voice_settings: { stability: 0.65, similarity_boost: 0.75 }
+        language_code: 'nl',
+        voice_settings: { stability: 0.72, similarity_boost: 0.75 }
       })
     });
     if (!res.ok) throw new Error('HTTP ' + res.status);
