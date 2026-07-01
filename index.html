@@ -117,14 +117,15 @@
   .mode-btn.active { background: #2e7d4f; color: white; border-color: #2e7d4f; }
 
   .ex-picker {
-    display: flex; align-items: center; justify-content: center; gap: 14px;
+    display: flex; align-items: center; justify-content: center; gap: 10px;
     margin-top: 16px; font-size: 0.95rem; color: var(--text);
   }
-  .chev {
-    background: var(--panel); color: var(--text); border: 1px solid var(--border);
-    width: 34px; height: 34px; padding: 0; border-radius: 8px; font-size: 1.1rem; line-height: 1;
+  .ex-icon { width: 54px; height: 36px; flex-shrink: 0; color: var(--accent); }
+  .ex-icon svg { width: 100%; height: 100%; display: block; }
+  .ex-select {
+    width: 100%; max-width: 220px; font-weight: 600; font-size: 1rem;
+    text-align: center; text-align-last: center; padding: 8px 10px;
   }
-  .ex-name { min-width: 130px; font-weight: 600; }
 
   .settings {
     margin-top: 14px; font-size: 0.9rem; color: var(--muted);
@@ -204,7 +205,14 @@
     font-size: 0.75rem; font-weight: 700; color: var(--muted); text-transform: uppercase;
     letter-spacing: 0.04em; margin: 2px 0 10px;
   }
-  .badge-row { display: flex; gap: 10px; flex-wrap: wrap; margin-bottom: 8px; }
+  .badge-row { margin-bottom: 4px; }
+  .badge-group { margin-bottom: 14px; }
+  .badge-group:last-child { margin-bottom: 0; }
+  .badge-group-label {
+    font-size: 0.66rem; font-weight: 600; color: var(--muted2); text-transform: uppercase;
+    letter-spacing: 0.03em; margin-bottom: 6px;
+  }
+  .badge-group-row { display: flex; gap: 10px; flex-wrap: wrap; }
   .badge {
     display: flex; flex-direction: column; align-items: center; gap: 4px;
     width: 60px; font-size: 0.65rem; color: var(--muted2); text-align: center;
@@ -497,9 +505,8 @@
       </div>
 
       <div class="ex-picker">
-        <button class="chev" id="exPrev">‹</button>
-        <div class="ex-name" id="exName">Plank</div>
-        <button class="chev" id="exNext">›</button>
+        <div class="ex-icon" id="exIcon"></div>
+        <select id="exSelect" class="ex-select"></select>
       </div>
 
       <div class="settings" id="freeSettings">
@@ -589,7 +596,7 @@
   const ELEVEN_API_KEY = 'REDACTED_ELEVENLABS_KEY';
   const ELEVEN_MODEL = 'eleven_turbo_v2_5';
   const FIXED_VOICE_ID = '';
-  const EX_KEYS = ['plank', 'deadhang', 'lsit'];
+  const EX_KEYS = ['plank', 'deadhang', 'lsit', 'sideplank', 'wallsit', 'hollowhold', 'superman', 'glutebridge', 'handstand', 'birddog'];
 
   // ====================================================================
   // ====== LANGUAGE / TRANSLATIONS =======================================
@@ -633,7 +640,7 @@
   const I18N = {
     nl: { dir: 'ltr', elevenLang: 'nl', speechLang: 'nl-NL',
       ui: { start:'Start', stop:'Stop', reset:'Reset', freeMode:'Vrije hold', intervalMode:'Intervallen',
-        exPlank:'Plank', exDeadhang:'Deadhang', exLsit:'L-sit deadhang',
+        exPlank:'Plank', exDeadhang:'Deadhang', exLsit:'L-sit deadhang', exSidePlank:'Zijplank', exWallSit:'Wandzit', exHollowHold:'Hollow hold', exSuperman:'Superman hold', exGluteBridge:'Bruggehouding', exHandstand:'Handstand (tegen de muur)', exBirdDog:'Vogelhond hold',
         every:'Meld elke', seconds:'seconden', work:'Werk', rest:'Rust', rounds:'Rondes',
         record:'Record', noRecord:'Nog geen record', stoppedAt:'Gestopt op', running:'Loopt...',
         tapBar:'Tik op een staafje voor de langst volgehouden tijd die dag', noSession:'Geen sessie deze dag',
@@ -667,17 +674,38 @@
           motiverend: {
             plank: ['Hou je rug mooi recht!', 'Laat je heupen niet zakken!', 'Span je buikspieren aan, jij kan dit!', BREATHING_CUE_BY_LANG.nl, 'Nek ontspannen, kijk naar de grond.'],
             deadhang: ['Schouders actief, niet helemaal hangen!', 'Grip vasthouden, je doet het goed!', BREATHING_CUE_BY_LANG.nl, 'Nek lekker los laten hangen.', 'Kom op, nog even volhouden!'],
-            lsit: ['Houd die benen mooi hoog!', 'Knieën strak, tenen gespannen!', 'Core aanspannen, je zit er goed bij!', 'Schouders naar beneden, weg bij je oren.', 'Sterk blijven, nog even!']
+            lsit: ['Houd die benen mooi hoog!', 'Knieën strak, tenen gespannen!', 'Core aanspannen, je zit er goed bij!', 'Schouders naar beneden, weg bij je oren.', 'Sterk blijven, nog even!'],
+            sideplank: ['Hou je heup omhoog!', 'Stapel je schouders recht boven je elleboog!', 'Span je zij aan, jij kan dit!', BREATHING_CUE_BY_LANG.nl, 'Blijf recht kijken, niet draaien.'],
+            wallsit: ['Knieën op 90 graden!', 'Rug plat tegen de muur!', 'Duw door je hielen, jij kan dit!', BREATHING_CUE_BY_LANG.nl, 'Ontspan je schouders.'],
+            hollowhold: ['Onderrug plat op de grond!', 'Armen en benen gestrekt!', 'Span je buik aan, jij kan dit!', BREATHING_CUE_BY_LANG.nl, 'Kin licht naar je borst.'],
+            superman: ['Til armen en benen samen op!', 'Span je onderrug en billen aan!', 'Blijf kijken naar de grond, jij kan dit!', BREATHING_CUE_BY_LANG.nl, 'Schouders ontspannen.'],
+            glutebridge: ['Knijp je billen samen!', 'Heupen zo hoog mogelijk!', 'Span je core aan, jij kan dit!', BREATHING_CUE_BY_LANG.nl, 'Kin licht naar beneden.'],
+            handstand: ['Armen gestrekt, duw door je schouders!', 'Buik en billen aangespannen!', 'Blijf rustig ademen, jij kan dit!', BREATHING_CUE_BY_LANG.nl, 'Kijk tussen je handen door.'],
+            birddog: ['Arm en been in één lijn met je rug!', 'Heupen recht, niet draaien!', 'Span je core aan, jij kan dit!', BREATHING_CUE_BY_LANG.nl, 'Rustig blijven ademen.']
           },
           streng: {
             plank: ['Rug recht. Nu!', 'Heupen omhoog!', 'Buik strak!', BREATHING_CUE_BY_LANG.nl, 'Focus.'],
             deadhang: ['Grip vast! Niet loslaten!', 'Schouders actief!', BREATHING_CUE_BY_LANG.nl, 'Doorzetten!', 'Niet verslappen!'],
-            lsit: ['Benen omhoog! Nu!', 'Knieën op slot!', 'Core aan!', BREATHING_CUE_BY_LANG.nl, 'Volhouden!']
+            lsit: ['Benen omhoog! Nu!', 'Knieën op slot!', 'Core aan!', BREATHING_CUE_BY_LANG.nl, 'Volhouden!'],
+            sideplank: ['Heup omhoog. Nu!', 'Schouder boven elleboog!', 'Zij strak!', BREATHING_CUE_BY_LANG.nl, 'Niet zakken.'],
+            wallsit: ['90 graden. Nu!', 'Rug plat!', 'Hielen duwen!', BREATHING_CUE_BY_LANG.nl, 'Niet omhoog komen.'],
+            hollowhold: ['Rug plat. Nu!', 'Buik strak!', 'Benen gestrekt!', BREATHING_CUE_BY_LANG.nl, 'Niet doorzakken.'],
+            superman: ['Omhoog. Nu!', 'Rug strak!', 'Blijf hoog!', BREATHING_CUE_BY_LANG.nl, 'Niet zakken.'],
+            glutebridge: ['Heupen omhoog. Nu!', 'Billen aan!', 'Hoog blijven!', BREATHING_CUE_BY_LANG.nl, 'Niet zakken.'],
+            handstand: ['Recht. Nu!', 'Schouders duwen!', 'Buik strak!', BREATHING_CUE_BY_LANG.nl, 'Niet zakken.'],
+            birddog: ['In lijn. Nu!', 'Heupen recht!', 'Core aan!', BREATHING_CUE_BY_LANG.nl, 'Niet wiebelen.']
           },
           chill: {
             plank: ['Lekker bezig, rustig aan.', 'Voel je core, geen paniek.', BREATHING_CUE_BY_LANG.nl, 'Je doet het prima zo.', 'Nog even chillen in de plank.'],
             deadhang: ['Relax je schouders, hang lekker.', 'Grip losjes maar stevig.', BREATHING_CUE_BY_LANG.nl, 'Rustig aan, het komt goed.', 'Je bent lekker bezig.'],
-            lsit: ['Benen omhoog, geen stress.', BREATHING_CUE_BY_LANG.nl, 'Focus op je ademhaling.', 'Je zit er goed bij, rustig aan.', 'Nog even volhouden, relaxed.']
+            lsit: ['Benen omhoog, geen stress.', BREATHING_CUE_BY_LANG.nl, 'Focus op je ademhaling.', 'Je zit er goed bij, rustig aan.', 'Nog even volhouden, relaxed.'],
+            sideplank: ['Lekker stabiel, rustig aan.', 'Voel je zij, geen paniek.', BREATHING_CUE_BY_LANG.nl, 'Je doet het prima zo.', 'Nog even volhouden in de zijplank.'],
+            wallsit: ['Lekker stevig, rustig aan.', 'Voel je bovenbenen, geen paniek.', BREATHING_CUE_BY_LANG.nl, 'Je doet het prima zo.', 'Nog even chillen tegen de muur.'],
+            hollowhold: ['Lekker compact, rustig aan.', 'Voel je buik, geen paniek.', BREATHING_CUE_BY_LANG.nl, 'Je doet het prima zo.', 'Nog even volhouden in de hollow hold.'],
+            superman: ['Lekker gestrekt, rustig aan.', 'Voel je onderrug, geen paniek.', BREATHING_CUE_BY_LANG.nl, 'Je doet het prima zo.', 'Nog even zweven in de superman.'],
+            glutebridge: ['Lekker stevig, rustig aan.', 'Voel je billen, geen paniek.', BREATHING_CUE_BY_LANG.nl, 'Je doet het prima zo.', 'Nog even volhouden in de brug.'],
+            handstand: ['Lekker ondersteboven, rustig aan.', 'Voel je schouders, geen paniek.', BREATHING_CUE_BY_LANG.nl, 'Je doet het prima zo.', 'Nog even boven blijven.'],
+            birddog: ['Lekker in balans, rustig aan.', 'Voel je core, geen paniek.', BREATHING_CUE_BY_LANG.nl, 'Je doet het prima zo.', 'Nog even stabiel blijven.']
           }
         },
         badges: {
@@ -691,12 +719,13 @@
           earlybird: { label:'Vroege vogel', desc:"Train vóór 8 uur 's ochtends.", congrats:'Al voor 8 uur getraind, echte vroege vogel!' },
           nightowl: { label:'Nachtuil', desc:"Train na 22 uur 's avonds.", congrats:'Nog laat getraind, echte nachtuil!' }
         },
-        units: { sec:'seconde', secs:'seconden', min:'minuut', mins:'minuten', hour:'uur', hours:'uur' }
+        units: { sec:'seconde', secs:'seconden', min:'minuut', mins:'minuten', hour:'uur', hours:'uur' },
+        badgeGroups: { count:'Sessies', duration:'Langste hold', streak:'Streaks', special:'Oefening-specialisatie', cumulative:'Totale tijd', fun:'Bijzonder' }
       }
     },
     en: { dir: 'ltr', elevenLang: 'en', speechLang: 'en-US',
       ui: { start:'Start', stop:'Stop', reset:'Reset', freeMode:'Free hold', intervalMode:'Intervals',
-        exPlank:'Plank', exDeadhang:'Deadhang', exLsit:'L-sit deadhang',
+        exPlank:'Plank', exDeadhang:'Deadhang', exLsit:'L-sit deadhang', exSidePlank:'Side plank', exWallSit:'Wall sit', exHollowHold:'Hollow hold', exSuperman:'Superman hold', exGluteBridge:'Glute bridge hold', exHandstand:'Handstand (against wall)', exBirdDog:'Bird dog hold',
         every:'Announce every', seconds:'seconds', work:'Work', rest:'Rest', rounds:'Rounds',
         record:'Record', noRecord:'No record yet', stoppedAt:'Stopped at', running:'Running...',
         tapBar:'Tap a bar to see the longest hold that day', noSession:'No session that day',
@@ -721,33 +750,41 @@
         startWithName:(n)=>`Come on, ${n}!`, startNoName:'Start!',
         numberWords:(n)=>String(n), secWord:'seconds', minWord:'minute', minsWord:'minutes',
         heldFor:(name,dur)=>(name ? name+', you' : 'You')+' held it for '+dur+'!',
-        newRecordSuffix:(imp)=>` New record, ${imp} longer than before!`, firstRecordSuffix:' That’s your first record!',
+        newRecordSuffix:(imp)=>` New record, ${imp} longer than before!`, firstRecordSuffix:' That\u2019s your first record!',
         cooldown:'Take a moment to breathe out slowly.', restWord:'Rest.', roundGo:(n)=>`Round ${n}, go!`,
         trainingDone:(name)=> name ? `Training complete, ${name}! Great work!` : 'Training complete! Great work!',
         startRoundOne:'Start, round one!', halfRecord:"You're halfway to your record! Keep going!",
         matchRecord:"You've reached your record! Push on!",
         cues: { motiverend: {
             plank: ['Keep your back nice and straight!', "Don't let your hips drop!", 'Brace your core, you can do this!', BREATHING_CUE_BY_LANG.en, 'Relax your neck, look at the floor.'],
-            deadhang: ['Keep your shoulders active, not fully hanging!', 'Hold that grip, you’re doing great!', BREATHING_CUE_BY_LANG.en, 'Let your neck relax.', 'Come on, hang in there!'],
-            lsit: ['Keep those legs up high!', 'Knees locked, toes pointed!', 'Engage your core, looking strong!', 'Shoulders down, away from your ears.', 'Stay strong, almost there!']
+            deadhang: ['Keep your shoulders active, not fully hanging!', 'Hold that grip, you\u2019re doing great!', BREATHING_CUE_BY_LANG.en, 'Let your neck relax.', 'Come on, hang in there!'],
+            lsit: ['Keep those legs up high!', 'Knees locked, toes pointed!', 'Engage your core, looking strong!', 'Shoulders down, away from your ears.', 'Stay strong, almost there!'],
+            sideplank: ['Keep those hips up!', 'Stack your shoulder right over your elbow!', 'Brace your side, you can do this!', BREATHING_CUE_BY_LANG.en, 'Keep looking forward, no twisting.'],
+            wallsit: ['Knees at 90 degrees!', 'Back flat against the wall!', 'Push through your heels, you can do this!', BREATHING_CUE_BY_LANG.en, 'Relax your shoulders.'],
+            hollowhold: ['Lower back flat on the floor!', 'Arms and legs extended!', 'Brace your core, you can do this!', BREATHING_CUE_BY_LANG.en, 'Chin slightly tucked.'],
+            superman: ['Lift arms and legs together!', 'Squeeze your lower back and glutes!', 'Keep looking down, you can do this!', BREATHING_CUE_BY_LANG.en, 'Relax your shoulders.'],
+            glutebridge: ['Squeeze your glutes together!', 'Hips as high as possible!', 'Brace your core, you can do this!', BREATHING_CUE_BY_LANG.en, 'Chin slightly down.'],
+            handstand: ['Arms straight, push through your shoulders!', 'Brace your abs and glutes!', 'Keep breathing calmly, you can do this!', BREATHING_CUE_BY_LANG.en, 'Look between your hands.'],
+            birddog: ['Arm and leg in line with your back!', 'Hips square, no twisting!', 'Brace your core, you can do this!', BREATHING_CUE_BY_LANG.en, 'Keep breathing steadily.']
           } },
         badges: {
           first: { label:'First hold', desc:'Complete your very first session.', congrats:'Congrats on your very first hold!' },
-          count: { desc:(n)=>`Complete ${n} sessions in total.`, congrats:(n)=>`You’ve completed ${n} sessions, great work!` },
+          count: { desc:(n)=>`Complete ${n} sessions in total.`, congrats:(n)=>`You\u2019ve completed ${n} sessions, great work!` },
           duration: { desc:(l)=>`Hold an exercise for ${l}.`, congrats:(l)=>`Congrats on your first ${l} hold!` },
           streak: { desc:(n)=>`Train ${n} days in a row.`, congrats:(n)=>`${n} days in a row, awesome consistency!` },
-          allex: { label:'All exercises', desc:'Try plank, deadhang and L-sit.', congrats:'You’ve tried every exercise, nicely versatile!' },
+          allex: { label:'All exercises', desc:'Try plank, deadhang and L-sit.', congrats:'You\u2019ve tried every exercise, nicely versatile!' },
           special: { desc:(n,ex)=>`Do ${n} ${ex} sessions.`, congrats:(ex)=>`Ten ${ex} sessions, nice work!` },
           cumulative: { desc:(l)=>`Train for ${l} in total.`, congrats:(l)=>`${l} of total training time, well built up!` },
           earlybird: { label:'Early bird', desc:'Train before 8am.', congrats:'Training before 8am, true early bird!' },
           nightowl: { label:'Night owl', desc:'Train after 10pm.', congrats:'Training late at night, true night owl!' }
         },
-        units: { sec:'second', secs:'seconds', min:'minute', mins:'minutes', hour:'hour', hours:'hours' }
+        units: { sec:'second', secs:'seconds', min:'minute', mins:'minutes', hour:'hour', hours:'hours' },
+        badgeGroups: { count:'Sessions', duration:'Longest hold', streak:'Streaks', special:'Exercise specialization', cumulative:'Total time', fun:'Special' }
       }
     },
     de: { dir: 'ltr', elevenLang: 'de', speechLang: 'de-DE',
       ui: { start:'Start', stop:'Stopp', reset:'Reset', freeMode:'Freier Hold', intervalMode:'Intervalle',
-        exPlank:'Plank', exDeadhang:'Deadhang', exLsit:'L-Sit Deadhang',
+        exPlank:'Plank', exDeadhang:'Deadhang', exLsit:'L-Sit Deadhang', exSidePlank:'Seitstütz', exWallSit:'Wandsitz', exHollowHold:'Hollow Hold', exSuperman:'Superman-Hold', exGluteBridge:'Gesäßbrücke', exHandstand:'Handstand (an der Wand)', exBirdDog:'Vogelhund-Hold',
         every:'Ansage alle', seconds:'Sekunden', work:'Arbeit', rest:'Pause', rounds:'Runden',
         record:'Rekord', noRecord:'Noch kein Rekord', stoppedAt:'Gestoppt bei', running:'Läuft...',
         tapBar:'Tippe auf einen Balken für die längste Zeit an diesem Tag', noSession:'Keine Sitzung an diesem Tag',
@@ -780,7 +817,14 @@
         cues: { motiverend: {
             plank: ['Halte deinen Rücken schön gerade!', 'Lass deine Hüfte nicht absacken!', 'Spann deine Bauchmuskeln an, du schaffst das!', BREATHING_CUE_BY_LANG.de, 'Nacken entspannen, zum Boden schauen.'],
             deadhang: ['Schultern aktiv halten, nicht ganz hängen!', 'Griff festhalten, du machst das gut!', BREATHING_CUE_BY_LANG.de, 'Nacken locker hängen lassen.', 'Komm schon, noch ein bisschen durchhalten!'],
-            lsit: ['Beine schön hoch halten!', 'Knie durchgestreckt, Zehen gespannt!', 'Rumpf anspannen, sieht stark aus!', 'Schultern runter, weg von den Ohren.', 'Stark bleiben, gleich geschafft!']
+            lsit: ['Beine schön hoch halten!', 'Knie durchgestreckt, Zehen gespannt!', 'Rumpf anspannen, sieht stark aus!', 'Schultern runter, weg von den Ohren.', 'Stark bleiben, gleich geschafft!'],
+            sideplank: ['Hüfte oben halten!', 'Schulter direkt über dem Ellbogen!', 'Spann deine Seite an, du schaffst das!', BREATHING_CUE_BY_LANG.de, 'Geradeaus schauen, nicht drehen.'],
+            wallsit: ['Knie im 90-Grad-Winkel!', 'Rücken flach an der Wand!', 'Durch die Fersen drücken, du schaffst das!', BREATHING_CUE_BY_LANG.de, 'Schultern entspannen.'],
+            hollowhold: ['Unterer Rücken flach am Boden!', 'Arme und Beine gestreckt!', 'Bauch anspannen, du schaffst das!', BREATHING_CUE_BY_LANG.de, 'Kinn leicht einziehen.'],
+            superman: ['Arme und Beine zusammen anheben!', 'Unteren Rücken und Po anspannen!', 'Weiter nach unten schauen, du schaffst das!', BREATHING_CUE_BY_LANG.de, 'Schultern entspannen.'],
+            glutebridge: ['Po zusammenkneifen!', 'Hüfte so hoch wie möglich!', 'Rumpf anspannen, du schaffst das!', BREATHING_CUE_BY_LANG.de, 'Kinn leicht senken.'],
+            handstand: ['Arme gestreckt, durch die Schultern drücken!', 'Bauch und Po anspannen!', 'Ruhig weiteratmen, du schaffst das!', BREATHING_CUE_BY_LANG.de, 'Zwischen die Hände schauen.'],
+            birddog: ['Arm und Bein in einer Linie mit dem Rücken!', 'Hüfte gerade halten, nicht drehen!', 'Rumpf anspannen, du schaffst das!', BREATHING_CUE_BY_LANG.de, 'Gleichmäßig weiteratmen.']
           } },
         badges: {
           first: { label:'Erster Hold', desc:'Schließe deine allererste Sitzung ab.', congrats:'Glückwunsch zu deinem allerersten Hold!' },
@@ -793,12 +837,13 @@
           earlybird: { label:'Frühaufsteher', desc:'Trainiere vor 8 Uhr morgens.', congrats:'Schon vor 8 Uhr trainiert, echter Frühaufsteher!' },
           nightowl: { label:'Nachteule', desc:'Trainiere nach 22 Uhr.', congrats:'Noch spät trainiert, echte Nachteule!' }
         },
-        units: { sec:'Sekunde', secs:'Sekunden', min:'Minute', mins:'Minuten', hour:'Stunde', hours:'Stunden' }
+        units: { sec:'Sekunde', secs:'Sekunden', min:'Minute', mins:'Minuten', hour:'Stunde', hours:'Stunden' },
+        badgeGroups: { count:'Sitzungen', duration:'Längster Hold', streak:'Serien', special:'Übungs-Spezialisierung', cumulative:'Gesamtzeit', fun:'Besonderes' }
       }
     },
     es: { dir: 'ltr', elevenLang: 'es', speechLang: 'es-ES',
       ui: { start:'Iniciar', stop:'Detener', reset:'Reiniciar', freeMode:'Espera libre', intervalMode:'Intervalos',
-        exPlank:'Plancha', exDeadhang:'Deadhang', exLsit:'L-sit deadhang',
+        exPlank:'Plancha', exDeadhang:'Deadhang', exLsit:'L-sit deadhang', exSidePlank:'Plancha lateral', exWallSit:'Silla contra la pared', exHollowHold:'Hollow hold', exSuperman:'Superman', exGluteBridge:'Puente de glúteos', exHandstand:'Pino (contra la pared)', exBirdDog:'Perro de caza',
         every:'Avisar cada', seconds:'segundos', work:'Trabajo', rest:'Descanso', rounds:'Rondas',
         record:'Récord', noRecord:'Sin récord aún', stoppedAt:'Detenido en', running:'En marcha...',
         tapBar:'Toca una barra para ver el tiempo más largo de ese día', noSession:'Sin sesión ese día',
@@ -831,7 +876,14 @@
         cues: { motiverend: {
             plank: ['¡Mantén la espalda bien recta!', '¡No dejes caer las caderas!', '¡Aprieta el core, tú puedes!', BREATHING_CUE_BY_LANG.es, 'Relaja el cuello, mira al suelo.'],
             deadhang: ['¡Hombros activos, no cuelgues del todo!', '¡Mantén el agarre, lo haces genial!', BREATHING_CUE_BY_LANG.es, 'Relaja el cuello.', '¡Vamos, aguanta un poco más!'],
-            lsit: ['¡Mantén las piernas bien altas!', '¡Rodillas firmes, puntas de pie tensas!', '¡Activa el core, se ve fuerte!', 'Hombros abajo, lejos de las orejas.', '¡Mantente fuerte, ya casi!']
+            lsit: ['¡Mantén las piernas bien altas!', '¡Rodillas firmes, puntas de pie tensas!', '¡Activa el core, se ve fuerte!', 'Hombros abajo, lejos de las orejas.', '¡Mantente fuerte, ya casi!'],
+            sideplank: ['¡Mantén la cadera arriba!', '¡Hombro justo sobre el codo!', '¡Aprieta el costado, tú puedes!', BREATHING_CUE_BY_LANG.es, 'Mira al frente, sin girar.'],
+            wallsit: ['¡Rodillas a 90 grados!', '¡Espalda plana contra la pared!', '¡Empuja con los talones, tú puedes!', BREATHING_CUE_BY_LANG.es, 'Relaja los hombros.'],
+            hollowhold: ['¡Zona lumbar pegada al suelo!', '¡Brazos y piernas extendidos!', '¡Aprieta el core, tú puedes!', BREATHING_CUE_BY_LANG.es, 'Barbilla ligeramente metida.'],
+            superman: ['¡Levanta brazos y piernas juntos!', '¡Aprieta la zona lumbar y los glúteos!', '¡Sigue mirando abajo, tú puedes!', BREATHING_CUE_BY_LANG.es, 'Relaja los hombros.'],
+            glutebridge: ['¡Aprieta los glúteos!', '¡Cadera lo más alta posible!', '¡Aprieta el core, tú puedes!', BREATHING_CUE_BY_LANG.es, 'Barbilla ligeramente abajo.'],
+            handstand: ['¡Brazos rectos, empuja con los hombros!', '¡Aprieta abdomen y glúteos!', '¡Sigue respirando con calma, tú puedes!', BREATHING_CUE_BY_LANG.es, 'Mira entre tus manos.'],
+            birddog: ['¡Brazo y pierna en línea con la espalda!', '¡Cadera recta, sin girar!', '¡Aprieta el core, tú puedes!', BREATHING_CUE_BY_LANG.es, 'Sigue respirando con calma.']
           } },
         badges: {
           first: { label:'Primera espera', desc:'Completa tu primera sesión.', congrats:'¡Felicidades por tu primera espera!' },
@@ -844,45 +896,53 @@
           earlybird: { label:'Madrugador', desc:'Entrena antes de las 8am.', congrats:'¡Entrenando antes de las 8am, verdadero madrugador!' },
           nightowl: { label:'Búho nocturno', desc:'Entrena después de las 10pm.', congrats:'¡Entrenando tarde, verdadero búho nocturno!' }
         },
-        units: { sec:'segundo', secs:'segundos', min:'minuto', mins:'minutos', hour:'hora', hours:'horas' }
+        units: { sec:'segundo', secs:'segundos', min:'minuto', mins:'minutos', hour:'hora', hours:'horas' },
+        badgeGroups: { count:'Sesiones', duration:'Espera más larga', streak:'Rachas', special:'Especialización por ejercicio', cumulative:'Tiempo total', fun:'Especiales' }
       }
     },
     fr: { dir: 'ltr', elevenLang: 'fr', speechLang: 'fr-FR',
       ui: { start:'Démarrer', stop:'Arrêter', reset:'Réinitialiser', freeMode:'Maintien libre', intervalMode:'Intervalles',
-        exPlank:'Planche', exDeadhang:'Deadhang', exLsit:'L-sit deadhang',
+        exPlank:'Planche', exDeadhang:'Deadhang', exLsit:'L-sit deadhang', exSidePlank:'Planche latérale', exWallSit:'Chaise (mur)', exHollowHold:'Hollow hold', exSuperman:'Superman', exGluteBridge:'Pont fessier', exHandstand:'Poirier (contre le mur)', exBirdDog:'Bird dog',
         every:'Annoncer toutes les', seconds:'secondes', work:'Travail', rest:'Repos', rounds:'Tours',
         record:'Record', noRecord:'Pas encore de record', stoppedAt:'Arrêté à', running:'En cours...',
         tapBar:'Touchez une barre pour voir le temps le plus long ce jour-là', noSession:'Aucune séance ce jour-là',
         statsToggle:'Statistiques', hideStats:'Masquer les statistiques', achievements:'Succès',
         progress:'Progrès par exercice', recent:'Séances récentes', noSessions:'Aucune séance pour le moment',
-        name:'Votre prénom (pour des encouragements personnels)', color:'Couleur d’accent', tone:'Ton du coach',
+        name:'Votre prénom (pour des encouragements personnels)', color:'Couleur d\u2019accent', tone:'Ton du coach',
         toneMotiv:'Motivant', toneStrict:'Strict', toneChill:'Détendu',
         goal:'Objectif hebdomadaire (séances par semaine)', goalNone:'Aucun objectif', everyDay:'Tous les jours',
         speed:'Vitesse de la voix', speedSlow:'Lente', speedNormal:'Normale', speedFast:'Rapide',
         volume:'Volume de la voix', lightTheme:'Thème clair', voiceControl:'Contrôle vocal (dites "stop")',
         language:'Langue', gymMode:'Mode salle (grand écran)', shareRecord:'Partager le record',
-        today:'Aujourd’hui', session:'séance', sessions:'séances', total:'total',
+        today:'Aujourd\u2019hui', session:'séance', sessions:'séances', total:'total',
         weekdays:['Di','Lu','Ma','Me','Je','Ve','Sa'], now:'Maintenant',
-        welcomeBack:'Bon retour', appName:'Partenaire d’entraînement', readyToTrain:'Prêt à t’entraîner ?',
-        tips:['Un peu d’étirement avant de commencer\u00a0?', 'N’oublie pas de boire assez d’eau.', 'Échauffe tes poignets et tes épaules.', 'La régularité bat l’intensité, continue à venir.', 'Continue à respirer calmement pendant ta tenue.', 'Fais attention à ta posture, ça protège ton dos.'], unlockedEyebrow:'Succès débloqué',
-        goalReached:'Objectif hebdomadaire atteint !', goalLabel:'Objectif hebdo', daysTrainedOf:(n,g)=>`${n}/${g} jours d’entraînement`,
+        welcomeBack:'Bon retour', appName:'Partenaire d\u2019entraînement', readyToTrain:'Prêt à t\u2019entraîner ?',
+        tips:['Un peu d\u2019étirement avant de commencer\u00a0?', 'N\u2019oublie pas de boire assez d\u2019eau.', 'Échauffe tes poignets et tes épaules.', 'La régularité bat l\u2019intensité, continue à venir.', 'Continue à respirer calmement pendant ta tenue.', 'Fais attention à ta posture, ça protège ton dos.'], unlockedEyebrow:'Succès débloqué',
+        goalReached:'Objectif hebdomadaire atteint !', goalLabel:'Objectif hebdo', daysTrainedOf:(n,g)=>`${n}/${g} jours d\u2019entraînement`,
         dayStreak:'jour de suite', daysStreak:'jours de suite', voiceLoadingMsg:'Chargement de la voix...',
         elevenError:'Erreur ElevenLabs\u00a0: ', unlockedTag:'Débloqué ✅', newRecordTag:'Nouveau record\u00a0! 🎉',
         newRecordShare:'Nouveau record\u00a0!', proSuffix:'pro'
       },
       speech: { countdown:['trois','deux','un'],
-        startWithName:(n)=>`Allez, ${n}\u00a0!`, startNoName:'C’est parti\u00a0!',
+        startWithName:(n)=>`Allez, ${n}\u00a0!`, startNoName:'C\u2019est parti\u00a0!',
         numberWords:(n)=>String(n), secWord:'secondes', minWord:'minute', minsWord:'minutes',
         heldFor:(name,dur)=>(name ? name+', tu' : 'Tu')+' as tenu '+dur+'\u00a0!',
-        newRecordSuffix:(imp)=>` Nouveau record, ${imp} de plus qu’avant\u00a0!`, firstRecordSuffix:' C’est ton tout premier record\u00a0!',
-        cooldown:'Souffle calmement un instant.', restWord:'Repos.', roundGo:(n)=>`Tour ${n}, c’est parti\u00a0!`,
+        newRecordSuffix:(imp)=>` Nouveau record, ${imp} de plus qu\u2019avant\u00a0!`, firstRecordSuffix:' C\u2019est ton tout premier record\u00a0!',
+        cooldown:'Souffle calmement un instant.', restWord:'Repos.', roundGo:(n)=>`Tour ${n}, c\u2019est parti\u00a0!`,
         trainingDone:(name)=> name ? `Entraînement terminé, ${name}\u00a0! Bien joué\u00a0!` : 'Entraînement terminé\u00a0! Bien joué\u00a0!',
         startRoundOne:'Départ, tour un\u00a0!', halfRecord:'Tu es à mi-chemin de ton record\u00a0! Continue\u00a0!',
         matchRecord:'Tu as atteint ton record\u00a0! Continue comme ça\u00a0!',
         cues: { motiverend: {
             plank: ['Garde le dos bien droit\u00a0!', 'Ne laisse pas tomber les hanches\u00a0!', 'Gaine ton ventre, tu peux le faire\u00a0!', BREATHING_CUE_BY_LANG.fr, 'Détends la nuque, regarde le sol.'],
             deadhang: ['Épaules actives, ne te laisse pas pendre complètement\u00a0!', 'Garde la prise, tu te débrouilles bien\u00a0!', BREATHING_CUE_BY_LANG.fr, 'Détends ta nuque.', 'Allez, tiens encore un peu\u00a0!'],
-            lsit: ['Garde les jambes bien hautes\u00a0!', 'Genoux verrouillés, pointes de pieds tendues\u00a0!', 'Gaine ton centre, ça a l’air solide\u00a0!', 'Épaules basses, loin des oreilles.', 'Reste fort, presque fini\u00a0!']
+            lsit: ['Garde les jambes bien hautes\u00a0!', 'Genoux verrouillés, pointes de pieds tendues\u00a0!', 'Gaine ton centre, ça a l\u2019air solide\u00a0!', 'Épaules basses, loin des oreilles.', 'Reste fort, presque fini\u00a0!'],
+            sideplank: ['Garde la hanche haute !', 'Épaule bien au-dessus du coude !', 'Gaine ton flanc, tu peux le faire !', BREATHING_CUE_BY_LANG.fr, 'Regarde devant toi, ne tourne pas.'],
+            wallsit: ['Genoux à 90 degrés !', 'Dos plat contre le mur !', 'Pousse par les talons, tu peux le faire !', BREATHING_CUE_BY_LANG.fr, 'Détends les épaules.'],
+            hollowhold: ['Bas du dos plaqué au sol !', 'Bras et jambes tendus !', 'Gaine ton ventre, tu peux le faire !', BREATHING_CUE_BY_LANG.fr, 'Menton légèrement rentré.'],
+            superman: ['Lève bras et jambes ensemble !', 'Contracte le bas du dos et les fessiers !', 'Continue à regarder le sol, tu peux le faire !', BREATHING_CUE_BY_LANG.fr, 'Détends les épaules.'],
+            glutebridge: ['Serre les fessiers !', 'Hanches le plus haut possible !', 'Gaine ton centre, tu peux le faire !', BREATHING_CUE_BY_LANG.fr, 'Menton légèrement baissé.'],
+            handstand: ['Bras tendus, pousse par les épaules !', 'Gaine ventre et fessiers !', 'Continue à respirer calmement, tu peux le faire !', BREATHING_CUE_BY_LANG.fr, 'Regarde entre tes mains.'],
+            birddog: ['Bras et jambe alignés avec le dos !', 'Hanches droites, ne tourne pas !', 'Gaine ton centre, tu peux le faire !', BREATHING_CUE_BY_LANG.fr, 'Continue à respirer calmement.']
           } },
         badges: {
           first: { label:'Première tenue', desc:'Termine ta toute première séance.', congrats:'Félicitations pour ta toute première tenue\u00a0!' },
@@ -891,16 +951,17 @@
           streak: { desc:(n)=>`Entraîne-toi ${n} jours de suite.`, congrats:(n)=>`${n} jours de suite, superbe régularité\u00a0!` },
           allex: { label:'Tous les exercices', desc:'Essaie planche, deadhang et L-sit.', congrats:'Tu as essayé tous les exercices, beau polyvalence\u00a0!' },
           special: { desc:(n,ex)=>`Fais ${n} séances de ${ex}.`, congrats:(ex)=>`Dix séances de ${ex}, joli travail\u00a0!` },
-          cumulative: { desc:(l)=>`Entraîne-toi ${l} au total.`, congrats:(l)=>`${l} de temps d’entraînement total, bien construit\u00a0!` },
+          cumulative: { desc:(l)=>`Entraîne-toi ${l} au total.`, congrats:(l)=>`${l} de temps d\u2019entraînement total, bien construit\u00a0!` },
           earlybird: { label:'Lève-tôt', desc:'Entraîne-toi avant 8h.', congrats:'Entraînement avant 8h, vrai lève-tôt\u00a0!' },
           nightowl: { label:'Couche-tard', desc:'Entraîne-toi après 22h.', congrats:'Entraînement tardif, vrai couche-tard\u00a0!' }
         },
-        units: { sec:'seconde', secs:'secondes', min:'minute', mins:'minutes', hour:'heure', hours:'heures' }
+        units: { sec:'seconde', secs:'secondes', min:'minute', mins:'minutes', hour:'heure', hours:'heures' },
+        badgeGroups: { count:'Séances', duration:'Tenue la plus longue', streak:'Séries', special:'Spécialisation par exercice', cumulative:'Temps total', fun:'Spéciaux' }
       }
     },
     pt: { dir: 'ltr', elevenLang: 'pt', speechLang: 'pt-PT',
       ui: { start:'Iniciar', stop:'Parar', reset:'Reiniciar', freeMode:'Espera livre', intervalMode:'Intervalos',
-        exPlank:'Prancha', exDeadhang:'Deadhang', exLsit:'L-sit deadhang',
+        exPlank:'Prancha', exDeadhang:'Deadhang', exLsit:'L-sit deadhang', exSidePlank:'Prancha lateral', exWallSit:'Cadeira na parede', exHollowHold:'Hollow hold', exSuperman:'Superman', exGluteBridge:'Ponte de glúteos', exHandstand:'Pino (na parede)', exBirdDog:'Bird dog',
         every:'Anunciar a cada', seconds:'segundos', work:'Trabalho', rest:'Descanso', rounds:'Rondas',
         record:'Recorde', noRecord:'Ainda sem recorde', stoppedAt:'Parado em', running:'A decorrer...',
         tapBar:'Toque numa barra para ver o tempo mais longo desse dia', noSession:'Sem sessão nesse dia',
@@ -933,7 +994,14 @@
         cues: { motiverend: {
             plank: ['Mantém as costas bem direitas!', 'Não deixes cair as ancas!', 'Contrai o core, tu consegues!', BREATHING_CUE_BY_LANG.pt, 'Relaxa o pescoço, olha para o chão.'],
             deadhang: ['Ombros ativos, não penduras totalmente!', 'Mantém a pega, estás a ir muito bem!', BREATHING_CUE_BY_LANG.pt, 'Relaxa o pescoço.', 'Vamos, aguenta mais um pouco!'],
-            lsit: ['Mantém as pernas bem altas!', 'Joelhos travados, pontas dos pés esticadas!', 'Ativa o core, está com bom aspeto!', 'Ombros para baixo, longe das orelhas.', 'Mantém-te forte, já está quase!']
+            lsit: ['Mantém as pernas bem altas!', 'Joelhos travados, pontas dos pés esticadas!', 'Ativa o core, está com bom aspeto!', 'Ombros para baixo, longe das orelhas.', 'Mantém-te forte, já está quase!'],
+            sideplank: ['Mantém a anca alta!', 'Ombro bem em cima do cotovelo!', 'Contrai o lado, tu consegues!', BREATHING_CUE_BY_LANG.pt, 'Olha em frente, sem rodar.'],
+            wallsit: ['Joelhos a 90 graus!', 'Costas planas contra a parede!', 'Empurra pelos calcanhares, tu consegues!', BREATHING_CUE_BY_LANG.pt, 'Relaxa os ombros.'],
+            hollowhold: ['Lombar apoiada no chão!', 'Braços e pernas esticados!', 'Contrai o core, tu consegues!', BREATHING_CUE_BY_LANG.pt, 'Queixo ligeiramente recolhido.'],
+            superman: ['Levanta braços e pernas juntos!', 'Contrai a lombar e os glúteos!', 'Continua a olhar para baixo, tu consegues!', BREATHING_CUE_BY_LANG.pt, 'Relaxa os ombros.'],
+            glutebridge: ['Aperta os glúteos!', 'Anca o mais alto possível!', 'Contrai o core, tu consegues!', BREATHING_CUE_BY_LANG.pt, 'Queixo ligeiramente para baixo.'],
+            handstand: ['Braços esticados, empurra pelos ombros!', 'Contrai abdómen e glúteos!', 'Continua a respirar com calma, tu consegues!', BREATHING_CUE_BY_LANG.pt, 'Olha entre as mãos.'],
+            birddog: ['Braço e perna alinhados com as costas!', 'Anca direita, sem rodar!', 'Contrai o core, tu consegues!', BREATHING_CUE_BY_LANG.pt, 'Continua a respirar com calma.']
           } },
         badges: {
           first: { label:'Primeira espera', desc:'Completa a tua primeira sessão.', congrats:'Parabéns pela tua primeira espera!' },
@@ -946,12 +1014,13 @@
           earlybird: { label:'Madrugador', desc:'Treina antes das 8h.', congrats:'Treino antes das 8h, verdadeiro madrugador!' },
           nightowl: { label:'Notívago', desc:'Treina depois das 22h.', congrats:'Treino tarde, verdadeiro notívago!' }
         },
-        units: { sec:'segundo', secs:'segundos', min:'minuto', mins:'minutos', hour:'hora', hours:'horas' }
+        units: { sec:'segundo', secs:'segundos', min:'minuto', mins:'minutos', hour:'hora', hours:'horas' },
+        badgeGroups: { count:'Sessões', duration:'Espera mais longa', streak:'Sequências', special:'Especialização por exercício', cumulative:'Tempo total', fun:'Especiais' }
       }
     },
     ru: { dir: 'ltr', elevenLang: 'ru', speechLang: 'ru-RU',
       ui: { start:'Старт', stop:'Стоп', reset:'Сброс', freeMode:'Свободный холд', intervalMode:'Интервалы',
-        exPlank:'Планка', exDeadhang:'Дэдхэнг', exLsit:'L-sit дэдхэнг',
+        exPlank:'Планка', exDeadhang:'Дэдхэнг', exLsit:'L-sit дэдхэнг', exSidePlank:'Боковая планка', exWallSit:'Стульчик у стены', exHollowHold:'Холлоу холд', exSuperman:'Супермен', exGluteBridge:'Ягодичный мостик', exHandstand:'Стойка на руках (у стены)', exBirdDog:'Бёрд-дог',
         every:'Сообщать каждые', seconds:'секунд', work:'Работа', rest:'Отдых', rounds:'Раунды',
         record:'Рекорд', noRecord:'Рекорда пока нет', stoppedAt:'Остановлено на', running:'Идёт...',
         tapBar:'Нажми на столбик, чтобы увидеть лучший результат за день', noSession:'В этот день тренировок не было',
@@ -984,7 +1053,14 @@
         cues: { motiverend: {
             plank: ['Держи спину ровно!', 'Не опускай таз!', 'Напряги пресс, у тебя получится!', BREATHING_CUE_BY_LANG.ru, 'Расслабь шею, смотри вниз.'],
             deadhang: ['Плечи активны, не висни полностью!', 'Держи хват, ты молодец!', BREATHING_CUE_BY_LANG.ru, 'Расслабь шею.', 'Давай, ещё немного!'],
-            lsit: ['Держи ноги высоко!', 'Колени прямо, носки натянуты!', 'Напряги пресс, выглядит сильно!', 'Плечи вниз, от ушей.', 'Держись, почти всё!']
+            lsit: ['Держи ноги высоко!', 'Колени прямо, носки натянуты!', 'Напряги пресс, выглядит сильно!', 'Плечи вниз, от ушей.', 'Держись, почти всё!'],
+            sideplank: ['Держи бедро вверху!', 'Плечо прямо над локтем!', 'Напряги бок, у тебя получится!', BREATHING_CUE_BY_LANG.ru, 'Смотри вперёд, не крутись.'],
+            wallsit: ['Колени под 90 градусов!', 'Спина плотно у стены!', 'Дави через пятки, у тебя получится!', BREATHING_CUE_BY_LANG.ru, 'Расслабь плечи.'],
+            hollowhold: ['Поясница прижата к полу!', 'Руки и ноги вытянуты!', 'Напряги пресс, у тебя получится!', BREATHING_CUE_BY_LANG.ru, 'Подбородок слегка к груди.'],
+            superman: ['Поднимай руки и ноги вместе!', 'Напряги поясницу и ягодицы!', 'Смотри вниз, у тебя получится!', BREATHING_CUE_BY_LANG.ru, 'Расслабь плечи.'],
+            glutebridge: ['Сожми ягодицы!', 'Таз как можно выше!', 'Напряги корпус, у тебя получится!', BREATHING_CUE_BY_LANG.ru, 'Подбородок слегка вниз.'],
+            handstand: ['Руки прямые, дави через плечи!', 'Напряги живот и ягодицы!', 'Дыши спокойно, у тебя получится!', BREATHING_CUE_BY_LANG.ru, 'Смотри между рук.'],
+            birddog: ['Рука и нога на одной линии со спиной!', 'Таз ровно, не крутись!', 'Напряги корпус, у тебя получится!', BREATHING_CUE_BY_LANG.ru, 'Дыши ровно.']
           } },
         badges: {
           first: { label:'Первый холд', desc:'Заверши свою самую первую тренировку.', congrats:'Поздравляем с самым первым холдом!' },
@@ -997,12 +1073,13 @@
           earlybird: { label:'Ранняя пташка', desc:'Тренируйся до 8 утра.', congrats:'Тренировка до 8 утра, настоящая ранняя пташка!' },
           nightowl: { label:'Полуночник', desc:'Тренируйся после 22:00.', congrats:'Поздняя тренировка, настоящий полуночник!' }
         },
-        units: { sec:'секунду', secs:'секунд', min:'минуту', mins:'минут', hour:'час', hours:'часов' }
+        units: { sec:'секунду', secs:'секунд', min:'минуту', mins:'минут', hour:'час', hours:'часов' },
+        badgeGroups: { count:'Тренировки', duration:'Самый долгий холд', streak:'Серии', special:'Специализация по упражнению', cumulative:'Общее время', fun:'Особые' }
       }
     },
     zh: { dir: 'ltr', elevenLang: 'zh', speechLang: 'zh-CN',
       ui: { start:'开始', stop:'停止', reset:'重置', freeMode:'自由坚持', intervalMode:'间歇训练',
-        exPlank:'平板支撑', exDeadhang:'死悬垂', exLsit:'L-sit 死悬垂',
+        exPlank:'平板支撑', exDeadhang:'死悬垂', exLsit:'L-sit 死悬垂', exSidePlank:'侧平板支撑', exWallSit:'靠墙静蹲', exHollowHold:'空心支撑', exSuperman:'超人式', exGluteBridge:'臀桥', exHandstand:'靠墙倒立', exBirdDog:'鸟狗式',
         every:'每隔', seconds:'秒播报', work:'训练', rest:'休息', rounds:'轮数',
         record:'纪录', noRecord:'暂无纪录', stoppedAt:'停止于', running:'进行中…',
         tapBar:'点击柱状图查看当天最长坚持时间', noSession:'当天没有训练',
@@ -1035,7 +1112,14 @@
         cues: { motiverend: {
             plank: ['保持背部挺直！', '不要让臀部下沉！', '收紧腹部，你可以的！', BREATHING_CUE_BY_LANG.zh, '放松颈部，眼睛看向地面。'],
             deadhang: ['肩膀保持发力，不要完全放松悬挂！', '抓紧，你做得很好！', BREATHING_CUE_BY_LANG.zh, '放松颈部。', '加油，再坚持一下！'],
-            lsit: ['把腿抬高！', '膝盖伸直，脚尖绷紧！', '收紧核心，看起来很棒！', '肩膀下沉，远离耳朵。', '保持力量，快完成了！']
+            lsit: ['把腿抬高！', '膝盖伸直，脚尖绷紧！', '收紧核心，看起来很棒！', '肩膀下沉，远离耳朵。', '保持力量，快完成了！'],
+            sideplank: ['保持髋部抬高！', '肩膀对准手肘正上方！', '收紧侧腰，你可以的！', BREATHING_CUE_BY_LANG.zh, '目视前方，不要转身。'],
+            wallsit: ['膝盖呈90度！', '背部贴紧墙面！', '用脚跟发力，你可以的！', BREATHING_CUE_BY_LANG.zh, '放松肩膀。'],
+            hollowhold: ['下背部贴地！', '手臂和腿伸直！', '收紧腹部，你可以的！', BREATHING_CUE_BY_LANG.zh, '下巴微收。'],
+            superman: ['手臂和腿同时抬起！', '收紧下背部和臀部！', '继续看向地面，你可以的！', BREATHING_CUE_BY_LANG.zh, '放松肩膀。'],
+            glutebridge: ['收紧臀部！', '髋部尽量抬高！', '收紧核心，你可以的！', BREATHING_CUE_BY_LANG.zh, '下巴微低。'],
+            handstand: ['手臂伸直，肩膀发力！', '收紧腹部和臀部！', '保持平稳呼吸，你可以的！', BREATHING_CUE_BY_LANG.zh, '目视双手之间。'],
+            birddog: ['手臂和腿与背部呈一条直线！', '髋部保持水平，不要扭转！', '收紧核心，你可以的！', BREATHING_CUE_BY_LANG.zh, '保持平稳呼吸。']
           } },
         badges: {
           first: { label:'首次坚持', desc:'完成你的第一次训练。', congrats:'祝贺你完成第一次坚持训练！' },
@@ -1048,12 +1132,13 @@
           earlybird: { label:'早起鸟', desc:'在早上8点前训练。', congrats:'早上8点前就训练了，真是早起鸟！' },
           nightowl: { label:'夜猫子', desc:'在晚上10点后训练。', congrats:'深夜还在训练，真是夜猫子！' }
         },
-        units: { sec:'秒', secs:'秒', min:'分钟', mins:'分钟', hour:'小时', hours:'小时' }
+        units: { sec:'秒', secs:'秒', min:'分钟', mins:'分钟', hour:'小时', hours:'小时' },
+        badgeGroups: { count:'训练次数', duration:'最长坚持', streak:'连续天数', special:'动作专精', cumulative:'总时长', fun:'特别' }
       }
     },
     hi: { dir: 'ltr', elevenLang: 'hi', speechLang: 'hi-IN',
       ui: { start:'शुरू करें', stop:'रोकें', reset:'रीसेट', freeMode:'फ्री होल्ड', intervalMode:'इंटरवल',
-        exPlank:'प्लैंक', exDeadhang:'डेडहैंग', exLsit:'L-sit डेडहैंग',
+        exPlank:'प्लैंक', exDeadhang:'डेडहैंग', exLsit:'L-sit डेडहैंग', exSidePlank:'साइड प्लैंक', exWallSit:'वॉल सिट', exHollowHold:'हॉलो होल्ड', exSuperman:'सुपरमैन होल्ड', exGluteBridge:'ग्लूट ब्रिज', exHandstand:'हैंडस्टैंड (दीवार सहारे)', exBirdDog:'बर्ड डॉग होल्ड',
         every:'हर', seconds:'सेकंड में बताएं', work:'काम', rest:'आराम', rounds:'राउंड',
         record:'रिकॉर्ड', noRecord:'अभी तक कोई रिकॉर्ड नहीं', stoppedAt:'यहाँ रुका', running:'चल रहा है...',
         tapBar:'उस दिन का सबसे लंबा होल्ड देखने के लिए बार पर टैप करें', noSession:'उस दिन कोई सेशन नहीं',
@@ -1086,7 +1171,14 @@
         cues: { motiverend: {
             plank: ['अपनी पीठ सीधी रखें!', 'कूल्हे नीचे न गिरने दें!', 'पेट कस लें, आप कर सकते हैं!', BREATHING_CUE_BY_LANG.hi, 'गर्दन ढीली रखें, नीचे देखें।'],
             deadhang: ['कंधे सक्रिय रखें, पूरी तरह मत लटकें!', 'पकड़ बनाए रखें, बहुत बढ़िया कर रहे हैं!', BREATHING_CUE_BY_LANG.hi, 'गर्दन को ढीला छोड़ें।', 'चलो, थोड़ा और टिके रहें!'],
-            lsit: ['पैर ऊँचे रखें!', 'घुटने सीधे, पंजे तने हुए!', 'कोर टाइट रखें, मजबूत दिख रहे हैं!', 'कंधे नीचे, कानों से दूर।', 'मजबूत बने रहें, लगभग हो गया!']
+            lsit: ['पैर ऊँचे रखें!', 'घुटने सीधे, पंजे तने हुए!', 'कोर टाइट रखें, मजबूत दिख रहे हैं!', 'कंधे नीचे, कानों से दूर।', 'मजबूत बने रहें, लगभग हो गया!'],
+            sideplank: ['कूल्हा ऊपर रखें!', 'कंधा कोहनी के ठीक ऊपर रखें!', 'साइड कस लें, आप कर सकते हैं!', BREATHING_CUE_BY_LANG.hi, 'सामने देखें, मुड़ें नहीं।'],
+            wallsit: ['घुटने 90 डिग्री पर!', 'पीठ दीवार से सटी रहे!', 'एड़ियों से दबाव डालें, आप कर सकते हैं!', BREATHING_CUE_BY_LANG.hi, 'कंधे ढीले रखें।'],
+            hollowhold: ['पीठ का निचला हिस्सा ज़मीन पर सपाट!', 'हाथ और पैर सीधे!', 'पेट कस लें, आप कर सकते हैं!', BREATHING_CUE_BY_LANG.hi, 'ठुड्डी हल्की सी अंदर।'],
+            superman: ['हाथ और पैर एक साथ उठाएं!', 'पीठ और कूल्हे कस लें!', 'नीचे देखते रहें, आप कर सकते हैं!', BREATHING_CUE_BY_LANG.hi, 'कंधे ढीले रखें।'],
+            glutebridge: ['कूल्हे भींचें!', 'कूल्हा जितना हो सके ऊँचा रखें!', 'कोर कस लें, आप कर सकते हैं!', BREATHING_CUE_BY_LANG.hi, 'ठुड्डी हल्की नीचे।'],
+            handstand: ['हाथ सीधे, कंधों से दबाव डालें!', 'पेट और कूल्हे कस लें!', 'शांति से सांस लेते रहें, आप कर सकते हैं!', BREATHING_CUE_BY_LANG.hi, 'हाथों के बीच देखें।'],
+            birddog: ['हाथ और पैर पीठ की सीध में!', 'कूल्हे सीधे रखें, मुड़ें नहीं!', 'कोर कस लें, आप कर सकते हैं!', BREATHING_CUE_BY_LANG.hi, 'शांति से सांस लेते रहें।']
           } },
         badges: {
           first: { label:'पहला होल्ड', desc:'अपना पहला सेशन पूरा करें।', congrats:'आपके पहले होल्ड की बधाई!' },
@@ -1099,12 +1191,13 @@
           earlybird: { label:'अर्ली बर्ड', desc:'सुबह 8 बजे से पहले ट्रेन करें।', congrats:'सुबह 8 बजे से पहले ट्रेनिंग, असली अर्ली बर्ड!' },
           nightowl: { label:'नाइट आउल', desc:'रात 10 बजे के बाद ट्रेन करें।', congrats:'देर रात ट्रेनिंग, असली नाइट आउल!' }
         },
-        units: { sec:'सेकंड', secs:'सेकंड', min:'मिनट', mins:'मिनट', hour:'घंटा', hours:'घंटे' }
+        units: { sec:'सेकंड', secs:'सेकंड', min:'मिनट', mins:'मिनट', hour:'घंटा', hours:'घंटे' },
+        badgeGroups: { count:'सेशन', duration:'सबसे लंबा होल्ड', streak:'स्ट्रीक', special:'व्यायाम विशेषज्ञता', cumulative:'कुल समय', fun:'खास' }
       }
     },
     ar: { dir: 'rtl', elevenLang: 'ar', speechLang: 'ar-SA',
       ui: { start:'ابدأ', stop:'توقف', reset:'إعادة ضبط', freeMode:'ثبات حر', intervalMode:'فترات',
-        exPlank:'بلانك', exDeadhang:'التعليق الميت', exLsit:'L-sit تعليق',
+        exPlank:'بلانك', exDeadhang:'التعليق الميت', exLsit:'L-sit تعليق', exSidePlank:'بلانك جانبي', exWallSit:'جلسة الحائط', exHollowHold:'هولو هولد', exSuperman:'سوبرمان', exGluteBridge:'جسر الأرداف', exHandstand:'الوقوف على اليدين (عند الحائط)', exBirdDog:'بيرد دوغ',
         every:'أعلن كل', seconds:'ثوانٍ', work:'عمل', rest:'راحة', rounds:'جولات',
         record:'الرقم القياسي', noRecord:'لا يوجد رقم قياسي بعد', stoppedAt:'توقف عند', running:'جارٍ...',
         tapBar:'اضغط على عمود لرؤية أطول وقت في ذلك اليوم', noSession:'لا توجد جلسة في ذلك اليوم',
@@ -1137,7 +1230,14 @@
         cues: { motiverend: {
             plank: ['حافظ على استقامة ظهرك!', 'لا تدع وركيك يهبطان!', 'شدّ عضلات بطنك، أنت تستطيع!', BREATHING_CUE_BY_LANG.ar, 'أرخِ رقبتك وانظر إلى الأرض.'],
             deadhang: ['حافظ على نشاط كتفيك، لا تتدلَّ تمامًا!', 'حافظ على قبضتك، أنت تبلي بلاءً حسنًا!', BREATHING_CUE_BY_LANG.ar, 'أرخِ رقبتك.', 'هيا، استمر قليلًا بعد!'],
-            lsit: ['حافظ على ارتفاع رجليك!', 'ركبتاك مستقيمتان، أصابع قدميك ممدودة!', 'شدّ منتصف جسمك، تبدو قويًا!', 'اخفض كتفيك بعيدًا عن أذنيك.', 'ابقَ قويًا، اقتربت من النهاية!']
+            lsit: ['حافظ على ارتفاع رجليك!', 'ركبتاك مستقيمتان، أصابع قدميك ممدودة!', 'شدّ منتصف جسمك، تبدو قويًا!', 'اخفض كتفيك بعيدًا عن أذنيك.', 'ابقَ قويًا، اقتربت من النهاية!'],
+            sideplank: ['حافظ على ارتفاع الورك!', 'الكتف فوق الكوع مباشرة!', 'شدّ جانبك، أنت تستطيع!', BREATHING_CUE_BY_LANG.ar, 'انظر للأمام، لا تلتفت.'],
+            wallsit: ['الركبتان بزاوية 90 درجة!', 'الظهر مسطح على الحائط!', 'ادفع بكعبيك، أنت تستطيع!', BREATHING_CUE_BY_LANG.ar, 'أرخِ كتفيك.'],
+            hollowhold: ['أسفل الظهر ملاصق للأرض!', 'الذراعان والساقان ممدودتان!', 'شدّ بطنك، أنت تستطيع!', BREATHING_CUE_BY_LANG.ar, 'أنزل ذقنك قليلًا.'],
+            superman: ['ارفع الذراعين والساقين معًا!', 'شدّ أسفل ظهرك وأردافك!', 'استمر بالنظر للأسفل، أنت تستطيع!', BREATHING_CUE_BY_LANG.ar, 'أرخِ كتفيك.'],
+            glutebridge: ['اضغط على أردافك!', 'ارفع الورك قدر الإمكان!', 'شدّ منتصف جسمك، أنت تستطيع!', BREATHING_CUE_BY_LANG.ar, 'أنزل ذقنك قليلًا.'],
+            handstand: ['الذراعان ممدودتان، ادفع بكتفيك!', 'شدّ بطنك وأردافك!', 'استمر بالتنفس بهدوء، أنت تستطيع!', BREATHING_CUE_BY_LANG.ar, 'انظر بين يديك.'],
+            birddog: ['الذراع والساق في خط مستقيم مع الظهر!', 'الورك مستقيم، لا تلتفت!', 'شدّ منتصف جسمك، أنت تستطيع!', BREATHING_CUE_BY_LANG.ar, 'استمر بالتنفس بهدوء.']
           } },
         badges: {
           first: { label:'أول ثبات', desc:'أكمل أول جلسة لك.', congrats:'تهانينا على أول ثبات لك!' },
@@ -1150,14 +1250,15 @@
           earlybird: { label:'الطائر المبكر', desc:'تدرّب قبل الساعة 8 صباحًا.', congrats:'تدربت قبل الساعة 8 صباحًا، طائر مبكر حقيقي!' },
           nightowl: { label:'بومة الليل', desc:'تدرّب بعد الساعة 10 مساءً.', congrats:'تدربت متأخرًا، بومة ليل حقيقية!' }
         },
-        units: { sec:'ثانية', secs:'ثوانٍ', min:'دقيقة', mins:'دقائق', hour:'ساعة', hours:'ساعات' }
+        units: { sec:'ثانية', secs:'ثوانٍ', min:'دقيقة', mins:'دقائق', hour:'ساعة', hours:'ساعات' },
+        badgeGroups: { count:'الجلسات', duration:'أطول ثبات', streak:'السلاسل', special:'التخصص في التمرين', cumulative:'الوقت الإجمالي', fun:'خاص' }
       }
     }
   };
 
   let currentLang = 'nl';
   let t = I18N[currentLang];
-  const EX_ID_TO_UI = { plank: 'exPlank', deadhang: 'exDeadhang', lsit: 'exLsit' };
+  const EX_ID_TO_UI = { plank: 'exPlank', deadhang: 'exDeadhang', lsit: 'exLsit', sideplank: 'exSidePlank', wallsit: 'exWallSit', hollowhold: 'exHollowHold', superman: 'exSuperman', glutebridge: 'exGluteBridge', handstand: 'exHandstand', birddog: 'exBirdDog' };
   function exName_(ex) { return t.ui[EX_ID_TO_UI[ex]]; }
 
   // Duration -> localized label, e.g. "2 minuten" / "2 minutes" / "2 Minuten".
@@ -1199,9 +1300,7 @@
   const muteBtn = document.getElementById('muteBtn');
   const themeToggleInput = document.getElementById('themeToggleInput');
   const intervalSelect = document.getElementById('interval');
-  const exName = document.getElementById('exName');
-  const exPrev = document.getElementById('exPrev');
-  const exNext = document.getElementById('exNext');
+  const exSelect = document.getElementById('exSelect');
   const status = document.getElementById('status');
   const ringFill = document.getElementById('ringFill');
   const breathingCircle = document.getElementById('breathingCircle');
@@ -1692,6 +1791,13 @@
     { id: 'plank10', icon: '🧘', cat: 'special', ex: 'plank', n: 10, check: (list) => list.filter(s => s.ex === 'plank').length >= 10 },
     { id: 'deadhang10', icon: '🐒', cat: 'special', ex: 'deadhang', n: 10, check: (list) => list.filter(s => s.ex === 'deadhang').length >= 10 },
     { id: 'lsit10', icon: '🤾', cat: 'special', ex: 'lsit', n: 10, check: (list) => list.filter(s => s.ex === 'lsit').length >= 10 },
+    { id: 'sideplank10', icon: '🧍', cat: 'special', ex: 'sideplank', n: 10, check: (list) => list.filter(s => s.ex === 'sideplank').length >= 10 },
+    { id: 'wallsit10', icon: '🧱', cat: 'special', ex: 'wallsit', n: 10, check: (list) => list.filter(s => s.ex === 'wallsit').length >= 10 },
+    { id: 'hollowhold10', icon: '🌙', cat: 'special', ex: 'hollowhold', n: 10, check: (list) => list.filter(s => s.ex === 'hollowhold').length >= 10 },
+    { id: 'superman10', icon: '🦸', cat: 'special', ex: 'superman', n: 10, check: (list) => list.filter(s => s.ex === 'superman').length >= 10 },
+    { id: 'glutebridge10', icon: '🌉', cat: 'special', ex: 'glutebridge', n: 10, check: (list) => list.filter(s => s.ex === 'glutebridge').length >= 10 },
+    { id: 'handstand10', icon: '🤸', cat: 'special', ex: 'handstand', n: 10, check: (list) => list.filter(s => s.ex === 'handstand').length >= 10 },
+    { id: 'birddog10', icon: '🐕', cat: 'special', ex: 'birddog', n: 10, check: (list) => list.filter(s => s.ex === 'birddog').length >= 10 },
     { id: 'total10min', icon: '🌱', cat: 'cumulative', sec: 600, check: (list) => list.reduce((s, x) => s + x.dur, 0) >= 600 },
     { id: 'total30min', icon: '🌿', cat: 'cumulative', sec: 1800, check: (list) => list.reduce((s, x) => s + x.dur, 0) >= 1800 },
     { id: 'total1hour', icon: '🌳', cat: 'cumulative', sec: 3600, check: (list) => list.reduce((s, x) => s + x.dur, 0) >= 3600 },
@@ -1759,20 +1865,38 @@
     if (meta) showBadgePopup(meta, el.classList.contains('unlocked'));
   });
 
+  const CAT_TO_GROUP = {
+    first: 'count', count: 'count', duration: 'duration', streak: 'streak',
+    special: 'special', allex: 'special', cumulative: 'cumulative',
+    earlybird: 'fun', nightowl: 'fun'
+  };
+  const GROUP_ORDER = ['count', 'duration', 'streak', 'special', 'cumulative', 'fun'];
+
   function renderBadges(list) {
     const streak = computeStreakCount(list);
     let unlockedIds = [];
     try { unlockedIds = JSON.parse(localStorage.getItem('unlockedBadges') || '[]'); } catch (e) {}
     const newlyUnlocked = [];
-    badgeRow.innerHTML = BADGE_META.map((meta) => {
+    const grouped = {}; GROUP_ORDER.forEach((g) => { grouped[g] = []; });
+
+    BADGE_META.forEach((meta) => {
       const unlocked = meta.check(list, streak);
       if (unlocked && !unlockedIds.includes(meta.id)) newlyUnlocked.push(meta);
       const txt = getBadgeText(meta);
-      return `<div class="badge ${unlocked ? 'unlocked' : ''}" data-id="${meta.id}">
+      const groupKey = CAT_TO_GROUP[meta.cat];
+      grouped[groupKey].push(`<div class="badge ${unlocked ? 'unlocked' : ''}" data-id="${meta.id}">
         <div class="badge-icon">${meta.icon}</div>
         <span>${txt.label}</span>
-      </div>`;
-    }).join('');
+      </div>`);
+    });
+
+    badgeRow.innerHTML = GROUP_ORDER.map((g) => `
+      <div class="badge-group">
+        <div class="badge-group-label">${t.speech.badgeGroups[g]}</div>
+        <div class="badge-group-row">${grouped[g].join('')}</div>
+      </div>
+    `).join('');
+
     if (newlyUnlocked.length) {
       const allUnlockedNow = BADGE_META.filter(m => m.check(list, streak)).map(m => m.id);
       try { localStorage.setItem('unlockedBadges', JSON.stringify(allUnlockedNow)); } catch (e) {}
@@ -1876,27 +2000,125 @@
     historyToggle.textContent = showing ? t.ui.statsToggle : t.ui.hideStats;
   });
 
-  // ====== Exercise picker ======
-  function renderExName() { exName.textContent = exName_(currentEx()); }
-  function changeExercise(delta) {
-    if (timerId) return;
-    exerciseIndex = (exerciseIndex + delta + EX_KEYS.length) % EX_KEYS.length;
-    renderExName();
+  // ====== Exercise picker (dropdown) ======
+  // ====== Exercise pictograms ======
+  // Simple pictogram figures, one per exercise, using a fixed color palette
+  // (neutral body, green shirt, dark shorts, small hair tuft) — no longer
+  // tied to the user's accent color, since that constraint was dropped in
+  // favor of a more illustrated look.
+  // Fixed palette (no longer tied to the user's accent color, per their request
+  // for a richer pictogram): neutral body, green "shirt" tying back to the
+  // brand, dark "shorts" accent at the hip, small hair tuft, gray equipment.
+  const ICON_SKIN = '#c9c2b6';
+  const ICON_HAIR = '#3a3f47';
+  const ICON_SHIRT = '#7fdba8';
+  const ICON_SHORTS = '#4a5560';
+  const ICON_FIXTURE = '#5b6169';
+
+  const EX_ICONS = {
+    plank: `<ellipse cx="10.5" cy="11.2" rx="4.2" ry="3.4" fill="${ICON_HAIR}"/>
+      <circle cx="12.8" cy="14.1" r="5.4" fill="${ICON_SKIN}"/>
+      <path d="M20.5 19.2 L58.9 29.4" stroke="${ICON_SHIRT}" stroke-width="8"/>
+      <path d="M20.5 19.2 L20.5 41.0" stroke="${ICON_SKIN}" stroke-width="5.5"/><circle cx="20.5" cy="41.0" r="2.4" fill="${ICON_SKIN}"/>
+      <circle cx="58.9" cy="29.4" r="4.6" fill="${ICON_SHORTS}"/>
+      <path d="M58.9 29.4 L67.8 41.0 L75.5 41.0" stroke="${ICON_SKIN}" stroke-width="6.5"/>`,
+    deadhang: `<path d="M25.6 3.8 H56.3" stroke="${ICON_FIXTURE}" stroke-width="2.8"/>
+      <path d="M25.6 3.8 L34.6 21.8" stroke="${ICON_SKIN}" stroke-width="5.5"/><circle cx="25.6" cy="3.8" r="2.4" fill="${ICON_SKIN}"/>
+      <path d="M56.3 3.8 L47.4 21.8" stroke="${ICON_SKIN}" stroke-width="5.5"/><circle cx="56.3" cy="3.8" r="2.4" fill="${ICON_SKIN}"/>
+      <ellipse cx="38.7" cy="12.5" rx="4.2" ry="3.4" fill="${ICON_HAIR}"/>
+      <circle cx="41.0" cy="15.4" r="5.4" fill="${ICON_SKIN}"/>
+      <path d="M41.0 23.0 L41.0 37.1" stroke="${ICON_SHIRT}" stroke-width="8"/>
+      <circle cx="41.0" cy="37.1" r="4.6" fill="${ICON_SHORTS}"/>
+      <path d="M38.0 37.1 L38.0 50.5" stroke="${ICON_SKIN}" stroke-width="6.5"/>
+      <path d="M44.0 37.1 L44.0 50.5" stroke="${ICON_SKIN}" stroke-width="6.5"/>`,
+    lsit: `<path d="M25.6 3.8 H56.3" stroke="${ICON_FIXTURE}" stroke-width="2.8"/>
+      <path d="M25.6 3.8 L34.6 21.8" stroke="${ICON_SKIN}" stroke-width="5.5"/><circle cx="25.6" cy="3.8" r="2.4" fill="${ICON_SKIN}"/>
+      <path d="M56.3 3.8 L47.4 21.8" stroke="${ICON_SKIN}" stroke-width="5.5"/><circle cx="56.3" cy="3.8" r="2.4" fill="${ICON_SKIN}"/>
+      <ellipse cx="38.7" cy="12.5" rx="4.2" ry="3.4" fill="${ICON_HAIR}"/>
+      <circle cx="41.0" cy="15.4" r="5.4" fill="${ICON_SKIN}"/>
+      <path d="M41.0 23.0 L41.0 33.3" stroke="${ICON_SHIRT}" stroke-width="8"/>
+      <circle cx="41.0" cy="33.3" r="4.6" fill="${ICON_SHORTS}"/>
+      <path d="M41.0 33.3 L69.1 33.3 L69.1 27.0" stroke="${ICON_SKIN}" stroke-width="6.5"/>`,
+    sideplank: `<ellipse cx="14.3" cy="8.6" rx="4.2" ry="3.4" fill="${ICON_HAIR}"/>
+      <circle cx="16.6" cy="11.5" r="5.4" fill="${ICON_SKIN}"/>
+      <path d="M23.0 16.6 L56.3 29.4" stroke="${ICON_SHIRT}" stroke-width="8"/>
+      <path d="M23.0 16.6 L19.2 41.0" stroke="${ICON_SKIN}" stroke-width="5.5"/><circle cx="19.2" cy="41.0" r="2.4" fill="${ICON_SKIN}"/>
+      <circle cx="56.3" cy="29.4" r="4.6" fill="${ICON_SHORTS}"/>
+      <path d="M56.3 29.4 L64.0 41.0 L71.0 41.0" stroke="${ICON_SKIN}" stroke-width="6.5"/>
+      <path d="M23.0 16.6 L38.4 1.3" stroke="${ICON_SKIN}" stroke-width="5.5"/><circle cx="38.4" cy="1.3" r="2.4" fill="${ICON_SKIN}"/>`,
+    wallsit: `<path d="M10.2 0.0 V51.2" stroke="${ICON_FIXTURE}" stroke-width="2.8"/>
+      <ellipse cx="19.5" cy="4.8" rx="4.2" ry="3.4" fill="${ICON_HAIR}"/>
+      <circle cx="21.8" cy="7.7" r="5.4" fill="${ICON_SKIN}"/>
+      <path d="M16.6 14.1 L16.6 32.0" stroke="${ICON_SHIRT}" stroke-width="8"/>
+      <path d="M16.6 16.6 L7.7 25.6" stroke="${ICON_SKIN}" stroke-width="5.5"/><circle cx="7.7" cy="25.6" r="2.4" fill="${ICON_SKIN}"/>
+      <circle cx="16.6" cy="32.0" r="4.6" fill="${ICON_SHORTS}"/>
+      <path d="M16.6 32.0 L38.4 32.0 L38.4 48.6 L45.0 48.6" stroke="${ICON_SKIN}" stroke-width="6.5"/>`,
+    // Lower back stays FLAT on the ground (the actual cue for this exercise) —
+    // drawn as a long flat segment, with shoulders/legs raised only slightly.
+    // That's the visual that distinguishes it from superman below.
+    hollowhold: `<ellipse cx="9.7" cy="31.1" rx="4.2" ry="3.4" fill="${ICON_HAIR}"/>
+      <circle cx="12" cy="34" r="5.4" fill="${ICON_SKIN}"/>
+      <path d="M20 40 L26 44" stroke="${ICON_SHIRT}" stroke-width="8"/>
+      <path d="M26 44 H46" stroke="${ICON_SHIRT}" stroke-width="8"/>
+      <circle cx="46" cy="44" r="4.6" fill="${ICON_SHORTS}"/>
+      <path d="M46 44 L64 36 L70.5 33.2" stroke="${ICON_SKIN}" stroke-width="6.5"/>
+      <path d="M20 40 L8 26" stroke="${ICON_SKIN}" stroke-width="5.5"/><circle cx="8" cy="26" r="2.4" fill="${ICON_SKIN}"/>`,
+    // Only the HIP touches the ground (small tick mark) — everything else
+    // arches up away from the floor. That single-point contact is what
+    // visually separates this from the flat-back hollow hold above.
+    superman: `<ellipse cx="11.7" cy="23.1" rx="4.2" ry="3.4" fill="${ICON_HAIR}"/>
+      <circle cx="14" cy="26" r="5.4" fill="${ICON_SKIN}"/>
+      <path d="M24 34 L42 44" stroke="${ICON_SHIRT}" stroke-width="8"/>
+      <path d="M38 47 L46 47" stroke="${ICON_FIXTURE}" stroke-width="4"/>
+      <circle cx="42" cy="44" r="4.6" fill="${ICON_SHORTS}"/>
+      <path d="M42 44 L64 32 L70.5 29" stroke="${ICON_SKIN}" stroke-width="6.5"/>
+      <path d="M24 34 L10 20" stroke="${ICON_SKIN}" stroke-width="5.5"/><circle cx="10" cy="20" r="2.4" fill="${ICON_SKIN}"/>`,
+    glutebridge: `<ellipse cx="6.7" cy="35.5" rx="4.2" ry="3.4" fill="${ICON_HAIR}"/>
+      <circle cx="9.0" cy="38.4" r="5.4" fill="${ICON_SKIN}"/>
+      <path d="M16.6 38.4 L37.1 23.0" stroke="${ICON_SHIRT}" stroke-width="8"/>
+      <circle cx="37.1" cy="23.0" r="4.6" fill="${ICON_SHORTS}"/>
+      <path d="M37.1 23.0 L53.8 37.1" stroke="${ICON_SKIN}" stroke-width="6.5"/>
+      <path d="M53.8 37.1 L53.8 48.6 L60.8 48.6" stroke="${ICON_SKIN}" stroke-width="6.5"/>
+      <path d="M16.6 38.4 L5.1 47.4" stroke="${ICON_SKIN}" stroke-width="5.5"/><circle cx="5.1" cy="47.4" r="2.4" fill="${ICON_SKIN}"/>`,
+    // Same "everything on one computed line" approach as before, just with a
+    // smaller horizontal offset (hand closer to the heel's x) so the lean is
+    // ~15° from vertical instead of ~26° — noticeably more upright.
+    handstand: `<path d="M41 0 V52" stroke="${ICON_FIXTURE}" stroke-width="2.8"/>
+      <path d="M28 49 L32.2 32.9" stroke="${ICON_SKIN}" stroke-width="5.5"/><circle cx="28" cy="49" r="2.4" fill="${ICON_SKIN}"/>
+      <path d="M32.2 32.9 L37.6 12.2" stroke="${ICON_SHIRT}" stroke-width="8"/>
+      <ellipse cx="28.5" cy="31.8" rx="4.2" ry="3.4" fill="${ICON_HAIR}"/>
+      <circle cx="31.8" cy="34.3" r="5.4" fill="${ICON_SKIN}"/>
+      <circle cx="37.6" cy="12.2" r="4.6" fill="${ICON_SHORTS}"/>
+      <path d="M37.6 12.2 L40 3" stroke="${ICON_SKIN}" stroke-width="6.5"/>`,
+    birddog: `<ellipse cx="9.2" cy="12.5" rx="4.2" ry="3.4" fill="${ICON_HAIR}"/>
+      <circle cx="11.5" cy="15.4" r="5.4" fill="${ICON_SKIN}"/>
+      <path d="M17.9 20.5 H44.8" stroke="${ICON_SHIRT}" stroke-width="8"/>
+      <path d="M17.9 20.5 L17.9 38.4" stroke="${ICON_SKIN}" stroke-width="5.5"/><circle cx="17.9" cy="38.4" r="2.4" fill="${ICON_SKIN}"/>
+      <circle cx="44.8" cy="20.5" r="4.6" fill="${ICON_SHORTS}"/>
+      <path d="M44.8 20.5 L44.8 38.4 L51.8 38.4" stroke="${ICON_SKIN}" stroke-width="6.5"/>
+      <path d="M17.9 20.5 L2.6 9.0" stroke="${ICON_SKIN}" stroke-width="5.5"/><circle cx="2.6" cy="9.0" r="2.4" fill="${ICON_SKIN}"/>
+      <path d="M44.8 20.5 L66.6 11.5 L73.6 10.0" stroke="${ICON_SKIN}" stroke-width="6.5"/>`
+  };
+  const exIconEl = document.getElementById('exIcon');
+  function renderExIcon() {
+    const inner = EX_ICONS[currentEx()] || '';
+    exIconEl.innerHTML = `<svg viewBox="0 0 82 52" fill="none" stroke-linecap="round" stroke-linejoin="round">${inner}</svg>`;
+  }
+
+  function populateExerciseSelect() {
+    // Rebuilds the option labels (needed after a language switch) while
+    // keeping the currently selected exercise intact.
+    exSelect.innerHTML = EX_KEYS.map((k) => `<option value="${k}">${exName_(k)}</option>`).join('');
+    exSelect.value = currentEx();
+  }
+  function renderExName() { populateExerciseSelect(); renderExIcon(); }
+  exSelect.addEventListener('change', () => {
+    if (timerId) { exSelect.value = currentEx(); return; } // ignore while running
+    exerciseIndex = EX_KEYS.indexOf(exSelect.value);
+    renderExIcon();
     updateRecordDisplay();
     shareBtn.style.display = 'none';
-  }
-  exPrev.addEventListener('click', () => changeExercise(-1));
-  exNext.addEventListener('click', () => changeExercise(1));
-
-  let touchStartX = null;
-  const exPickerEl = document.querySelector('.ex-picker');
-  exPickerEl.addEventListener('touchstart', (e) => { touchStartX = e.touches[0].clientX; }, { passive: true });
-  exPickerEl.addEventListener('touchend', (e) => {
-    if (touchStartX === null) return;
-    const dx = e.changedTouches[0].clientX - touchStartX;
-    if (Math.abs(dx) > 40) changeExercise(dx > 0 ? -1 : 1);
-    touchStartX = null;
-  }, { passive: true });
+  });
 
   // ====== Mute ======
   muteBtn.addEventListener('click', () => {
@@ -1965,24 +2187,29 @@
     } catch (e) {}
   }
 
+  // Fetches ElevenLabs audio for a phrase and stores it in the cache, without
+  // playing it. Shared by speakEleven() and the countdown prefetch below.
+  async function fetchAndCacheAudioUrl(text) {
+    const cachedUrl = await getCachedAudio(text);
+    if (cachedUrl) return cachedUrl;
+    const res = await fetch('https://api.elevenlabs.io/v1/text-to-speech/' + elevenVoiceId, {
+      method: 'POST',
+      headers: { 'xi-api-key': ELEVEN_API_KEY, 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        text: text, model_id: ELEVEN_MODEL, language_code: t.elevenLang,
+        voice_settings: { stability: 0.88, similarity_boost: 0.75, style: 0.2, use_speaker_boost: true }
+      })
+    });
+    if (!res.ok) throw new Error('HTTP ' + res.status);
+    const blob = await res.blob();
+    putCachedAudio(text, blob);
+    return URL.createObjectURL(blob);
+  }
+
   async function speakEleven(text) {
     audioPlayer.volume = voiceVolume;
     audioPlayer.playbackRate = voiceSpeed;
-    const cachedUrl = await getCachedAudio(text);
-    const url = cachedUrl || await (async () => {
-      const res = await fetch('https://api.elevenlabs.io/v1/text-to-speech/' + elevenVoiceId, {
-        method: 'POST',
-        headers: { 'xi-api-key': ELEVEN_API_KEY, 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          text: text, model_id: ELEVEN_MODEL, language_code: t.elevenLang,
-          voice_settings: { stability: 0.88, similarity_boost: 0.75, style: 0.2, use_speaker_boost: true }
-        })
-      });
-      if (!res.ok) throw new Error('HTTP ' + res.status);
-      const blob = await res.blob();
-      putCachedAudio(text, blob);
-      return URL.createObjectURL(blob);
-    })();
+    const url = await fetchAndCacheAudioUrl(text);
     audioPlayer.src = url;
     await audioPlayer.play();
     await waitForAudioEnd(audioPlayer);
@@ -2207,8 +2434,7 @@
     workSecSelect.disabled = locked;
     restSecSelect.disabled = locked;
     roundsSelect.disabled = locked;
-    exPrev.disabled = locked;
-    exNext.disabled = locked;
+    exSelect.disabled = locked;
     freeModeBtn.disabled = locked;
     intervalModeBtn.disabled = locked;
   }
@@ -2250,6 +2476,16 @@
   }
 
   // ====== Start / Stop / Reset ======
+  // Fetches all countdown phrases in parallel and caches them BEFORE the
+  // visual countdown starts, so there's no network wait between "3", "2",
+  // "1" and "Start" — that's what was making the spoken "Start" lag behind
+  // the number on screen.
+  async function prefetchCountdownAudio() {
+    if (!elevenReady) return;
+    const phrases = [...t.speech.countdown, userName ? t.speech.startWithName(userName) : t.speech.startNoName];
+    await Promise.all(phrases.map((p) => fetchAndCacheAudioUrl(p).catch(() => {})));
+  }
+
   let countdownCancelled = false;
   async function runCountdown() {
     countdownCancelled = false;
@@ -2279,6 +2515,7 @@
     setControlsLockedForRun(true);
     shareBtn.style.display = 'none';
     status.textContent = '';
+    await prefetchCountdownAudio();
     const proceeded = await runCountdown();
     if (!proceeded) return;
     status.textContent = intervalMode ? '' : t.ui.running;
