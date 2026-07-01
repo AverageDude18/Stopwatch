@@ -44,7 +44,11 @@
     color: var(--text);
     transition: background 0.3s ease, color 0.3s ease;
   }
-  .card { text-align: center; padding: 30px 26px; width: min(90vw, 380px); position: relative; }
+  .card {
+    text-align: center; padding: 30px 26px; width: min(90vw, 380px); position: relative;
+    background: var(--panel); border-radius: 28px;
+    box-shadow: 0 24px 60px rgba(0,0,0,0.35), 0 1px 0 rgba(255,255,255,0.03) inset;
+  }
 
   .top-row {
     display: flex; justify-content: space-between; align-items: center;
@@ -55,6 +59,10 @@
   .ring-wrap {
     position: relative; width: 230px; height: 230px; margin: 6px auto 18px;
     display: flex; align-items: center; justify-content: center;
+  }
+  .ring-glow {
+    position: absolute; inset: -20px; border-radius: 50%; z-index: 0;
+    background: radial-gradient(circle, rgba(var(--accent-rgb, 127,219,168), 0.16), rgba(var(--accent-rgb, 127,219,168), 0) 68%);
   }
   .progress-ring { position: absolute; top: 0; left: 0; width: 100%; height: 100%; transform: rotate(-90deg); z-index: 2; }
   .ring-bg { fill: none; stroke: var(--panel-alt); stroke-width: 10; }
@@ -95,9 +103,13 @@
   #muteBtn { background: var(--border); color: var(--text); padding: 13px 15px; font-size: 1.1rem; }
   button:disabled { opacity: 0.4; cursor: not-allowed; }
 
-  .mode-row { display: flex; gap: 8px; justify-content: center; margin-top: 16px; }
+  .session-panel {
+    background: var(--panel-alt); border: 1px solid var(--border); border-radius: 16px;
+    padding: 16px 14px 14px; margin-top: 16px;
+  }
+  .mode-row { display: flex; gap: 8px; justify-content: center; }
   .mode-btn {
-    flex: 1; background: var(--panel-alt); color: var(--muted); font-size: 0.85rem;
+    flex: 1; background: var(--panel); color: var(--muted); font-size: 0.85rem;
     padding: 9px; border: 1px solid var(--border);
   }
   .mode-btn.active { background: #2e7d4f; color: white; border-color: #2e7d4f; }
@@ -107,7 +119,7 @@
     margin-top: 16px; font-size: 0.95rem; color: var(--text);
   }
   .chev {
-    background: var(--panel-alt); color: var(--text); border: 1px solid var(--border);
+    background: var(--panel); color: var(--text); border: 1px solid var(--border);
     width: 34px; height: 34px; padding: 0; border-radius: 8px; font-size: 1.1rem; line-height: 1;
   }
   .ex-name { min-width: 130px; font-weight: 600; }
@@ -117,18 +129,21 @@
     display: flex; align-items: center; justify-content: center; gap: 8px; flex-wrap: wrap;
   }
   select {
-    background: var(--panel-alt); color: var(--text); border: 1px solid var(--border);
+    background: var(--panel); color: var(--text); border: 1px solid var(--border);
     border-radius: 6px; padding: 4px 8px;
   }
-  .record-line { margin-top: 10px; font-size: 0.85rem; color: var(--accent); min-height: 1.2em; }
+  .record-line { margin-top: 14px; font-size: 0.85rem; color: var(--accent); min-height: 1.2em; }
   .status { margin-top: 12px; font-size: 0.85rem; color: var(--muted2); min-height: 1.2em; }
 
   .small-btn {
     background: var(--panel-alt); color: var(--muted); font-size: 0.8rem;
     padding: 8px 14px; border: 1px solid var(--border);
   }
-  .history { margin-top: 14px; text-align: left; background: var(--panel); border-radius: 12px; padding: 12px 16px; font-size: 0.85rem; }
-  .history-item { display: flex; justify-content: space-between; padding: 5px 0; border-bottom: 1px solid var(--panel-alt); color: var(--text); }
+  .history {
+    margin-top: 14px; text-align: left; background: var(--panel-alt); border-radius: 14px;
+    padding: 12px 16px; font-size: 0.85rem; border: 1px solid var(--border);
+  }
+  .history-item { display: flex; justify-content: space-between; padding: 5px 0; border-bottom: 1px solid var(--panel); color: var(--text); }
   .history-item:last-child { border-bottom: none; }
   .history-empty { color: var(--muted2); padding: 4px 0; }
 
@@ -142,8 +157,8 @@
   .today-line { font-size: 0.78rem; color: var(--muted2); margin-top: 2px; }
 
   .settings-panel {
-    display: none; text-align: left; background: var(--panel); border-radius: 12px;
-    padding: 14px 16px; margin-top: 14px; font-size: 0.85rem;
+    display: none; text-align: left; background: var(--panel-alt); border-radius: 14px;
+    padding: 14px 16px; margin-top: 14px; font-size: 0.85rem; border: 1px solid var(--border);
   }
   .settings-panel label { display: block; color: var(--muted); margin-bottom: 6px; }
   .settings-panel input[type="text"] {
@@ -179,30 +194,96 @@
   .goal-bar-fill { height: 100%; background: var(--accent); border-radius: 999px; transition: width 0.3s ease; }
   .goal-bar-label { margin-top: 4px; font-size: 0.75rem; color: var(--muted2); }
 
-  .badge-row { display: flex; gap: 10px; flex-wrap: wrap; margin-bottom: 14px; }
+  .stats-heading {
+    font-size: 0.75rem; font-weight: 700; color: var(--muted); text-transform: uppercase;
+    letter-spacing: 0.04em; margin: 2px 0 10px;
+  }
+  .badge-row { display: flex; gap: 10px; flex-wrap: wrap; margin-bottom: 8px; }
   .badge {
     display: flex; flex-direction: column; align-items: center; gap: 4px;
     width: 60px; font-size: 0.65rem; color: var(--muted2); text-align: center;
+    cursor: pointer; transition: transform 0.1s ease;
   }
+  .badge:active { transform: scale(0.92); }
   .badge-icon {
-    width: 42px; height: 42px; border-radius: 50%; background: var(--panel-alt);
+    width: 42px; height: 42px; border-radius: 50%; background: var(--panel);
     display: flex; align-items: center; justify-content: center; font-size: 1.3rem;
-    filter: grayscale(1); opacity: 0.35;
+    filter: grayscale(1); opacity: 0.35; border: 1px solid var(--border);
   }
-  .badge.unlocked .badge-icon { filter: none; opacity: 1; background: rgba(var(--accent-rgb, 127,219,168), 0.18); }
+  .badge.unlocked .badge-icon { filter: none; opacity: 1; background: rgba(var(--accent-rgb, 127,219,168), 0.18); border-color: var(--accent); }
   .badge.unlocked { color: var(--text); }
 
+  .badge-popup {
+    max-height: 0; overflow: hidden; opacity: 0;
+    background: var(--panel); border: 1px solid var(--border); border-radius: 10px;
+    font-size: 0.78rem; color: var(--text); line-height: 1.5;
+    transition: max-height 0.25s ease, opacity 0.2s ease, margin 0.25s ease, padding 0.25s ease;
+  }
+  .badge-popup.visible { max-height: 70px; opacity: 1; margin-bottom: 16px; padding: 10px 12px; }
+  .badge-popup b { color: var(--text); }
+  .badge-popup span { color: var(--muted); }
+
+  .achievement-overlay {
+    position: fixed; inset: 0; z-index: 90; display: flex; align-items: center; justify-content: center;
+    background: rgba(0,0,0,0.55); opacity: 0; pointer-events: none; transition: opacity 0.25s ease;
+  }
+  .achievement-overlay.visible { opacity: 1; pointer-events: auto; }
+  .achievement-card {
+    background: var(--panel); border: 1px solid var(--border); border-radius: 22px;
+    padding: 28px 32px; text-align: center; width: min(80vw, 280px);
+    transform: scale(0.7); opacity: 0; transition: transform 0.35s cubic-bezier(.34,1.56,.64,1), opacity 0.25s ease;
+  }
+  .achievement-overlay.visible .achievement-card { transform: scale(1); opacity: 1; }
+  .achievement-icon-wrap { position: relative; width: 84px; height: 84px; margin: 0 auto 14px; }
+  .achievement-glow {
+    position: absolute; inset: -18px; border-radius: 50%;
+    background: radial-gradient(circle, rgba(var(--accent-rgb,127,219,168),0.4), rgba(var(--accent-rgb,127,219,168),0) 70%);
+    animation: splash-glow-pulse 1.6s ease-in-out infinite;
+  }
+  .achievement-icon {
+    position: relative; width: 84px; height: 84px; border-radius: 50%;
+    background: rgba(var(--accent-rgb,127,219,168),0.18); border: 2px solid var(--accent);
+    display: flex; align-items: center; justify-content: center; font-size: 2.4rem;
+  }
+  .achievement-eyebrow { font-size: 0.72rem; color: var(--muted); text-transform: uppercase; letter-spacing: 0.05em; }
+  .achievement-title { font-size: 1.15rem; font-weight: 700; color: var(--text); margin-top: 4px; }
+
+  .stats-divider { border: none; border-top: 1px solid var(--border); margin: 4px 0 16px; }
+
+  .ex-chart-block { margin-bottom: 12px; }
+  .ex-chart-label { font-size: 0.72rem; font-weight: 600; color: var(--muted); margin-bottom: 6px; }
   .week-chart {
     display: flex; align-items: flex-end; justify-content: space-between;
-    gap: 8px; height: 90px; margin-bottom: 14px; padding: 0 4px;
+    gap: 6px; height: 56px; padding: 0 2px;
   }
   .week-bar-col { display: flex; flex-direction: column; align-items: center; flex: 1; height: 100%; justify-content: flex-end; }
   .week-bar {
-    width: 100%; max-width: 22px; border-radius: 6px 6px 3px 3px;
-    background: var(--panel-alt); min-height: 4px; transition: height 0.3s ease;
+    width: 100%; max-width: 20px; border-radius: 5px 5px 2px 2px;
+    background: var(--panel); min-height: 4px; transition: height 0.3s ease, box-shadow 0.15s ease, transform 0.1s ease;
+    cursor: pointer;
   }
+  .week-bar:active { transform: scaleX(0.85); }
   .week-bar.has-data { background: var(--accent); }
-  .week-label { margin-top: 6px; font-size: 0.65rem; color: var(--muted2); }
+  .week-bar.selected { box-shadow: 0 0 0 2px var(--text); }
+  .week-label { margin-top: 5px; font-size: 0.6rem; color: var(--muted2); }
+
+  .chart-detail-card {
+    display: flex; align-items: center; gap: 12px;
+    background: var(--panel); border: 1px solid var(--border); border-radius: 14px;
+    padding: 12px 14px; margin: 4px 0 16px; min-height: 30px;
+  }
+  .chart-detail-card.empty {
+    color: var(--muted2); font-size: 0.78rem; justify-content: center; padding: 14px;
+  }
+  .chart-detail-icon {
+    width: 40px; height: 40px; border-radius: 50%; flex-shrink: 0;
+    background: rgba(var(--accent-rgb, 127,219,168), 0.18); color: var(--accent);
+    display: flex; align-items: center; justify-content: center; font-size: 1rem; font-weight: 700;
+  }
+  .chart-detail-info { animation: chart-detail-in 0.25s ease; }
+  .chart-detail-time { font-size: 1.4rem; font-weight: 700; color: var(--accent); font-variant-numeric: tabular-nums; line-height: 1.1; }
+  .chart-detail-sub { font-size: 0.75rem; color: var(--muted); margin-top: 2px; }
+  @keyframes chart-detail-in { from { opacity: 0; transform: translateY(4px); } to { opacity: 1; transform: none; } }
 
   /* Gym mode: hide everything except the giant timer */
   body.gym-mode .top-row, body.gym-mode .controls, body.gym-mode .mode-row,
@@ -212,7 +293,7 @@
   body.gym-mode .controls + .controls { display: none !important; }
   body.gym-mode .ring-wrap { width: 90vw; height: 90vw; max-width: 420px; max-height: 420px; }
   body.gym-mode .time { font-size: 5rem; }
-  body.gym-mode .card { width: 100vw; }
+  body.gym-mode .card { width: 100vw; background: none; box-shadow: none; border-radius: 0; }
 
   .confetti-piece {
     position: fixed; top: -20px; width: 8px; height: 14px; z-index: 60; pointer-events: none;
@@ -381,6 +462,7 @@
     </div>
 
     <div class="ring-wrap" id="ringWrap">
+      <div class="ring-glow"></div>
       <svg class="progress-ring" viewBox="0 0 230 230">
         <circle class="ring-bg" cx="115" cy="115" r="100"></circle>
         <circle class="ring-fill" id="ringFill" cx="115" cy="115" r="100"></circle>
@@ -399,49 +481,51 @@
       <button id="muteBtn" aria-label="Geluid aan/uit">🔊</button>
     </div>
 
-    <div class="mode-row">
-      <button class="mode-btn active" id="freeModeBtn">Vrije hold</button>
-      <button class="mode-btn" id="intervalModeBtn">Intervallen</button>
-    </div>
+    <div class="session-panel">
+      <div class="mode-row">
+        <button class="mode-btn active" id="freeModeBtn">Vrije hold</button>
+        <button class="mode-btn" id="intervalModeBtn">Intervallen</button>
+      </div>
 
-    <div class="ex-picker">
-      <button class="chev" id="exPrev">‹</button>
-      <div class="ex-name" id="exName">Plank</div>
-      <button class="chev" id="exNext">›</button>
-    </div>
+      <div class="ex-picker">
+        <button class="chev" id="exPrev">‹</button>
+        <div class="ex-name" id="exName">Plank</div>
+        <button class="chev" id="exNext">›</button>
+      </div>
 
-    <div class="settings" id="freeSettings">
-      Meld elke
-      <select id="interval">
-        <option value="5">5</option>
-        <option value="10">10</option>
-        <option value="15">15</option>
-        <option value="30">30</option>
-      </select>
-      seconden
-    </div>
+      <div class="settings" id="freeSettings">
+        Meld elke
+        <select id="interval">
+          <option value="5">5</option>
+          <option value="10">10</option>
+          <option value="15">15</option>
+          <option value="30">30</option>
+        </select>
+        seconden
+      </div>
 
-    <div id="intervalSettings" style="display:none;">
-      <div class="settings">
-        Werk <select id="workSec">
-          <option value="15">15s</option>
-          <option value="20">20s</option>
-          <option value="30" selected>30s</option>
-          <option value="45">45s</option>
-          <option value="60">60s</option>
-        </select>
-        Rust <select id="restSec">
-          <option value="10">10s</option>
-          <option value="15" selected>15s</option>
-          <option value="20">20s</option>
-          <option value="30">30s</option>
-        </select>
-        Rondes <select id="rounds">
-          <option value="1">1</option><option value="2">2</option>
-          <option value="3" selected>3</option><option value="4">4</option>
-          <option value="5">5</option><option value="6">6</option>
-          <option value="8">8</option><option value="10">10</option>
-        </select>
+      <div id="intervalSettings" style="display:none;">
+        <div class="settings">
+          Werk <select id="workSec">
+            <option value="15">15s</option>
+            <option value="20">20s</option>
+            <option value="30" selected>30s</option>
+            <option value="45">45s</option>
+            <option value="60">60s</option>
+          </select>
+          Rust <select id="restSec">
+            <option value="10">10s</option>
+            <option value="15" selected>15s</option>
+            <option value="20">20s</option>
+            <option value="30">30s</option>
+          </select>
+          Rondes <select id="rounds">
+            <option value="1">1</option><option value="2">2</option>
+            <option value="3" selected>3</option><option value="4">4</option>
+            <option value="5">5</option><option value="6">6</option>
+            <option value="8">8</option><option value="10">10</option>
+          </select>
+        </div>
       </div>
     </div>
 
@@ -455,13 +539,41 @@
       <button class="small-btn" id="historyToggle">Statistieken</button>
     </div>
     <div class="history" id="historySection" style="display:none;">
+      <div class="stats-heading">Prestaties</div>
       <div class="badge-row" id="badgeRow"></div>
-      <div class="week-chart" id="heatmap"></div>
+      <div class="badge-popup" id="badgePopup"></div>
+      <hr class="stats-divider">
+      <div class="stats-heading">Voortgang per oefening</div>
+      <div class="ex-chart-block">
+        <div class="ex-chart-label">Plank</div>
+        <div class="week-chart" id="chart-plank"></div>
+      </div>
+      <div class="ex-chart-block">
+        <div class="ex-chart-label">Deadhang</div>
+        <div class="week-chart" id="chart-deadhang"></div>
+      </div>
+      <div class="ex-chart-block">
+        <div class="ex-chart-label">L-sit deadhang</div>
+        <div class="week-chart" id="chart-lsit"></div>
+      </div>
+      <div class="chart-detail-card empty" id="chartDetail">Tik op een staafje voor de langst volgehouden tijd die dag</div>
+      <hr class="stats-divider">
+      <div class="stats-heading">Recente sessies</div>
       <div id="historyList" class="history-empty">Nog geen sessies</div>
     </div>
   </div>
 
   <div id="confettiContainer"></div>
+  <div class="achievement-overlay" id="achievementOverlay">
+    <div class="achievement-card">
+      <div class="achievement-icon-wrap">
+        <div class="achievement-glow"></div>
+        <div class="achievement-icon" id="achievementIcon">🏆</div>
+      </div>
+      <div class="achievement-eyebrow">Prestatie ontgrendeld</div>
+      <div class="achievement-title" id="achievementTitle">Badge</div>
+    </div>
+  </div>
 
 <script>
   // ====== CONFIG ======
@@ -509,7 +621,7 @@
     streng: {
       plank: ['Rug recht. Nu!', 'Heupen omhoog!', 'Buik strak!', BREATHING_CUE, 'Focus.'],
       deadhang: ['Grip vast! Niet loslaten!', 'Schouders actief!', BREATHING_CUE, 'Doorzetten!', 'Niet verslappen!'],
-      lsit: ['Benen omhoog! Nu!', 'Knieën op slot!', 'Core aan!', 'Doorademen.', 'Volhouden!']
+      lsit: ['Benen omhoog! Nu!', 'Knieën op slot!', 'Core aan!', BREATHING_CUE, 'Volhouden!']
     },
     chill: {
       plank: ['Lekker bezig, rustig aan.', 'Voel je core, geen paniek.', BREATHING_CUE, 'Je doet het prima zo.', 'Nog even chillen in de plank.'],
@@ -518,6 +630,8 @@
     }
   };
   let currentTone = 'motiverend';
+  let voiceSpeed = 1;
+  let voiceVolume = 1;
   function encouragementsByExerciseNow() { return TONE_PHRASES[currentTone] || TONE_PHRASES.motiverend; }
 
   function currentEx() { return EX_KEYS[exerciseIndex]; }
@@ -568,7 +682,8 @@
   const volumeSlider = document.getElementById('volumeSlider');
   const badgeRow = document.getElementById('badgeRow');
   const ringWrap = document.getElementById('ringWrap');
-  const heatmapEl = document.getElementById('heatmap');
+  const chartDetail = document.getElementById('chartDetail');
+  const exChartEls = { plank: document.getElementById('chart-plank'), deadhang: document.getElementById('chart-deadhang'), lsit: document.getElementById('chart-lsit') };
   const confettiContainer = document.getElementById('confettiContainer');
 
   // ====== Ring ======
@@ -582,6 +697,7 @@
   function applyAccentCSS() {
     const [r, g, b] = accentRGB;
     document.documentElement.style.setProperty('--accent', `rgb(${r},${g},${b})`);
+    document.documentElement.style.setProperty('--accent-rgb', `${r},${g},${b}`);
   }
   (() => {
     try {
@@ -602,6 +718,39 @@
       try { localStorage.setItem('accentColor', sw.dataset.color); } catch (e) {}
       if (!timerId) resetRing();
     });
+  });
+
+  // ====== Coach tone ======
+  (() => {
+    try {
+      const saved = localStorage.getItem('coachTone');
+      if (saved && TONE_PHRASES[saved]) currentTone = saved;
+    } catch (e) {}
+    toneSelect.value = currentTone;
+  })();
+  toneSelect.addEventListener('change', () => {
+    currentTone = toneSelect.value;
+    try { localStorage.setItem('coachTone', currentTone); } catch (e) {}
+  });
+
+  // ====== Voice speed & volume ======
+  (() => {
+    try {
+      const savedSpeed = localStorage.getItem('voiceSpeed');
+      if (savedSpeed) voiceSpeed = parseFloat(savedSpeed);
+      const savedVolume = localStorage.getItem('voiceVolume');
+      if (savedVolume !== null) voiceVolume = parseFloat(savedVolume);
+    } catch (e) {}
+    speedSelect.value = String(voiceSpeed);
+    volumeSlider.value = String(Math.round(voiceVolume * 100));
+  })();
+  speedSelect.addEventListener('change', () => {
+    voiceSpeed = parseFloat(speedSelect.value);
+    try { localStorage.setItem('voiceSpeed', String(voiceSpeed)); } catch (e) {}
+  });
+  volumeSlider.addEventListener('input', () => {
+    voiceVolume = parseInt(volumeSlider.value, 10) / 100;
+    try { localStorage.setItem('voiceVolume', String(voiceVolume)); } catch (e) {}
   });
 
   // ====== Personalized name ======
@@ -723,6 +872,7 @@
   function playTick() { playTone(1000, 0.05, 'square', 0.08); }
   function playMilestoneChime() { playChime([659.25, 880]); }
   function playRecordFanfare() { playChime([523.25, 659.25, 783.99, 1046.5], 0.09); }
+  function playBadgeUnlock() { playChime([880, 1174.66], 0.1); }
 
   // ====== Wake lock ======
   async function requestWakeLock() {
@@ -777,8 +927,10 @@
       localStorage.setItem('sessions', JSON.stringify(trimmed));
       renderHistory(trimmed);
       updateTodayOverview(trimmed);
-      renderWeekChart(trimmed);
+      renderExerciseCharts(trimmed);
       updateStreak(trimmed);
+      updateGoalProgress(trimmed);
+      renderBadges(trimmed);
     } catch (e) {}
   }
   function renderHistory(list) {
@@ -797,31 +949,70 @@
     todayDisplay.textContent = `Vandaag: ${todays.length} ${todays.length === 1 ? 'sessie' : 'sessies'}, ${format(total)} totaal`;
   }
 
-  function renderWeekChart(list) {
-    const totals = {};
-    list.forEach(s => {
-      const key = new Date(s.ts).toDateString();
-      totals[key] = (totals[key] || 0) + s.dur;
-    });
+  function renderExerciseCharts(list) {
     const dayLabels = ['Zo', 'Ma', 'Di', 'Wo', 'Do', 'Vr', 'Za'];
     const today = new Date();
     const days = [];
     for (let i = 6; i >= 0; i--) {
       const d = new Date(today);
       d.setDate(d.getDate() - i);
-      days.push({ date: d, dur: totals[d.toDateString()] || 0 });
+      days.push(d);
     }
-    const maxDur = Math.max(...days.map(d => d.dur), 60);
-    heatmapEl.innerHTML = days.map(d => {
-      const heightPct = d.dur > 0 ? Math.max((d.dur / maxDur) * 100, 8) : 3;
-      const isToday = d.date.toDateString() === today.toDateString();
-      const label = isToday ? 'Nu' : dayLabels[d.date.getDay()];
-      return `<div class="week-bar-col">
-        <div class="week-bar ${d.dur > 0 ? 'has-data' : ''}" style="height:${heightPct}%" title="${format(d.dur)}"></div>
-        <div class="week-label">${label}</div>
-      </div>`;
-    }).join('');
+
+    EX_KEYS.forEach((ex) => {
+      const container = exChartEls[ex];
+      if (!container) return;
+
+      // For each of the last 7 days, find the LONGEST single hold for this
+      // exercise that day (not the total) — that's what actually shows progress.
+      const maxByDay = days.map((d) => {
+        const dayStr = d.toDateString();
+        const sessionsThatDay = list.filter((s) => s.ex === ex && new Date(s.ts).toDateString() === dayStr);
+        return sessionsThatDay.length ? Math.max(...sessionsThatDay.map((s) => s.dur)) : 0;
+      });
+      const scaleMax = Math.max(...maxByDay, 30);
+
+      container.innerHTML = days.map((d, i) => {
+        const dur = maxByDay[i];
+        const heightPct = dur > 0 ? Math.max((dur / scaleMax) * 100, 8) : 3;
+        const isToday = d.toDateString() === today.toDateString();
+        const dayLabel = isToday ? 'Nu' : dayLabels[d.getDay()];
+        const fullDateLabel = d.toLocaleDateString('nl-NL', { weekday: 'long', day: 'numeric', month: 'short' });
+        return `<div class="week-bar-col">
+          <div class="week-bar ${dur > 0 ? 'has-data' : ''}" data-ex="${ex}" data-date="${fullDateLabel}" data-dur="${dur}"
+               style="height:${heightPct}%"></div>
+          <div class="week-label">${dayLabel}</div>
+        </div>`;
+      }).join('');
+    });
   }
+
+  // One click listener for all three charts (event delegation) — shows the
+  // tapped bar's exact time in the detail line below, and highlights the bar.
+  document.querySelectorAll('.week-chart').forEach((chart) => {
+    chart.addEventListener('click', (e) => {
+      const bar = e.target.closest('.week-bar');
+      if (!bar) return;
+      document.querySelectorAll('.week-bar.selected').forEach((b) => b.classList.remove('selected'));
+      bar.classList.add('selected');
+      const ex = bar.dataset.ex;
+      const dur = parseInt(bar.dataset.dur, 10);
+      const exLabel = EX_NAMES[ex] || ex;
+      const exLetter = exLabel.charAt(0);
+      chartDetail.classList.remove('empty');
+      chartDetail.innerHTML = dur > 0
+        ? `<div class="chart-detail-icon">${exLetter}</div>
+           <div class="chart-detail-info">
+             <div class="chart-detail-time">${format(dur)}</div>
+             <div class="chart-detail-sub">${exLabel} · ${bar.dataset.date}</div>
+           </div>`
+        : `<div class="chart-detail-icon">${exLetter}</div>
+           <div class="chart-detail-info">
+             <div class="chart-detail-sub">${exLabel} · ${bar.dataset.date}</div>
+             <div class="chart-detail-sub">Geen sessie deze dag</div>
+           </div>`;
+    });
+  });
 
   function updateStreak(list) {
     const days = new Set(list.map(s => new Date(s.ts).toDateString()));
@@ -830,6 +1021,115 @@
     if (!days.has(cursor.toDateString())) cursor.setDate(cursor.getDate() - 1);
     while (days.has(cursor.toDateString())) { streak++; cursor.setDate(cursor.getDate() - 1); }
     streakDisplay.textContent = streak > 0 ? '🔥 ' + streak + (streak === 1 ? ' dag op rij' : ' dagen op rij') : '';
+  }
+
+  // ====== Weekly goal ======
+  let weeklyGoal = 3;
+  (() => {
+    try {
+      const saved = localStorage.getItem('weeklyGoal');
+      if (saved !== null) weeklyGoal = parseInt(saved, 10);
+    } catch (e) {}
+    goalSelect.value = String(weeklyGoal);
+  })();
+  goalSelect.addEventListener('change', () => {
+    weeklyGoal = parseInt(goalSelect.value, 10);
+    try { localStorage.setItem('weeklyGoal', String(weeklyGoal)); } catch (e) {}
+    loadSessions().then(updateGoalProgress);
+  });
+  function startOfWeek(date) {
+    // Monday-based week, matching how most people in NL count "deze week".
+    const d = new Date(date);
+    const day = d.getDay(); // 0 = Sunday
+    const diff = day === 0 ? -6 : 1 - day;
+    d.setDate(d.getDate() + diff);
+    d.setHours(0, 0, 0, 0);
+    return d;
+  }
+  function updateGoalProgress(list) {
+    if (weeklyGoal <= 0) { goalBarWrap.style.display = 'none'; return; }
+    goalBarWrap.style.display = 'block';
+    const weekStart = startOfWeek(new Date());
+    const uniqueDaysThisWeek = new Set(
+      list.filter(s => new Date(s.ts) >= weekStart).map(s => new Date(s.ts).toDateString())
+    );
+    const count = uniqueDaysThisWeek.size;
+    const pct = Math.min((count / weeklyGoal) * 100, 100);
+    goalBarFill.style.width = pct + '%';
+    goalBarLabel.textContent = count >= weeklyGoal
+      ? `Weekdoel gehaald! (${count}/${weeklyGoal})`
+      : `Weekdoel: ${count}/${weeklyGoal} dagen getraind`;
+  }
+
+  // ====== Badges ======
+  const BADGE_DEFS = [
+    { id: 'first', icon: '🎯', label: 'Eerste hold', desc: 'Rond je allereerste sessie af.', check: (list) => list.length >= 1 },
+    { id: 'twomin', icon: '⏱️', label: '2 minuten', desc: 'Houd één oefening 2 minuten vol.', check: (list) => list.some(s => s.dur >= 120) },
+    { id: 'ten', icon: '🔟', label: '10 sessies', desc: 'Voltooi in totaal 10 sessies.', check: (list) => list.length >= 10 },
+    { id: 'streak7', icon: '🔥', label: '7 dagen streak', desc: 'Train 7 dagen op rij.', check: (list, streak) => streak >= 7 },
+    { id: 'allex', icon: '🏋️', label: 'Alle oefeningen', desc: 'Probeer plank, deadhang én L-sit.', check: (list) => {
+      const set = new Set(list.map(s => s.ex));
+      return set.has('plank') && set.has('deadhang') && set.has('lsit');
+    }}
+  ];
+  function computeStreakCount(list) {
+    const days = new Set(list.map(s => new Date(s.ts).toDateString()));
+    let streak = 0;
+    const cursor = new Date();
+    if (!days.has(cursor.toDateString())) cursor.setDate(cursor.getDate() - 1);
+    while (days.has(cursor.toDateString())) { streak++; cursor.setDate(cursor.getDate() - 1); }
+    return streak;
+  }
+
+  const badgePopup = document.getElementById('badgePopup');
+  let badgePopupTimer = null;
+  function showBadgePopup(badgeDef, unlocked) {
+    badgePopup.innerHTML = `<b>${badgeDef.icon} ${badgeDef.label}</b><br><span>${unlocked ? 'Ontgrendeld ✅' : badgeDef.desc}</span>`;
+    badgePopup.classList.add('visible');
+    clearTimeout(badgePopupTimer);
+    badgePopupTimer = setTimeout(() => badgePopup.classList.remove('visible'), 3000);
+  }
+
+  const achievementOverlay = document.getElementById('achievementOverlay');
+  const achievementIcon = document.getElementById('achievementIcon');
+  const achievementTitle = document.getElementById('achievementTitle');
+  function showAchievementOverlay(badgeDef) {
+    achievementIcon.textContent = badgeDef.icon;
+    achievementTitle.textContent = badgeDef.label;
+    achievementOverlay.classList.add('visible');
+    playBadgeUnlock();
+    spawnConfetti();
+    pulseFeedback([80, 50, 80, 50, 150]);
+    const dismiss = () => achievementOverlay.classList.remove('visible');
+    achievementOverlay.addEventListener('click', dismiss, { once: true });
+    setTimeout(dismiss, 2600);
+  }
+
+  badgeRow.addEventListener('click', (e) => {
+    const el = e.target.closest('.badge');
+    if (!el) return;
+    const def = BADGE_DEFS.find((b) => b.id === el.dataset.id);
+    if (def) showBadgePopup(def, el.classList.contains('unlocked'));
+  });
+
+  function renderBadges(list) {
+    const streak = computeStreakCount(list);
+    let unlockedIds = [];
+    try { unlockedIds = JSON.parse(localStorage.getItem('unlockedBadges') || '[]'); } catch (e) {}
+    const newlyUnlocked = [];
+    badgeRow.innerHTML = BADGE_DEFS.map((b) => {
+      const unlocked = b.check(list, streak);
+      if (unlocked && !unlockedIds.includes(b.id)) newlyUnlocked.push(b);
+      return `<div class="badge ${unlocked ? 'unlocked' : ''}" data-id="${b.id}">
+        <div class="badge-icon">${b.icon}</div>
+        <span>${b.label}</span>
+      </div>`;
+    }).join('');
+    if (newlyUnlocked.length) {
+      const allUnlockedNow = BADGE_DEFS.filter(b => b.check(list, streak)).map(b => b.id);
+      try { localStorage.setItem('unlockedBadges', JSON.stringify(allUnlockedNow)); } catch (e) {}
+      showAchievementOverlay(newlyUnlocked[0]);
+    }
   }
 
   // Converts a duration in seconds to a natural spoken Dutch phrase, e.g.
@@ -1025,6 +1325,8 @@
   }
 
   async function speakEleven(text) {
+    audioPlayer.volume = voiceVolume;
+    audioPlayer.playbackRate = voiceSpeed;
     const cachedUrl = await getCachedAudio(text);
     if (cachedUrl) {
       audioPlayer.src = cachedUrl;
@@ -1049,7 +1351,7 @@
     if (!('speechSynthesis' in window)) return;
     window.speechSynthesis.cancel();
     const u = new SpeechSynthesisUtterance(text);
-    u.lang = 'nl-NL'; u.rate = 1;
+    u.lang = 'nl-NL'; u.rate = voiceSpeed; u.volume = voiceVolume;
     window.speechSynthesis.speak(u);
   }
   async function speak(text) {
@@ -1129,7 +1431,7 @@
     } else if (cueIsDue) {
       lastCueAt = elapsed;
       if (timeIsDue) lastAnnounced = elapsed - (elapsed % step);
-      const list = encouragementsByExercise[currentEx()] || encouragementsByExercise.plank;
+      const list = encouragementsByExerciseNow()[currentEx()] || encouragementsByExerciseNow().plank;
       const cueText = list[encourageIndex % list.length];
       if (cueText === BREATHING_CUE) triggerBreathing();
       speak(cueText);
@@ -1154,7 +1456,7 @@
     if (elapsed > 0) {
       const ex = currentEx();
       const finalElapsed = elapsed;
-      saveSession(ex, finalElapsed);
+      await saveSession(ex, finalElapsed);
       const { isNewRecord, improvement } = await checkRecord(ex, finalElapsed);
       let summary = (userName ? userName + ', j' : 'J') + 'e hield het ' + spokenDuration(finalElapsed) + ' vol!';
       if (isNewRecord) {
@@ -1162,12 +1464,14 @@
           ? ' Nieuw record, ' + spokenDuration(improvement) + ' langer dan daarvoor!'
           : ' Dat is meteen je eerste record!';
       }
-      speak(summary);
+      await speak(summary);
+      speak('Adem nog even rustig uit.');
+    } else {
+      status.textContent = '';
     }
     elapsed = 0; lastAnnounced = 0; lastCueAt = -Infinity; minuteCount = 0; encourageIndex = 0;
     display.textContent = '0:00';
     resetRing();
-    status.textContent = '';
   }
 
   // ====== INTERVAL MODE ======
@@ -1348,10 +1652,23 @@
     renderHistory(list);
     updateStreak(list);
     updateTodayOverview(list);
-    renderWeekChart(list);
+    renderExerciseCharts(list);
+    updateGoalProgress(list);
+    renderBadges(list);
+
+    // First time opening the app today? Show a gentle stretch reminder instead
+    // of the usual streak/tagline, once, then remember we've shown it.
+    let isFirstOpenToday = false;
+    try {
+      const todayStr = new Date().toDateString();
+      isFirstOpenToday = localStorage.getItem('lastOpenDate') !== todayStr;
+      localStorage.setItem('lastOpenDate', todayStr);
+    } catch (e) {}
 
     splashTitle.textContent = userName ? 'Welkom terug, ' + userName + '!' : 'Trainingspartner';
-    splashSub.textContent = streakDisplay.textContent || 'Klaar om te trainen?';
+    splashSub.textContent = isFirstOpenToday
+      ? 'Even strekken voor je begint?'
+      : (streakDisplay.textContent || 'Klaar om te trainen?');
     setTimeout(hideSplash, 2200);
   }
   initApp();
