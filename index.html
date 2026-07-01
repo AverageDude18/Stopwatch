@@ -147,7 +147,12 @@
     padding: 12px 16px; font-size: 0.85rem; border: 1px solid var(--border);
   }
   body[dir="rtl"] .history { text-align: right; }
-  .history-item { display: flex; justify-content: space-between; padding: 5px 0; border-bottom: 1px solid var(--panel); color: var(--text); }
+  .history-item { display: flex; justify-content: space-between; align-items: center; padding: 5px 0; border-bottom: 1px solid var(--panel); color: var(--text); }
+  .history-delete {
+    background: none; border: none; color: var(--muted2); font-size: 0.75rem;
+    padding: 2px 6px; margin-left: 8px; cursor: pointer; border-radius: 4px;
+  }
+  .history-delete:active { color: #b3413a; background: rgba(179,65,58,0.15); }
   .history-item:last-child { border-bottom: none; }
   .history-empty { color: var(--muted2); padding: 4px 0; }
 
@@ -1653,8 +1658,39 @@
     historyList.innerHTML = list.slice(0, 6).map(s => {
       const d = new Date(s.ts);
       const dateStr = d.toLocaleDateString(t.speechLang, { day: 'numeric', month: 'short' });
-      return `<div class="history-item"><span>${exName_(s.ex)}</span><span>${format(s.dur)} · ${dateStr}</span></div>`;
+      return `<div class="history-item"><span>${exName_(s.ex)}</span><span>${format(s.dur)} · ${dateStr}<button class="history-delete" data-ts="${s.ts}" aria-label="Delete">✕</button></span></div>`;
     }).join('');
+  }
+  historyList.addEventListener('click', (e) => {
+    const btn = e.target.closest('.history-delete');
+    if (!btn) return;
+    deleteSession(parseFloat(btn.dataset.ts));
+  });
+  async function deleteSession(ts) {
+    const list = await loadSessions();
+    const target = list.find((s) => s.ts === ts);
+    if (!target) return;
+    const remaining = list.filter((s) => s.ts !== ts);
+    localStorage.setItem('sessions', JSON.stringify(remaining));
+    lastSessionsList = remaining;
+
+    // If the deleted session happened to be the one holding the current
+    // record for that exercise, recompute the record from what's left —
+    // otherwise an inflated "record" would keep showing even after removal.
+    const currentRecord = await getRecord(target.ex);
+    if (target.dur >= currentRecord) {
+      const remainingForEx = remaining.filter((s) => s.ex === target.ex);
+      const newRecord = remainingForEx.length ? Math.max(...remainingForEx.map((s) => s.dur)) : 0;
+      await setRecord(target.ex, newRecord);
+    }
+
+    renderHistory(remaining);
+    updateTodayOverview(remaining);
+    renderExerciseCharts(remaining);
+    updateStreak(remaining);
+    updateGoalProgress(remaining);
+    renderBadges(remaining);
+    updateRecordDisplay();
   }
   function updateTodayOverview(list) {
     const todayStr = new Date().toDateString();
@@ -1877,11 +1913,15 @@
     let unlockedIds = [];
     try { unlockedIds = JSON.parse(localStorage.getItem('unlockedBadges') || '[]'); } catch (e) {}
     const newlyUnlocked = [];
+    const currentlyUnlocked = [];
     const grouped = {}; GROUP_ORDER.forEach((g) => { grouped[g] = []; });
 
     BADGE_META.forEach((meta) => {
       const unlocked = meta.check(list, streak);
-      if (unlocked && !unlockedIds.includes(meta.id)) newlyUnlocked.push(meta);
+      if (unlocked) {
+        currentlyUnlocked.push(meta.id);
+        if (!unlockedIds.includes(meta.id)) newlyUnlocked.push(meta);
+      }
       const txt = getBadgeText(meta);
       const groupKey = CAT_TO_GROUP[meta.cat];
       grouped[groupKey].push(`<div class="badge ${unlocked ? 'unlocked' : ''}" data-id="${meta.id}">
@@ -1897,9 +1937,13 @@
       </div>
     `).join('');
 
+    // Always overwrite with the current truth (not just "add new ones"), so a
+    // badge that's no longer actually earned — e.g. because the session that
+    // unlocked it got deleted — also drops out of the "already celebrated"
+    // list. Otherwise re-earning it later wouldn't trigger the fanfare again.
+    try { localStorage.setItem('unlockedBadges', JSON.stringify(currentlyUnlocked)); } catch (e) {}
+
     if (newlyUnlocked.length) {
-      const allUnlockedNow = BADGE_META.filter(m => m.check(list, streak)).map(m => m.id);
-      try { localStorage.setItem('unlockedBadges', JSON.stringify(allUnlockedNow)); } catch (e) {}
       showAchievementSequence(newlyUnlocked);
     }
   }
@@ -2339,9 +2383,11 @@
     timerId = setInterval(freeTick, 200);
   }
   function stopFree() { status.textContent = t.ui.stoppedAt + ' ' + format(elapsed); }
+  const MIN_SESSION_SEC = 3; // shorter than this = treated as an accidental tap, not saved
+
   async function resetFree() {
     breathingCircle.classList.remove('active');
-    if (elapsed > 0) {
+    if (elapsed >= MIN_SESSION_SEC) {
       const ex = currentEx();
       const finalElapsed = elapsed;
       await saveSession(ex, finalElapsed);
