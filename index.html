@@ -44,6 +44,7 @@
     color: var(--text);
     transition: background 0.3s ease, color 0.3s ease;
   }
+  body[dir="rtl"] .card { text-align: right; }
   .card {
     text-align: center; padding: 30px 26px; width: min(90vw, 380px); position: relative;
     background: var(--panel); border-radius: 28px;
@@ -95,6 +96,7 @@
   button {
     font-size: 1rem; padding: 13px 18px; border-radius: 12px; border: none;
     cursor: pointer; font-weight: 600; transition: transform 0.1s ease;
+    font-family: inherit;
   }
   button:active { transform: scale(0.96); }
   #startBtn { background: #2e7d4f; color: white; }
@@ -110,7 +112,7 @@
   .mode-row { display: flex; gap: 8px; justify-content: center; }
   .mode-btn {
     flex: 1; background: var(--panel); color: var(--muted); font-size: 0.85rem;
-    padding: 9px; border: 1px solid var(--border);
+    padding: 9px; border: 1px solid var(--border); font-family: inherit;
   }
   .mode-btn.active { background: #2e7d4f; color: white; border-color: #2e7d4f; }
 
@@ -130,19 +132,20 @@
   }
   select {
     background: var(--panel); color: var(--text); border: 1px solid var(--border);
-    border-radius: 6px; padding: 4px 8px;
+    border-radius: 6px; padding: 4px 8px; font-family: inherit;
   }
   .record-line { margin-top: 14px; font-size: 0.85rem; color: var(--accent); min-height: 1.2em; }
   .status { margin-top: 12px; font-size: 0.85rem; color: var(--muted2); min-height: 1.2em; }
 
   .small-btn {
     background: var(--panel-alt); color: var(--muted); font-size: 0.8rem;
-    padding: 8px 14px; border: 1px solid var(--border);
+    padding: 8px 14px; border: 1px solid var(--border); font-family: inherit;
   }
   .history {
     margin-top: 14px; text-align: left; background: var(--panel-alt); border-radius: 14px;
     padding: 12px 16px; font-size: 0.85rem; border: 1px solid var(--border);
   }
+  body[dir="rtl"] .history { text-align: right; }
   .history-item { display: flex; justify-content: space-between; padding: 5px 0; border-bottom: 1px solid var(--panel); color: var(--text); }
   .history-item:last-child { border-bottom: none; }
   .history-empty { color: var(--muted2); padding: 4px 0; }
@@ -160,10 +163,11 @@
     display: none; text-align: left; background: var(--panel-alt); border-radius: 14px;
     padding: 14px 16px; margin-top: 14px; font-size: 0.85rem; border: 1px solid var(--border);
   }
+  body[dir="rtl"] .settings-panel { text-align: right; }
   .settings-panel label { display: block; color: var(--muted); margin-bottom: 6px; }
   .settings-panel input[type="text"] {
     width: 100%; background: var(--panel-alt); color: var(--text); border: 1px solid var(--border);
-    border-radius: 8px; padding: 8px 10px; font-size: 0.9rem; margin-bottom: 14px;
+    border-radius: 8px; padding: 8px 10px; font-size: 0.9rem; margin-bottom: 14px; font-family: inherit;
   }
   .swatch-row { display: flex; gap: 10px; }
   .swatch {
@@ -171,6 +175,8 @@
     cursor: pointer; padding: 0;
   }
   .swatch.selected { border-color: var(--text); }
+
+  .lang-option { display: flex; align-items: center; gap: 8px; }
 
   .toggle-row {
     display: flex; align-items: center; justify-content: space-between;
@@ -395,14 +401,14 @@
         <div class="streak" id="streakDisplay"></div>
         <div class="today-line" id="todayDisplay"></div>
       </div>
-      <button class="icon-btn" id="settingsBtn" aria-label="Instellingen">⚙️</button>
+      <button class="icon-btn" id="settingsBtn" aria-label="Settings">⚙️</button>
     </div>
 
     <div class="settings-panel" id="settingsPanel">
-      <label for="nameInput">Jouw naam (voor persoonlijke aanmoedigingen)</label>
+      <label for="nameInput" id="lblName">Jouw naam (voor persoonlijke aanmoedigingen)</label>
       <input type="text" id="nameInput" placeholder="bijv. Ids">
 
-      <label>Accentkleur</label>
+      <label id="lblColor">Accentkleur</label>
       <div class="swatch-row">
         <button class="swatch selected" data-color="127,219,168" style="background:#7fdba8"></button>
         <button class="swatch" data-color="94,158,219" style="background:#5e9edb"></button>
@@ -411,39 +417,42 @@
         <button class="swatch" data-color="255,184,92" style="background:#ffb85c"></button>
       </div>
 
-      <label for="toneSelect">Coach-toon</label>
+      <label for="langSelect" id="lblLanguage">Taal</label>
+      <select id="langSelect" style="width:100%; margin-bottom:14px;"></select>
+
+      <label for="toneSelect" id="lblTone">Coach-toon</label>
       <select id="toneSelect" style="width:100%; margin-bottom:14px;">
-        <option value="motiverend">Motiverend</option>
-        <option value="streng">Streng</option>
-        <option value="chill">Chill</option>
+        <option value="motiverend" id="optToneMotiv">Motiverend</option>
+        <option value="streng" id="optToneStrict">Streng</option>
+        <option value="chill" id="optToneChill">Chill</option>
       </select>
 
-      <label for="goalSelect">Weekdoel (sessies per week)</label>
+      <label for="goalSelect" id="lblGoal">Weekdoel (sessies per week)</label>
       <select id="goalSelect" style="width:100%; margin-bottom:6px;">
-        <option value="0">Geen doel</option>
-        <option value="2">2 per week</option>
-        <option value="3" selected>3 per week</option>
-        <option value="4">4 per week</option>
-        <option value="5">5 per week</option>
-        <option value="7">Elke dag</option>
+        <option value="0" id="optGoal0">Geen doel</option>
+        <option value="2">2</option>
+        <option value="3" selected>3</option>
+        <option value="4">4</option>
+        <option value="5">5</option>
+        <option value="7" id="optGoal7">Elke dag</option>
       </select>
       <div class="goal-bar-wrap" id="goalBarWrap" style="display:none;">
         <div class="goal-bar"><div class="goal-bar-fill" id="goalBarFill"></div></div>
         <div class="goal-bar-label" id="goalBarLabel"></div>
       </div>
 
-      <label for="speedSelect">Spreeksnelheid van de stem</label>
+      <label for="speedSelect" id="lblSpeed">Spreeksnelheid van de stem</label>
       <select id="speedSelect" style="width:100%; margin-bottom:14px;">
-        <option value="0.85">Langzaam</option>
-        <option value="1" selected>Normaal</option>
-        <option value="1.2">Snel</option>
+        <option value="0.85" id="optSpeedSlow">Langzaam</option>
+        <option value="1" selected id="optSpeedNormal">Normaal</option>
+        <option value="1.2" id="optSpeedFast">Snel</option>
       </select>
 
-      <label for="volumeSlider">Stemvolume</label>
+      <label for="volumeSlider" id="lblVolume">Stemvolume</label>
       <input type="range" id="volumeSlider" min="0" max="100" value="100" style="width:100%; margin-bottom:14px;">
 
       <div class="toggle-row">
-        <span>Licht thema</span>
+        <span id="lblLightTheme">Licht thema</span>
         <label class="toggle-switch">
           <input type="checkbox" id="themeToggleInput">
           <span class="toggle-slider"></span>
@@ -451,7 +460,7 @@
       </div>
 
       <div class="toggle-row" id="voiceToggleRow" style="display:none;">
-        <span>Stembediening ("stop" zeggen)</span>
+        <span id="lblVoiceControl">Stembediening ("stop" zeggen)</span>
         <label class="toggle-switch">
           <input type="checkbox" id="voiceToggleInput">
           <span class="toggle-slider"></span>
@@ -478,7 +487,7 @@
       <button id="startBtn">Start</button>
       <button id="stopBtn" disabled>Stop</button>
       <button id="resetBtn">Reset</button>
-      <button id="muteBtn" aria-label="Geluid aan/uit">🔊</button>
+      <button id="muteBtn" aria-label="Mute">🔊</button>
     </div>
 
     <div class="session-panel">
@@ -494,32 +503,32 @@
       </div>
 
       <div class="settings" id="freeSettings">
-        Meld elke
+        <span id="lblEvery">Meld elke</span>
         <select id="interval">
           <option value="5">5</option>
           <option value="10">10</option>
           <option value="15">15</option>
           <option value="30">30</option>
         </select>
-        seconden
+        <span id="lblSeconds">seconden</span>
       </div>
 
       <div id="intervalSettings" style="display:none;">
         <div class="settings">
-          Werk <select id="workSec">
+          <span id="lblWork">Werk</span> <select id="workSec">
             <option value="15">15s</option>
             <option value="20">20s</option>
             <option value="30" selected>30s</option>
             <option value="45">45s</option>
             <option value="60">60s</option>
           </select>
-          Rust <select id="restSec">
+          <span id="lblRest">Rust</span> <select id="restSec">
             <option value="10">10s</option>
             <option value="15" selected>15s</option>
             <option value="20">20s</option>
             <option value="30">30s</option>
           </select>
-          Rondes <select id="rounds">
+          <span id="lblRounds">Rondes</span> <select id="rounds">
             <option value="1">1</option><option value="2">2</option>
             <option value="3" selected>3</option><option value="4">4</option>
             <option value="5">5</option><option value="6">6</option>
@@ -539,26 +548,26 @@
       <button class="small-btn" id="historyToggle">Statistieken</button>
     </div>
     <div class="history" id="historySection" style="display:none;">
-      <div class="stats-heading">Prestaties</div>
+      <div class="stats-heading" id="lblAchievements">Prestaties</div>
       <div class="badge-row" id="badgeRow"></div>
       <div class="badge-popup" id="badgePopup"></div>
       <hr class="stats-divider">
-      <div class="stats-heading">Voortgang per oefening</div>
+      <div class="stats-heading" id="lblProgress">Voortgang per oefening</div>
       <div class="ex-chart-block">
-        <div class="ex-chart-label">Plank</div>
+        <div class="ex-chart-label" id="lblExPlank">Plank</div>
         <div class="week-chart" id="chart-plank"></div>
       </div>
       <div class="ex-chart-block">
-        <div class="ex-chart-label">Deadhang</div>
+        <div class="ex-chart-label" id="lblExDeadhang">Deadhang</div>
         <div class="week-chart" id="chart-deadhang"></div>
       </div>
       <div class="ex-chart-block">
-        <div class="ex-chart-label">L-sit deadhang</div>
+        <div class="ex-chart-label" id="lblExLsit">L-sit deadhang</div>
         <div class="week-chart" id="chart-lsit"></div>
       </div>
       <div class="chart-detail-card empty" id="chartDetail">Tik op een staafje voor de langst volgehouden tijd die dag</div>
       <hr class="stats-divider">
-      <div class="stats-heading">Recente sessies</div>
+      <div class="stats-heading" id="lblRecent">Recente sessies</div>
       <div id="historyList" class="history-empty">Nog geen sessies</div>
     </div>
   </div>
@@ -570,7 +579,7 @@
         <div class="achievement-glow"></div>
         <div class="achievement-icon" id="achievementIcon">🏆</div>
       </div>
-      <div class="achievement-eyebrow">Prestatie ontgrendeld</div>
+      <div class="achievement-eyebrow" id="achievementEyebrow">Prestatie ontgrendeld</div>
       <div class="achievement-title" id="achievementTitle">Badge</div>
     </div>
   </div>
@@ -579,62 +588,607 @@
   // ====== CONFIG ======
   const ELEVEN_API_KEY = 'REDACTED_ELEVENLABS_KEY';
   const ELEVEN_MODEL = 'eleven_turbo_v2_5';
-  // Leave empty to auto-pick the first voice in your account. Fill in a specific
-  // ElevenLabs voice_id (from the Voice Library) to always use that exact voice.
   const FIXED_VOICE_ID = '';
   const EX_KEYS = ['plank', 'deadhang', 'lsit'];
-  const EX_NAMES = { plank: 'Plank', deadhang: 'Deadhang', lsit: 'L-sit deadhang' };
 
+  // ====================================================================
+  // ====== LANGUAGE / TRANSLATIONS =======================================
+  // ====================================================================
+  const LANGS = [
+    { code: 'nl', flag: '🇳🇱', name: 'Nederlands' },
+    { code: 'en', flag: '🇬🇧', name: 'English' },
+    { code: 'de', flag: '🇩🇪', name: 'Deutsch' },
+    { code: 'es', flag: '🇪🇸', name: 'Español' },
+    { code: 'fr', flag: '🇫🇷', name: 'Français' },
+    { code: 'pt', flag: '🇵🇹', name: 'Português' },
+    { code: 'ru', flag: '🇷🇺', name: 'Русский' },
+    { code: 'zh', flag: '🇨🇳', name: '中文' },
+    { code: 'hi', flag: '🇮🇳', name: 'हिन्दी' },
+    { code: 'ar', flag: '🇸🇦', name: 'العربية' }
+  ];
+
+  // Dutch keeps its special "een vs één" number-word logic (see earlier fix).
+  // Every other language just speaks the digit + unit word — TTS handles
+  // numerals fine in those languages, this quirk was specifically Dutch.
+  function numberToDutchWords(n) {
+    const ones = ['nul','een','twee','drie','vier','vijf','zes','zeven','acht','negen',
+                  'tien','elf','twaalf','dertien','veertien','vijftien','zestien',
+                  'zeventien','achttien','negentien'];
+    const tens = ['', '', 'twintig', 'dertig', 'veertig', 'vijftig', 'zestig', 'zeventig', 'tachtig', 'negentig'];
+    if (n < 20) return ones[n];
+    if (n < 100) {
+      const t = Math.floor(n / 10), o = n % 10;
+      return o === 0 ? tens[t] : ones[o] + 'en' + tens[t];
+    }
+    const h = Math.floor(n / 100), rest = n % 100;
+    return (h > 1 ? ones[h] + 'honderd' : 'honderd') + (rest ? numberToDutchWords(rest) : '');
+  }
+
+  const BREATHING_CUE_BY_LANG = {
+    nl: 'Rustig doorademen.', en: 'Breathe calmly.', de: 'Ruhig weiteratmen.',
+    es: 'Respira con calma.', fr: 'Respire calmement.', pt: 'Respire com calma.',
+    ru: 'Дыши спокойно.', zh: '平稳呼吸。', hi: 'शांति से सांस लें।', ar: 'تنفّس بهدوء.'
+  };
+
+  const I18N = {
+    nl: { dir: 'ltr', elevenLang: 'nl', speechLang: 'nl-NL',
+      ui: { start:'Start', stop:'Stop', reset:'Reset', freeMode:'Vrije hold', intervalMode:'Intervallen',
+        exPlank:'Plank', exDeadhang:'Deadhang', exLsit:'L-sit deadhang',
+        every:'Meld elke', seconds:'seconden', work:'Werk', rest:'Rust', rounds:'Rondes',
+        record:'Record', noRecord:'Nog geen record', stoppedAt:'Gestopt op', running:'Loopt...',
+        tapBar:'Tik op een staafje voor de langst volgehouden tijd die dag', noSession:'Geen sessie deze dag',
+        statsToggle:'Statistieken', hideStats:'Verberg statistieken', achievements:'Prestaties',
+        progress:'Voortgang per oefening', recent:'Recente sessies', noSessions:'Nog geen sessies',
+        name:'Jouw naam (voor persoonlijke aanmoedigingen)', color:'Accentkleur', tone:'Coach-toon',
+        toneMotiv:'Motiverend', toneStrict:'Streng', toneChill:'Chill',
+        goal:'Weekdoel (sessies per week)', goalNone:'Geen doel', everyDay:'Elke dag',
+        speed:'Spreeksnelheid van de stem', speedSlow:'Langzaam', speedNormal:'Normaal', speedFast:'Snel',
+        volume:'Stemvolume', lightTheme:'Licht thema', voiceControl:'Stembediening ("stop" zeggen)',
+        language:'Taal', gymMode:'Gym-modus (groot scherm)', shareRecord:'Deel record',
+        today:'Vandaag', session:'sessie', sessions:'sessies', total:'totaal',
+        weekdays:['Zo','Ma','Di','Wo','Do','Vr','Za'], now:'Nu',
+        welcomeBack:'Welkom terug', appName:'Trainingspartner', readyToTrain:'Klaar om te trainen?',
+        tips:['Even strekken voor je begint?', 'Vergeet niet genoeg water te drinken.', 'Warm je polsen en schouders even op.', 'Consistentie wint het van intensiteit - blijf komen opdagen.', 'Blijf rustig doorademen tijdens je hold.', 'Let op je houding, dat beschermt je rug.'], unlockedEyebrow:'Prestatie ontgrendeld',
+        goalReached:'Weekdoel gehaald!', goalLabel:'Weekdoel', daysTrainedOf:(n,g)=>`${n}/${g} dagen getraind`,
+        dayStreak:'dag op rij', daysStreak:'dagen op rij', voiceLoadingMsg:'Stem laden...',
+        elevenError:'ElevenLabs fout: ', unlockedTag:'Ontgrendeld ✅', newRecordTag:'Nieuw record! 🎉',
+        newRecordShare:'Nieuw record!', proSuffix:'pro'
+      },
+      speech: { countdown:['drie','twee','één'],
+        startWithName:(n)=>`Kom op, ${n}!`, startNoName:'Start!',
+        numberWords: numberToDutchWords, secWord:'seconden', minWord:'minuut', minsWord:'minuten',
+        heldFor:(name,dur)=>(name ? name+', j' : 'J')+'e hield het '+dur+' vol!',
+        newRecordSuffix:(imp)=>` Nieuw record, ${imp} langer dan daarvoor!`, firstRecordSuffix:' Dat is meteen je eerste record!',
+        cooldown:'Adem nog even rustig uit.', restWord:'Rust.', roundGo:(n)=>`Ronde ${n}, ga!`,
+        trainingDone:(name)=> name ? `Training voltooid, ${name}! Goed gedaan!` : 'Training voltooid! Goed gedaan!',
+        startRoundOne:'Start, ronde één!', halfRecord:'Je zit op de helft van je record! Kom op!',
+        matchRecord:'Je zit nu op je record! Kom op, ga door!',
+        cues: {
+          motiverend: {
+            plank: ['Hou je rug mooi recht!', 'Laat je heupen niet zakken!', 'Span je buikspieren aan, jij kan dit!', BREATHING_CUE_BY_LANG.nl, 'Nek ontspannen, kijk naar de grond.'],
+            deadhang: ['Schouders actief, niet helemaal hangen!', 'Grip vasthouden, je doet het goed!', BREATHING_CUE_BY_LANG.nl, 'Nek lekker los laten hangen.', 'Kom op, nog even volhouden!'],
+            lsit: ['Houd die benen mooi hoog!', 'Knieën strak, tenen gespannen!', 'Core aanspannen, je zit er goed bij!', 'Schouders naar beneden, weg bij je oren.', 'Sterk blijven, nog even!']
+          },
+          streng: {
+            plank: ['Rug recht. Nu!', 'Heupen omhoog!', 'Buik strak!', BREATHING_CUE_BY_LANG.nl, 'Focus.'],
+            deadhang: ['Grip vast! Niet loslaten!', 'Schouders actief!', BREATHING_CUE_BY_LANG.nl, 'Doorzetten!', 'Niet verslappen!'],
+            lsit: ['Benen omhoog! Nu!', 'Knieën op slot!', 'Core aan!', BREATHING_CUE_BY_LANG.nl, 'Volhouden!']
+          },
+          chill: {
+            plank: ['Lekker bezig, rustig aan.', 'Voel je core, geen paniek.', BREATHING_CUE_BY_LANG.nl, 'Je doet het prima zo.', 'Nog even chillen in de plank.'],
+            deadhang: ['Relax je schouders, hang lekker.', 'Grip losjes maar stevig.', BREATHING_CUE_BY_LANG.nl, 'Rustig aan, het komt goed.', 'Je bent lekker bezig.'],
+            lsit: ['Benen omhoog, geen stress.', BREATHING_CUE_BY_LANG.nl, 'Focus op je ademhaling.', 'Je zit er goed bij, rustig aan.', 'Nog even volhouden, relaxed.']
+          }
+        },
+        badges: {
+          first: { label:'Eerste hold', desc:'Rond je allereerste sessie af.', congrats:'Gefeliciteerd met je allereerste hold!' },
+          count: { desc:(n)=>`Voltooi ${n} sessies in totaal.`, congrats:(n)=>`Je hebt ${n} sessies voltooid, lekker bezig!` },
+          duration: { desc:(l)=>`Houd een oefening ${l} vol.`, congrats:(l)=>`Gefeliciteerd met je eerste hold van ${l}!` },
+          streak: { desc:(n)=>`Train ${n} dagen op rij.`, congrats:(n)=>`${n} dagen op rij getraind, geweldig volgehouden!` },
+          allex: { label:'Alle oefeningen', desc:'Probeer plank, deadhang én L-sit.', congrats:'Je hebt alle oefeningen geprobeerd, mooi veelzijdig!' },
+          special: { desc:(n,ex)=>`Doe ${n} ${ex}-sessies.`, congrats:(ex)=>`Tien ${ex}-sessies, knap werk!` },
+          cumulative: { desc:(l)=>`Train in totaal ${l}.`, congrats:(l)=>`${l} totale trainingstijd bij elkaar, mooi opgebouwd!` },
+          earlybird: { label:'Vroege vogel', desc:"Train vóór 8 uur 's ochtends.", congrats:'Al voor 8 uur getraind, echte vroege vogel!' },
+          nightowl: { label:'Nachtuil', desc:"Train na 22 uur 's avonds.", congrats:'Nog laat getraind, echte nachtuil!' }
+        },
+        units: { sec:'seconde', secs:'seconden', min:'minuut', mins:'minuten', hour:'uur', hours:'uur' }
+      }
+    },
+    en: { dir: 'ltr', elevenLang: 'en', speechLang: 'en-US',
+      ui: { start:'Start', stop:'Stop', reset:'Reset', freeMode:'Free hold', intervalMode:'Intervals',
+        exPlank:'Plank', exDeadhang:'Deadhang', exLsit:'L-sit deadhang',
+        every:'Announce every', seconds:'seconds', work:'Work', rest:'Rest', rounds:'Rounds',
+        record:'Record', noRecord:'No record yet', stoppedAt:'Stopped at', running:'Running...',
+        tapBar:'Tap a bar to see the longest hold that day', noSession:'No session that day',
+        statsToggle:'Stats', hideStats:'Hide stats', achievements:'Achievements',
+        progress:'Progress per exercise', recent:'Recent sessions', noSessions:'No sessions yet',
+        name:'Your name (for personal encouragement)', color:'Accent color', tone:'Coach tone',
+        toneMotiv:'Motivating', toneStrict:'Strict', toneChill:'Chill',
+        goal:'Weekly goal (sessions per week)', goalNone:'No goal', everyDay:'Every day',
+        speed:'Voice speed', speedSlow:'Slow', speedNormal:'Normal', speedFast:'Fast',
+        volume:'Voice volume', lightTheme:'Light theme', voiceControl:'Voice control (say "stop")',
+        language:'Language', gymMode:'Gym mode (big screen)', shareRecord:'Share record',
+        today:'Today', session:'session', sessions:'sessions', total:'total',
+        weekdays:['Sun','Mon','Tue','Wed','Thu','Fri','Sat'], now:'Now',
+        welcomeBack:'Welcome back', appName:'Training Partner', readyToTrain:'Ready to train?',
+        tips:['Stretch before you begin?', "Don't forget to drink enough water.", 'Warm up your wrists and shoulders.', 'Consistency beats intensity - keep showing up.', 'Keep breathing steadily during your hold.', 'Watch your posture, it protects your back.'], unlockedEyebrow:'Achievement unlocked',
+        goalReached:'Weekly goal reached!', goalLabel:'Weekly goal', daysTrainedOf:(n,g)=>`${n}/${g} days trained`,
+        dayStreak:'day streak', daysStreak:'day streak', voiceLoadingMsg:'Loading voice...',
+        elevenError:'ElevenLabs error: ', unlockedTag:'Unlocked ✅', newRecordTag:'New record! 🎉',
+        newRecordShare:'New record!', proSuffix:'pro'
+      },
+      speech: { countdown:['three','two','one'],
+        startWithName:(n)=>`Come on, ${n}!`, startNoName:'Start!',
+        numberWords:(n)=>String(n), secWord:'seconds', minWord:'minute', minsWord:'minutes',
+        heldFor:(name,dur)=>(name ? name+', you' : 'You')+' held it for '+dur+'!',
+        newRecordSuffix:(imp)=>` New record, ${imp} longer than before!`, firstRecordSuffix:' That’s your first record!',
+        cooldown:'Take a moment to breathe out slowly.', restWord:'Rest.', roundGo:(n)=>`Round ${n}, go!`,
+        trainingDone:(name)=> name ? `Training complete, ${name}! Great work!` : 'Training complete! Great work!',
+        startRoundOne:'Start, round one!', halfRecord:"You're halfway to your record! Keep going!",
+        matchRecord:"You've reached your record! Push on!",
+        cues: { motiverend: {
+            plank: ['Keep your back nice and straight!', "Don't let your hips drop!", 'Brace your core, you can do this!', BREATHING_CUE_BY_LANG.en, 'Relax your neck, look at the floor.'],
+            deadhang: ['Keep your shoulders active, not fully hanging!', 'Hold that grip, you’re doing great!', BREATHING_CUE_BY_LANG.en, 'Let your neck relax.', 'Come on, hang in there!'],
+            lsit: ['Keep those legs up high!', 'Knees locked, toes pointed!', 'Engage your core, looking strong!', 'Shoulders down, away from your ears.', 'Stay strong, almost there!']
+          } },
+        badges: {
+          first: { label:'First hold', desc:'Complete your very first session.', congrats:'Congrats on your very first hold!' },
+          count: { desc:(n)=>`Complete ${n} sessions in total.`, congrats:(n)=>`You’ve completed ${n} sessions, great work!` },
+          duration: { desc:(l)=>`Hold an exercise for ${l}.`, congrats:(l)=>`Congrats on your first ${l} hold!` },
+          streak: { desc:(n)=>`Train ${n} days in a row.`, congrats:(n)=>`${n} days in a row, awesome consistency!` },
+          allex: { label:'All exercises', desc:'Try plank, deadhang and L-sit.', congrats:'You’ve tried every exercise, nicely versatile!' },
+          special: { desc:(n,ex)=>`Do ${n} ${ex} sessions.`, congrats:(ex)=>`Ten ${ex} sessions, nice work!` },
+          cumulative: { desc:(l)=>`Train for ${l} in total.`, congrats:(l)=>`${l} of total training time, well built up!` },
+          earlybird: { label:'Early bird', desc:'Train before 8am.', congrats:'Training before 8am, true early bird!' },
+          nightowl: { label:'Night owl', desc:'Train after 10pm.', congrats:'Training late at night, true night owl!' }
+        },
+        units: { sec:'second', secs:'seconds', min:'minute', mins:'minutes', hour:'hour', hours:'hours' }
+      }
+    },
+    de: { dir: 'ltr', elevenLang: 'de', speechLang: 'de-DE',
+      ui: { start:'Start', stop:'Stopp', reset:'Reset', freeMode:'Freier Hold', intervalMode:'Intervalle',
+        exPlank:'Plank', exDeadhang:'Deadhang', exLsit:'L-Sit Deadhang',
+        every:'Ansage alle', seconds:'Sekunden', work:'Arbeit', rest:'Pause', rounds:'Runden',
+        record:'Rekord', noRecord:'Noch kein Rekord', stoppedAt:'Gestoppt bei', running:'Läuft...',
+        tapBar:'Tippe auf einen Balken für die längste Zeit an diesem Tag', noSession:'Keine Sitzung an diesem Tag',
+        statsToggle:'Statistiken', hideStats:'Statistiken ausblenden', achievements:'Erfolge',
+        progress:'Fortschritt pro Übung', recent:'Letzte Sitzungen', noSessions:'Noch keine Sitzungen',
+        name:'Dein Name (für persönliche Ansprache)', color:'Akzentfarbe', tone:'Coach-Ton',
+        toneMotiv:'Motivierend', toneStrict:'Streng', toneChill:'Entspannt',
+        goal:'Wochenziel (Sitzungen pro Woche)', goalNone:'Kein Ziel', everyDay:'Jeden Tag',
+        speed:'Sprechgeschwindigkeit', speedSlow:'Langsam', speedNormal:'Normal', speedFast:'Schnell',
+        volume:'Stimmlautstärke', lightTheme:'Helles Design', voiceControl:'Sprachsteuerung ("Stopp" sagen)',
+        language:'Sprache', gymMode:'Gym-Modus (großer Bildschirm)', shareRecord:'Rekord teilen',
+        today:'Heute', session:'Sitzung', sessions:'Sitzungen', total:'insgesamt',
+        weekdays:['So','Mo','Di','Mi','Do','Fr','Sa'], now:'Jetzt',
+        welcomeBack:'Willkommen zurück', appName:'Trainingspartner', readyToTrain:'Bereit zu trainieren?',
+        tips:['Vor dem Start etwas dehnen?', 'Denk daran, genug Wasser zu trinken.', 'Wärme Handgelenke und Schultern auf.', 'Konstanz schlägt Intensität - bleib dran.', 'Atme während des Holds gleichmäßig weiter.', 'Achte auf deine Haltung, das schützt deinen Rücken.'], unlockedEyebrow:'Erfolg freigeschaltet',
+        goalReached:'Wochenziel erreicht!', goalLabel:'Wochenziel', daysTrainedOf:(n,g)=>`${n}/${g} Tage trainiert`,
+        dayStreak:'Tag in Folge', daysStreak:'Tage in Folge', voiceLoadingMsg:'Stimme wird geladen...',
+        elevenError:'ElevenLabs-Fehler: ', unlockedTag:'Freigeschaltet ✅', newRecordTag:'Neuer Rekord! 🎉',
+        newRecordShare:'Neuer Rekord!', proSuffix:'Profi'
+      },
+      speech: { countdown:['drei','zwei','eins'],
+        startWithName:(n)=>`Los geht's, ${n}!`, startNoName:'Start!',
+        numberWords:(n)=>String(n), secWord:'Sekunden', minWord:'Minute', minsWord:'Minuten',
+        heldFor:(name,dur)=>(name ? name+', du' : 'Du')+' hast es '+dur+' durchgehalten!',
+        newRecordSuffix:(imp)=>` Neuer Rekord, ${imp} länger als zuvor!`, firstRecordSuffix:' Das ist gleich dein erster Rekord!',
+        cooldown:'Atme jetzt noch einmal ruhig aus.', restWord:'Pause.', roundGo:(n)=>`Runde ${n}, los!`,
+        trainingDone:(name)=> name ? `Training beendet, ${name}! Gut gemacht!` : 'Training beendet! Gut gemacht!',
+        startRoundOne:'Start, Runde eins!', halfRecord:'Du bist auf halbem Weg zu deinem Rekord! Weiter so!',
+        matchRecord:'Du hast deinen Rekord erreicht! Gib weiter Gas!',
+        cues: { motiverend: {
+            plank: ['Halte deinen Rücken schön gerade!', 'Lass deine Hüfte nicht absacken!', 'Spann deine Bauchmuskeln an, du schaffst das!', BREATHING_CUE_BY_LANG.de, 'Nacken entspannen, zum Boden schauen.'],
+            deadhang: ['Schultern aktiv halten, nicht ganz hängen!', 'Griff festhalten, du machst das gut!', BREATHING_CUE_BY_LANG.de, 'Nacken locker hängen lassen.', 'Komm schon, noch ein bisschen durchhalten!'],
+            lsit: ['Beine schön hoch halten!', 'Knie durchgestreckt, Zehen gespannt!', 'Rumpf anspannen, sieht stark aus!', 'Schultern runter, weg von den Ohren.', 'Stark bleiben, gleich geschafft!']
+          } },
+        badges: {
+          first: { label:'Erster Hold', desc:'Schließe deine allererste Sitzung ab.', congrats:'Glückwunsch zu deinem allerersten Hold!' },
+          count: { desc:(n)=>`Absolviere insgesamt ${n} Sitzungen.`, congrats:(n)=>`Du hast ${n} Sitzungen absolviert, super gemacht!` },
+          duration: { desc:(l)=>`Halte eine Übung ${l} durch.`, congrats:(l)=>`Glückwunsch zu deinem ersten Hold von ${l}!` },
+          streak: { desc:(n)=>`Trainiere ${n} Tage in Folge.`, congrats:(n)=>`${n} Tage in Folge trainiert, toll durchgehalten!` },
+          allex: { label:'Alle Übungen', desc:'Probiere Plank, Deadhang und L-Sit.', congrats:'Du hast alle Übungen ausprobiert, schön vielseitig!' },
+          special: { desc:(n,ex)=>`Mach ${n} ${ex}-Sitzungen.`, congrats:(ex)=>`Zehn ${ex}-Sitzungen, starke Leistung!` },
+          cumulative: { desc:(l)=>`Trainiere insgesamt ${l}.`, congrats:(l)=>`${l} gesamte Trainingszeit zusammen, gut aufgebaut!` },
+          earlybird: { label:'Frühaufsteher', desc:'Trainiere vor 8 Uhr morgens.', congrats:'Schon vor 8 Uhr trainiert, echter Frühaufsteher!' },
+          nightowl: { label:'Nachteule', desc:'Trainiere nach 22 Uhr.', congrats:'Noch spät trainiert, echte Nachteule!' }
+        },
+        units: { sec:'Sekunde', secs:'Sekunden', min:'Minute', mins:'Minuten', hour:'Stunde', hours:'Stunden' }
+      }
+    },
+    es: { dir: 'ltr', elevenLang: 'es', speechLang: 'es-ES',
+      ui: { start:'Iniciar', stop:'Detener', reset:'Reiniciar', freeMode:'Espera libre', intervalMode:'Intervalos',
+        exPlank:'Plancha', exDeadhang:'Deadhang', exLsit:'L-sit deadhang',
+        every:'Avisar cada', seconds:'segundos', work:'Trabajo', rest:'Descanso', rounds:'Rondas',
+        record:'Récord', noRecord:'Sin récord aún', stoppedAt:'Detenido en', running:'En marcha...',
+        tapBar:'Toca una barra para ver el tiempo más largo de ese día', noSession:'Sin sesión ese día',
+        statsToggle:'Estadísticas', hideStats:'Ocultar estadísticas', achievements:'Logros',
+        progress:'Progreso por ejercicio', recent:'Sesiones recientes', noSessions:'Aún sin sesiones',
+        name:'Tu nombre (para ánimos personales)', color:'Color de acento', tone:'Tono del coach',
+        toneMotiv:'Motivador', toneStrict:'Estricto', toneChill:'Relajado',
+        goal:'Meta semanal (sesiones por semana)', goalNone:'Sin meta', everyDay:'Todos los días',
+        speed:'Velocidad de la voz', speedSlow:'Lenta', speedNormal:'Normal', speedFast:'Rápida',
+        volume:'Volumen de la voz', lightTheme:'Tema claro', voiceControl:'Control por voz (di "stop")',
+        language:'Idioma', gymMode:'Modo gimnasio (pantalla grande)', shareRecord:'Compartir récord',
+        today:'Hoy', session:'sesión', sessions:'sesiones', total:'total',
+        weekdays:['Do','Lu','Ma','Mi','Ju','Vi','Sa'], now:'Ahora',
+        welcomeBack:'Bienvenido de nuevo', appName:'Compañero de entrenamiento', readyToTrain:'¿Listo para entrenar?',
+        tips:['¿Estiras antes de empezar?', 'No olvides beber suficiente agua.', 'Calienta muñecas y hombros.', 'La constancia gana a la intensidad, sigue apareciendo.', 'Sigue respirando con calma durante tu espera.', 'Cuida tu postura, así proteges tu espalda.'], unlockedEyebrow:'Logro desbloqueado',
+        goalReached:'¡Meta semanal alcanzada!', goalLabel:'Meta semanal', daysTrainedOf:(n,g)=>`${n}/${g} días entrenados`,
+        dayStreak:'día seguido', daysStreak:'días seguidos', voiceLoadingMsg:'Cargando voz...',
+        elevenError:'Error de ElevenLabs: ', unlockedTag:'Desbloqueado ✅', newRecordTag:'¡Nuevo récord! 🎉',
+        newRecordShare:'¡Nuevo récord!', proSuffix:'pro'
+      },
+      speech: { countdown:['tres','dos','uno'],
+        startWithName:(n)=>`¡Vamos, ${n}!`, startNoName:'¡Empieza!',
+        numberWords:(n)=>String(n), secWord:'segundos', minWord:'minuto', minsWord:'minutos',
+        heldFor:(name,dur)=>(name ? name+', ' : '')+'aguantaste '+dur+'!',
+        newRecordSuffix:(imp)=>` ¡Nuevo récord, ${imp} más que antes!`, firstRecordSuffix:' ¡Ese es tu primer récord!',
+        cooldown:'Respira lento un momento.', restWord:'Descanso.', roundGo:(n)=>`Ronda ${n}, vamos!`,
+        trainingDone:(name)=> name ? `¡Entrenamiento terminado, ${name}! ¡Bien hecho!` : '¡Entrenamiento terminado! ¡Bien hecho!',
+        startRoundOne:'¡Empieza, ronda uno!', halfRecord:'¡Vas por la mitad de tu récord! ¡Vamos!',
+        matchRecord:'¡Has alcanzado tu récord! ¡Sigue así!',
+        cues: { motiverend: {
+            plank: ['¡Mantén la espalda bien recta!', '¡No dejes caer las caderas!', '¡Aprieta el core, tú puedes!', BREATHING_CUE_BY_LANG.es, 'Relaja el cuello, mira al suelo.'],
+            deadhang: ['¡Hombros activos, no cuelgues del todo!', '¡Mantén el agarre, lo haces genial!', BREATHING_CUE_BY_LANG.es, 'Relaja el cuello.', '¡Vamos, aguanta un poco más!'],
+            lsit: ['¡Mantén las piernas bien altas!', '¡Rodillas firmes, puntas de pie tensas!', '¡Activa el core, se ve fuerte!', 'Hombros abajo, lejos de las orejas.', '¡Mantente fuerte, ya casi!']
+          } },
+        badges: {
+          first: { label:'Primera espera', desc:'Completa tu primera sesión.', congrats:'¡Felicidades por tu primera espera!' },
+          count: { desc:(n)=>`Completa ${n} sesiones en total.`, congrats:(n)=>`¡Has completado ${n} sesiones, muy bien!` },
+          duration: { desc:(l)=>`Aguanta un ejercicio ${l}.`, congrats:(l)=>`¡Felicidades por tu primera espera de ${l}!` },
+          streak: { desc:(n)=>`Entrena ${n} días seguidos.`, congrats:(n)=>`¡${n} días seguidos, gran constancia!` },
+          allex: { label:'Todos los ejercicios', desc:'Prueba plancha, deadhang y L-sit.', congrats:'¡Has probado todos los ejercicios, muy versátil!' },
+          special: { desc:(n,ex)=>`Haz ${n} sesiones de ${ex}.`, congrats:(ex)=>`¡Diez sesiones de ${ex}, gran trabajo!` },
+          cumulative: { desc:(l)=>`Entrena ${l} en total.`, congrats:(l)=>`¡${l} de tiempo total de entrenamiento, bien construido!` },
+          earlybird: { label:'Madrugador', desc:'Entrena antes de las 8am.', congrats:'¡Entrenando antes de las 8am, verdadero madrugador!' },
+          nightowl: { label:'Búho nocturno', desc:'Entrena después de las 10pm.', congrats:'¡Entrenando tarde, verdadero búho nocturno!' }
+        },
+        units: { sec:'segundo', secs:'segundos', min:'minuto', mins:'minutos', hour:'hora', hours:'horas' }
+      }
+    },
+    fr: { dir: 'ltr', elevenLang: 'fr', speechLang: 'fr-FR',
+      ui: { start:'Démarrer', stop:'Arrêter', reset:'Réinitialiser', freeMode:'Maintien libre', intervalMode:'Intervalles',
+        exPlank:'Planche', exDeadhang:'Deadhang', exLsit:'L-sit deadhang',
+        every:'Annoncer toutes les', seconds:'secondes', work:'Travail', rest:'Repos', rounds:'Tours',
+        record:'Record', noRecord:'Pas encore de record', stoppedAt:'Arrêté à', running:'En cours...',
+        tapBar:'Touchez une barre pour voir le temps le plus long ce jour-là', noSession:'Aucune séance ce jour-là',
+        statsToggle:'Statistiques', hideStats:'Masquer les statistiques', achievements:'Succès',
+        progress:'Progrès par exercice', recent:'Séances récentes', noSessions:'Aucune séance pour le moment',
+        name:'Votre prénom (pour des encouragements personnels)', color:'Couleur d’accent', tone:'Ton du coach',
+        toneMotiv:'Motivant', toneStrict:'Strict', toneChill:'Détendu',
+        goal:'Objectif hebdomadaire (séances par semaine)', goalNone:'Aucun objectif', everyDay:'Tous les jours',
+        speed:'Vitesse de la voix', speedSlow:'Lente', speedNormal:'Normale', speedFast:'Rapide',
+        volume:'Volume de la voix', lightTheme:'Thème clair', voiceControl:'Contrôle vocal (dites "stop")',
+        language:'Langue', gymMode:'Mode salle (grand écran)', shareRecord:'Partager le record',
+        today:'Aujourd’hui', session:'séance', sessions:'séances', total:'total',
+        weekdays:['Di','Lu','Ma','Me','Je','Ve','Sa'], now:'Maintenant',
+        welcomeBack:'Bon retour', appName:'Partenaire d’entraînement', readyToTrain:'Prêt à t’entraîner ?',
+        tips:['Un peu d’étirement avant de commencer\u00a0?', 'N’oublie pas de boire assez d’eau.', 'Échauffe tes poignets et tes épaules.', 'La régularité bat l’intensité, continue à venir.', 'Continue à respirer calmement pendant ta tenue.', 'Fais attention à ta posture, ça protège ton dos.'], unlockedEyebrow:'Succès débloqué',
+        goalReached:'Objectif hebdomadaire atteint !', goalLabel:'Objectif hebdo', daysTrainedOf:(n,g)=>`${n}/${g} jours d’entraînement`,
+        dayStreak:'jour de suite', daysStreak:'jours de suite', voiceLoadingMsg:'Chargement de la voix...',
+        elevenError:'Erreur ElevenLabs\u00a0: ', unlockedTag:'Débloqué ✅', newRecordTag:'Nouveau record\u00a0! 🎉',
+        newRecordShare:'Nouveau record\u00a0!', proSuffix:'pro'
+      },
+      speech: { countdown:['trois','deux','un'],
+        startWithName:(n)=>`Allez, ${n}\u00a0!`, startNoName:'C’est parti\u00a0!',
+        numberWords:(n)=>String(n), secWord:'secondes', minWord:'minute', minsWord:'minutes',
+        heldFor:(name,dur)=>(name ? name+', tu' : 'Tu')+' as tenu '+dur+'\u00a0!',
+        newRecordSuffix:(imp)=>` Nouveau record, ${imp} de plus qu’avant\u00a0!`, firstRecordSuffix:' C’est ton tout premier record\u00a0!',
+        cooldown:'Souffle calmement un instant.', restWord:'Repos.', roundGo:(n)=>`Tour ${n}, c’est parti\u00a0!`,
+        trainingDone:(name)=> name ? `Entraînement terminé, ${name}\u00a0! Bien joué\u00a0!` : 'Entraînement terminé\u00a0! Bien joué\u00a0!',
+        startRoundOne:'Départ, tour un\u00a0!', halfRecord:'Tu es à mi-chemin de ton record\u00a0! Continue\u00a0!',
+        matchRecord:'Tu as atteint ton record\u00a0! Continue comme ça\u00a0!',
+        cues: { motiverend: {
+            plank: ['Garde le dos bien droit\u00a0!', 'Ne laisse pas tomber les hanches\u00a0!', 'Gaine ton ventre, tu peux le faire\u00a0!', BREATHING_CUE_BY_LANG.fr, 'Détends la nuque, regarde le sol.'],
+            deadhang: ['Épaules actives, ne te laisse pas pendre complètement\u00a0!', 'Garde la prise, tu te débrouilles bien\u00a0!', BREATHING_CUE_BY_LANG.fr, 'Détends ta nuque.', 'Allez, tiens encore un peu\u00a0!'],
+            lsit: ['Garde les jambes bien hautes\u00a0!', 'Genoux verrouillés, pointes de pieds tendues\u00a0!', 'Gaine ton centre, ça a l’air solide\u00a0!', 'Épaules basses, loin des oreilles.', 'Reste fort, presque fini\u00a0!']
+          } },
+        badges: {
+          first: { label:'Première tenue', desc:'Termine ta toute première séance.', congrats:'Félicitations pour ta toute première tenue\u00a0!' },
+          count: { desc:(n)=>`Termine ${n} séances au total.`, congrats:(n)=>`Tu as terminé ${n} séances, bien joué\u00a0!` },
+          duration: { desc:(l)=>`Tiens un exercice pendant ${l}.`, congrats:(l)=>`Félicitations pour ta première tenue de ${l}\u00a0!` },
+          streak: { desc:(n)=>`Entraîne-toi ${n} jours de suite.`, congrats:(n)=>`${n} jours de suite, superbe régularité\u00a0!` },
+          allex: { label:'Tous les exercices', desc:'Essaie planche, deadhang et L-sit.', congrats:'Tu as essayé tous les exercices, beau polyvalence\u00a0!' },
+          special: { desc:(n,ex)=>`Fais ${n} séances de ${ex}.`, congrats:(ex)=>`Dix séances de ${ex}, joli travail\u00a0!` },
+          cumulative: { desc:(l)=>`Entraîne-toi ${l} au total.`, congrats:(l)=>`${l} de temps d’entraînement total, bien construit\u00a0!` },
+          earlybird: { label:'Lève-tôt', desc:'Entraîne-toi avant 8h.', congrats:'Entraînement avant 8h, vrai lève-tôt\u00a0!' },
+          nightowl: { label:'Couche-tard', desc:'Entraîne-toi après 22h.', congrats:'Entraînement tardif, vrai couche-tard\u00a0!' }
+        },
+        units: { sec:'seconde', secs:'secondes', min:'minute', mins:'minutes', hour:'heure', hours:'heures' }
+      }
+    },
+    pt: { dir: 'ltr', elevenLang: 'pt', speechLang: 'pt-PT',
+      ui: { start:'Iniciar', stop:'Parar', reset:'Reiniciar', freeMode:'Espera livre', intervalMode:'Intervalos',
+        exPlank:'Prancha', exDeadhang:'Deadhang', exLsit:'L-sit deadhang',
+        every:'Anunciar a cada', seconds:'segundos', work:'Trabalho', rest:'Descanso', rounds:'Rondas',
+        record:'Recorde', noRecord:'Ainda sem recorde', stoppedAt:'Parado em', running:'A decorrer...',
+        tapBar:'Toque numa barra para ver o tempo mais longo desse dia', noSession:'Sem sessão nesse dia',
+        statsToggle:'Estatísticas', hideStats:'Ocultar estatísticas', achievements:'Conquistas',
+        progress:'Progresso por exercício', recent:'Sessões recentes', noSessions:'Ainda sem sessões',
+        name:'O teu nome (para incentivos pessoais)', color:'Cor de destaque', tone:'Tom do treinador',
+        toneMotiv:'Motivador', toneStrict:'Rigoroso', toneChill:'Descontraído',
+        goal:'Meta semanal (sessões por semana)', goalNone:'Sem meta', everyDay:'Todos os dias',
+        speed:'Velocidade da voz', speedSlow:'Lenta', speedNormal:'Normal', speedFast:'Rápida',
+        volume:'Volume da voz', lightTheme:'Tema claro', voiceControl:'Controlo por voz (diz "stop")',
+        language:'Idioma', gymMode:'Modo ginásio (ecrã grande)', shareRecord:'Partilhar recorde',
+        today:'Hoje', session:'sessão', sessions:'sessões', total:'total',
+        weekdays:['Do','Se','Te','Qu','Qu','Se','Sá'], now:'Agora',
+        welcomeBack:'Bem-vindo de volta', appName:'Parceiro de treino', readyToTrain:'Pronto para treinar?',
+        tips:['Alongar antes de começar?', 'Não te esqueças de beber água suficiente.', 'Aquece os pulsos e os ombros.', 'A consistência vence a intensidade, continua a aparecer.', 'Continua a respirar com calma durante a espera.', 'Cuida da tua postura, isso protege as costas.'], unlockedEyebrow:'Conquista desbloqueada',
+        goalReached:'Meta semanal atingida!', goalLabel:'Meta semanal', daysTrainedOf:(n,g)=>`${n}/${g} dias treinados`,
+        dayStreak:'dia seguido', daysStreak:'dias seguidos', voiceLoadingMsg:'A carregar a voz...',
+        elevenError:'Erro do ElevenLabs: ', unlockedTag:'Desbloqueado ✅', newRecordTag:'Novo recorde! 🎉',
+        newRecordShare:'Novo recorde!', proSuffix:'pro'
+      },
+      speech: { countdown:['três','dois','um'],
+        startWithName:(n)=>`Vamos, ${n}!`, startNoName:'Começar!',
+        numberWords:(n)=>String(n), secWord:'segundos', minWord:'minuto', minsWord:'minutos',
+        heldFor:(name,dur)=>(name ? name+', tu' : 'Tu')+' aguentaste '+dur+'!',
+        newRecordSuffix:(imp)=>` Novo recorde, ${imp} a mais do que antes!`, firstRecordSuffix:' Esse é já o teu primeiro recorde!',
+        cooldown:'Respira devagar por um momento.', restWord:'Descanso.', roundGo:(n)=>`Ronda ${n}, vamos!`,
+        trainingDone:(name)=> name ? `Treino concluído, ${name}! Bom trabalho!` : 'Treino concluído! Bom trabalho!',
+        startRoundOne:'Início, ronda um!', halfRecord:'Estás a meio do teu recorde! Continua!',
+        matchRecord:'Chegaste ao teu recorde! Continua assim!',
+        cues: { motiverend: {
+            plank: ['Mantém as costas bem direitas!', 'Não deixes cair as ancas!', 'Contrai o core, tu consegues!', BREATHING_CUE_BY_LANG.pt, 'Relaxa o pescoço, olha para o chão.'],
+            deadhang: ['Ombros ativos, não penduras totalmente!', 'Mantém a pega, estás a ir muito bem!', BREATHING_CUE_BY_LANG.pt, 'Relaxa o pescoço.', 'Vamos, aguenta mais um pouco!'],
+            lsit: ['Mantém as pernas bem altas!', 'Joelhos travados, pontas dos pés esticadas!', 'Ativa o core, está com bom aspeto!', 'Ombros para baixo, longe das orelhas.', 'Mantém-te forte, já está quase!']
+          } },
+        badges: {
+          first: { label:'Primeira espera', desc:'Completa a tua primeira sessão.', congrats:'Parabéns pela tua primeira espera!' },
+          count: { desc:(n)=>`Completa ${n} sessões no total.`, congrats:(n)=>`Completaste ${n} sessões, muito bem!` },
+          duration: { desc:(l)=>`Aguenta um exercício ${l}.`, congrats:(l)=>`Parabéns pela tua primeira espera de ${l}!` },
+          streak: { desc:(n)=>`Treina ${n} dias seguidos.`, congrats:(n)=>`${n} dias seguidos, ótima consistência!` },
+          allex: { label:'Todos os exercícios', desc:'Experimenta prancha, deadhang e L-sit.', congrats:'Experimentaste todos os exercícios, muito versátil!' },
+          special: { desc:(n,ex)=>`Faz ${n} sessões de ${ex}.`, congrats:(ex)=>`Dez sessões de ${ex}, ótimo trabalho!` },
+          cumulative: { desc:(l)=>`Treina ${l} no total.`, congrats:(l)=>`${l} de tempo total de treino, bem construído!` },
+          earlybird: { label:'Madrugador', desc:'Treina antes das 8h.', congrats:'Treino antes das 8h, verdadeiro madrugador!' },
+          nightowl: { label:'Notívago', desc:'Treina depois das 22h.', congrats:'Treino tarde, verdadeiro notívago!' }
+        },
+        units: { sec:'segundo', secs:'segundos', min:'minuto', mins:'minutos', hour:'hora', hours:'horas' }
+      }
+    },
+    ru: { dir: 'ltr', elevenLang: 'ru', speechLang: 'ru-RU',
+      ui: { start:'Старт', stop:'Стоп', reset:'Сброс', freeMode:'Свободный холд', intervalMode:'Интервалы',
+        exPlank:'Планка', exDeadhang:'Дэдхэнг', exLsit:'L-sit дэдхэнг',
+        every:'Сообщать каждые', seconds:'секунд', work:'Работа', rest:'Отдых', rounds:'Раунды',
+        record:'Рекорд', noRecord:'Рекорда пока нет', stoppedAt:'Остановлено на', running:'Идёт...',
+        tapBar:'Нажми на столбик, чтобы увидеть лучший результат за день', noSession:'В этот день тренировок не было',
+        statsToggle:'Статистика', hideStats:'Скрыть статистику', achievements:'Достижения',
+        progress:'Прогресс по упражнению', recent:'Недавние тренировки', noSessions:'Пока нет тренировок',
+        name:'Твоё имя (для личных подбадриваний)', color:'Акцентный цвет', tone:'Тон тренера',
+        toneMotiv:'Мотивирующий', toneStrict:'Строгий', toneChill:'Расслабленный',
+        goal:'Недельная цель (тренировок в неделю)', goalNone:'Без цели', everyDay:'Каждый день',
+        speed:'Скорость голоса', speedSlow:'Медленно', speedNormal:'Обычно', speedFast:'Быстро',
+        volume:'Громкость голоса', lightTheme:'Светлая тема', voiceControl:'Голосовое управление (скажи "стоп")',
+        language:'Язык', gymMode:'Режим зала (большой экран)', shareRecord:'Поделиться рекордом',
+        today:'Сегодня', session:'тренировка', sessions:'тренировок', total:'всего',
+        weekdays:['Вс','Пн','Вт','Ср','Чт','Пт','Сб'], now:'Сейчас',
+        welcomeBack:'С возвращением', appName:'Тренировочный партнёр', readyToTrain:'Готов тренироваться?',
+        tips:['Разомнёшься перед началом?', 'Не забывай пить достаточно воды.', 'Разомни запястья и плечи.', 'Постоянство важнее интенсивности - продолжай тренироваться.', 'Дыши ровно во время холда.', 'Следи за осанкой, это бережёт спину.'], unlockedEyebrow:'Достижение получено',
+        goalReached:'Недельная цель достигнута!', goalLabel:'Недельная цель', daysTrainedOf:(n,g)=>`${n}/${g} дней тренировок`,
+        dayStreak:'день подряд', daysStreak:'дней подряд', voiceLoadingMsg:'Загрузка голоса...',
+        elevenError:'Ошибка ElevenLabs: ', unlockedTag:'Получено ✅', newRecordTag:'Новый рекорд! 🎉',
+        newRecordShare:'Новый рекорд!', proSuffix:'про'
+      },
+      speech: { countdown:['три','два','один'],
+        startWithName:(n)=>`Давай, ${n}!`, startNoName:'Начали!',
+        numberWords:(n)=>String(n), secWord:'секунд', minWord:'минуту', minsWord:'минут',
+        heldFor:(name,dur)=>(name ? name+', ты' : 'Ты')+' продержался '+dur+'!',
+        newRecordSuffix:(imp)=>` Новый рекорд, на ${imp} больше, чем раньше!`, firstRecordSuffix:' Это твой первый рекорд!',
+        cooldown:'Сделай спокойный выдох.', restWord:'Отдых.', roundGo:(n)=>`Раунд ${n}, поехали!`,
+        trainingDone:(name)=> name ? `Тренировка завершена, ${name}! Отличная работа!` : 'Тренировка завершена! Отличная работа!',
+        startRoundOne:'Старт, первый раунд!', halfRecord:'Ты на полпути к своему рекорду! Продолжай!',
+        matchRecord:'Ты достиг своего рекорда! Держись дальше!',
+        cues: { motiverend: {
+            plank: ['Держи спину ровно!', 'Не опускай таз!', 'Напряги пресс, у тебя получится!', BREATHING_CUE_BY_LANG.ru, 'Расслабь шею, смотри вниз.'],
+            deadhang: ['Плечи активны, не висни полностью!', 'Держи хват, ты молодец!', BREATHING_CUE_BY_LANG.ru, 'Расслабь шею.', 'Давай, ещё немного!'],
+            lsit: ['Держи ноги высоко!', 'Колени прямо, носки натянуты!', 'Напряги пресс, выглядит сильно!', 'Плечи вниз, от ушей.', 'Держись, почти всё!']
+          } },
+        badges: {
+          first: { label:'Первый холд', desc:'Заверши свою самую первую тренировку.', congrats:'Поздравляем с самым первым холдом!' },
+          count: { desc:(n)=>`Заверши ${n} тренировок в общей сложности.`, congrats:(n)=>`Ты завершил ${n} тренировок, отличная работа!` },
+          duration: { desc:(l)=>`Продержись в упражнении ${l}.`, congrats:(l)=>`Поздравляем с первым холдом на ${l}!` },
+          streak: { desc:(n)=>`Тренируйся ${n} дней подряд.`, congrats:(n)=>`${n} дней подряд, отличная стабильность!` },
+          allex: { label:'Все упражнения', desc:'Попробуй планку, дэдхэнг и L-sit.', congrats:'Ты попробовал все упражнения, отлично!' },
+          special: { desc:(n,ex)=>`Сделай ${n} тренировок ${ex}.`, congrats:(ex)=>`Десять тренировок ${ex}, отличная работа!` },
+          cumulative: { desc:(l)=>`Тренируйся ${l} в общей сложности.`, congrats:(l)=>`${l} общего времени тренировок, отлично накоплено!` },
+          earlybird: { label:'Ранняя пташка', desc:'Тренируйся до 8 утра.', congrats:'Тренировка до 8 утра, настоящая ранняя пташка!' },
+          nightowl: { label:'Полуночник', desc:'Тренируйся после 22:00.', congrats:'Поздняя тренировка, настоящий полуночник!' }
+        },
+        units: { sec:'секунду', secs:'секунд', min:'минуту', mins:'минут', hour:'час', hours:'часов' }
+      }
+    },
+    zh: { dir: 'ltr', elevenLang: 'zh', speechLang: 'zh-CN',
+      ui: { start:'开始', stop:'停止', reset:'重置', freeMode:'自由坚持', intervalMode:'间歇训练',
+        exPlank:'平板支撑', exDeadhang:'死悬垂', exLsit:'L-sit 死悬垂',
+        every:'每隔', seconds:'秒播报', work:'训练', rest:'休息', rounds:'轮数',
+        record:'纪录', noRecord:'暂无纪录', stoppedAt:'停止于', running:'进行中…',
+        tapBar:'点击柱状图查看当天最长坚持时间', noSession:'当天没有训练',
+        statsToggle:'统计', hideStats:'隐藏统计', achievements:'成就',
+        progress:'各动作进度', recent:'最近训练', noSessions:'暂无训练记录',
+        name:'你的名字（用于个性化鼓励）', color:'主题色', tone:'教练语气',
+        toneMotiv:'激励型', toneStrict:'严格型', toneChill:'轻松型',
+        goal:'每周目标（每周训练次数）', goalNone:'无目标', everyDay:'每天',
+        speed:'语音速度', speedSlow:'慢', speedNormal:'正常', speedFast:'快',
+        volume:'语音音量', lightTheme:'浅色主题', voiceControl:'语音控制（说"停止"）',
+        language:'语言', gymMode:'健身房模式（大屏幕）', shareRecord:'分享纪录',
+        today:'今天', session:'次训练', sessions:'次训练', total:'总计',
+        weekdays:['周日','周一','周二','周三','周四','周五','周六'], now:'现在',
+        welcomeBack:'欢迎回来', appName:'训练伙伴', readyToTrain:'准备好训练了吗？',
+        tips:['开始前先拉伸一下？', '别忘了多喝水。', '先活动一下手腕和肩膀。', '坚持比强度更重要，继续保持。', '训练时保持平稳呼吸。', '注意姿势，保护好你的背部。'], unlockedEyebrow:'成就已解锁',
+        goalReached:'已达成每周目标！', goalLabel:'每周目标', daysTrainedOf:(n,g)=>`已训练 ${n}/${g} 天`,
+        dayStreak:'天连续', daysStreak:'天连续', voiceLoadingMsg:'语音加载中…',
+        elevenError:'ElevenLabs 错误：', unlockedTag:'已解锁 ✅', newRecordTag:'新纪录！🎉',
+        newRecordShare:'新纪录！', proSuffix:'达人'
+      },
+      speech: { countdown:['三','二','一'],
+        startWithName:(n)=>`加油，${n}！`, startNoName:'开始！',
+        numberWords:(n)=>String(n), secWord:'秒', minWord:'分钟', minsWord:'分钟',
+        heldFor:(name,dur)=>(name ? name+'，你' : '你')+'坚持了'+dur+'！',
+        newRecordSuffix:(imp)=>` 新纪录，比之前多了${imp}！`, firstRecordSuffix:' 这是你的第一个纪录！',
+        cooldown:'现在慢慢地呼气放松。', restWord:'休息。', roundGo:(n)=>`第${n}轮，开始！`,
+        trainingDone:(name)=> name ? `训练完成，${name}！做得很好！` : '训练完成！做得很好！',
+        startRoundOne:'开始，第一轮！', halfRecord:'你已经到达纪录的一半了！加油！',
+        matchRecord:'你已经达到自己的纪录了！继续加油！',
+        cues: { motiverend: {
+            plank: ['保持背部挺直！', '不要让臀部下沉！', '收紧腹部，你可以的！', BREATHING_CUE_BY_LANG.zh, '放松颈部，眼睛看向地面。'],
+            deadhang: ['肩膀保持发力，不要完全放松悬挂！', '抓紧，你做得很好！', BREATHING_CUE_BY_LANG.zh, '放松颈部。', '加油，再坚持一下！'],
+            lsit: ['把腿抬高！', '膝盖伸直，脚尖绷紧！', '收紧核心，看起来很棒！', '肩膀下沉，远离耳朵。', '保持力量，快完成了！']
+          } },
+        badges: {
+          first: { label:'首次坚持', desc:'完成你的第一次训练。', congrats:'祝贺你完成第一次坚持训练！' },
+          count: { desc:(n)=>`总共完成${n}次训练。`, congrats:(n)=>`你已经完成${n}次训练，很棒！` },
+          duration: { desc:(l)=>`坚持一个动作${l}。`, congrats:(l)=>`祝贺你第一次坚持${l}！` },
+          streak: { desc:(n)=>`连续训练${n}天。`, congrats:(n)=>`连续训练${n}天，非常自律！` },
+          allex: { label:'全部动作', desc:'尝试平板支撑、死悬垂和L-sit。', congrats:'你已经尝试了所有动作，非常全面！' },
+          special: { desc:(n,ex)=>`完成${n}次${ex}训练。`, congrats:(ex)=>`十次${ex}训练，做得好！` },
+          cumulative: { desc:(l)=>`累计训练${l}。`, congrats:(l)=>`累计训练时间达到${l}，积累得很好！` },
+          earlybird: { label:'早起鸟', desc:'在早上8点前训练。', congrats:'早上8点前就训练了，真是早起鸟！' },
+          nightowl: { label:'夜猫子', desc:'在晚上10点后训练。', congrats:'深夜还在训练，真是夜猫子！' }
+        },
+        units: { sec:'秒', secs:'秒', min:'分钟', mins:'分钟', hour:'小时', hours:'小时' }
+      }
+    },
+    hi: { dir: 'ltr', elevenLang: 'hi', speechLang: 'hi-IN',
+      ui: { start:'शुरू करें', stop:'रोकें', reset:'रीसेट', freeMode:'फ्री होल्ड', intervalMode:'इंटरवल',
+        exPlank:'प्लैंक', exDeadhang:'डेडहैंग', exLsit:'L-sit डेडहैंग',
+        every:'हर', seconds:'सेकंड में बताएं', work:'काम', rest:'आराम', rounds:'राउंड',
+        record:'रिकॉर्ड', noRecord:'अभी तक कोई रिकॉर्ड नहीं', stoppedAt:'यहाँ रुका', running:'चल रहा है...',
+        tapBar:'उस दिन का सबसे लंबा होल्ड देखने के लिए बार पर टैप करें', noSession:'उस दिन कोई सेशन नहीं',
+        statsToggle:'आँकड़े', hideStats:'आँकड़े छुपाएं', achievements:'उपलब्धियाँ',
+        progress:'हर व्यायाम की प्रगति', recent:'हाल के सेशन', noSessions:'अभी तक कोई सेशन नहीं',
+        name:'आपका नाम (व्यक्तिगत प्रोत्साहन के लिए)', color:'एक्सेंट रंग', tone:'कोच का लहजा',
+        toneMotiv:'प्रेरक', toneStrict:'सख्त', toneChill:'आरामदायक',
+        goal:'साप्ताहिक लक्ष्य (प्रति सप्ताह सेशन)', goalNone:'कोई लक्ष्य नहीं', everyDay:'हर दिन',
+        speed:'आवाज़ की गति', speedSlow:'धीमी', speedNormal:'सामान्य', speedFast:'तेज़',
+        volume:'आवाज़ की मात्रा', lightTheme:'लाइट थीम', voiceControl:'वॉइस कंट्रोल ("stop" बोलें)',
+        language:'भाषा', gymMode:'जिम मोड (बड़ी स्क्रीन)', shareRecord:'रिकॉर्ड शेयर करें',
+        today:'आज', session:'सेशन', sessions:'सेशन', total:'कुल',
+        weekdays:['रवि','सोम','मंगल','बुध','गुरु','शुक्र','शनि'], now:'अभी',
+        welcomeBack:'वापसी पर स्वागत है', appName:'ट्रेनिंग पार्टनर', readyToTrain:'ट्रेनिंग के लिए तैयार हैं?',
+        tips:['शुरू करने से पहले स्ट्रेच कर लें?', 'पर्याप्त पानी पीना न भूलें।', 'कलाई और कंधों को थोड़ा गर्म कर लें।', 'निरंतरता तीव्रता से बेहतर है, आते रहें।', 'होल्ड के दौरान शांति से सांस लेते रहें।', 'अपनी मुद्रा का ध्यान रखें, यह पीठ की रक्षा करता है।'], unlockedEyebrow:'उपलब्धि अनलॉक हुई',
+        goalReached:'साप्ताहिक लक्ष्य पूरा हुआ!', goalLabel:'साप्ताहिक लक्ष्य', daysTrainedOf:(n,g)=>`${n}/${g} दिन ट्रेन किया`,
+        dayStreak:'दिन की स्ट्रीक', daysStreak:'दिनों की स्ट्रीक', voiceLoadingMsg:'आवाज़ लोड हो रही है...',
+        elevenError:'ElevenLabs त्रुटि: ', unlockedTag:'अनलॉक हुआ ✅', newRecordTag:'नया रिकॉर्ड! 🎉',
+        newRecordShare:'नया रिकॉर्ड!', proSuffix:'प्रो'
+      },
+      speech: { countdown:['तीन','दो','एक'],
+        startWithName:(n)=>`चलो, ${n}!`, startNoName:'शुरू!',
+        numberWords:(n)=>String(n), secWord:'सेकंड', minWord:'मिनट', minsWord:'मिनट',
+        heldFor:(name,dur)=>(name ? name+', आपने' : 'आपने')+' '+dur+' तक होल्ड किया!',
+        newRecordSuffix:(imp)=>` नया रिकॉर्ड, पहले से ${imp} ज़्यादा!`, firstRecordSuffix:' यह आपका पहला रिकॉर्ड है!',
+        cooldown:'अब धीरे से सांस छोड़ें।', restWord:'आराम।', roundGo:(n)=>`राउंड ${n}, चलो!`,
+        trainingDone:(name)=> name ? `ट्रेनिंग पूरी हुई, ${name}! शानदार काम!` : 'ट्रेनिंग पूरी हुई! शानदार काम!',
+        startRoundOne:'शुरू, राउंड एक!', halfRecord:'आप अपने रिकॉर्ड के आधे रास्ते पर हैं! चलते रहें!',
+        matchRecord:'आपने अपना रिकॉर्ड छू लिया! आगे बढ़ते रहें!',
+        cues: { motiverend: {
+            plank: ['अपनी पीठ सीधी रखें!', 'कूल्हे नीचे न गिरने दें!', 'पेट कस लें, आप कर सकते हैं!', BREATHING_CUE_BY_LANG.hi, 'गर्दन ढीली रखें, नीचे देखें।'],
+            deadhang: ['कंधे सक्रिय रखें, पूरी तरह मत लटकें!', 'पकड़ बनाए रखें, बहुत बढ़िया कर रहे हैं!', BREATHING_CUE_BY_LANG.hi, 'गर्दन को ढीला छोड़ें।', 'चलो, थोड़ा और टिके रहें!'],
+            lsit: ['पैर ऊँचे रखें!', 'घुटने सीधे, पंजे तने हुए!', 'कोर टाइट रखें, मजबूत दिख रहे हैं!', 'कंधे नीचे, कानों से दूर।', 'मजबूत बने रहें, लगभग हो गया!']
+          } },
+        badges: {
+          first: { label:'पहला होल्ड', desc:'अपना पहला सेशन पूरा करें।', congrats:'आपके पहले होल्ड की बधाई!' },
+          count: { desc:(n)=>`कुल ${n} सेशन पूरे करें।`, congrats:(n)=>`आपने ${n} सेशन पूरे किए, बहुत बढ़िया!` },
+          duration: { desc:(l)=>`एक व्यायाम को ${l} तक होल्ड करें।`, congrats:(l)=>`आपके पहले ${l} होल्ड की बधाई!` },
+          streak: { desc:(n)=>`${n} दिन लगातार ट्रेन करें।`, congrats:(n)=>`${n} दिन लगातार, शानदार निरंतरता!` },
+          allex: { label:'सभी व्यायाम', desc:'प्लैंक, डेडहैंग और L-sit आज़माएं।', congrats:'आपने सभी व्यायाम आज़माए, बहुत बहुमुखी!' },
+          special: { desc:(n,ex)=>`${n} ${ex} सेशन करें।`, congrats:(ex)=>`दस ${ex} सेशन, बढ़िया काम!` },
+          cumulative: { desc:(l)=>`कुल ${l} ट्रेन करें।`, congrats:(l)=>`कुल ${l} ट्रेनिंग समय, अच्छी तरह बनाया गया!` },
+          earlybird: { label:'अर्ली बर्ड', desc:'सुबह 8 बजे से पहले ट्रेन करें।', congrats:'सुबह 8 बजे से पहले ट्रेनिंग, असली अर्ली बर्ड!' },
+          nightowl: { label:'नाइट आउल', desc:'रात 10 बजे के बाद ट्रेन करें।', congrats:'देर रात ट्रेनिंग, असली नाइट आउल!' }
+        },
+        units: { sec:'सेकंड', secs:'सेकंड', min:'मिनट', mins:'मिनट', hour:'घंटा', hours:'घंटे' }
+      }
+    },
+    ar: { dir: 'rtl', elevenLang: 'ar', speechLang: 'ar-SA',
+      ui: { start:'ابدأ', stop:'توقف', reset:'إعادة ضبط', freeMode:'ثبات حر', intervalMode:'فترات',
+        exPlank:'بلانك', exDeadhang:'التعليق الميت', exLsit:'L-sit تعليق',
+        every:'أعلن كل', seconds:'ثوانٍ', work:'عمل', rest:'راحة', rounds:'جولات',
+        record:'الرقم القياسي', noRecord:'لا يوجد رقم قياسي بعد', stoppedAt:'توقف عند', running:'جارٍ...',
+        tapBar:'اضغط على عمود لرؤية أطول وقت في ذلك اليوم', noSession:'لا توجد جلسة في ذلك اليوم',
+        statsToggle:'الإحصائيات', hideStats:'إخفاء الإحصائيات', achievements:'الإنجازات',
+        progress:'التقدم لكل تمرين', recent:'الجلسات الأخيرة', noSessions:'لا توجد جلسات بعد',
+        name:'اسمك (للتشجيع الشخصي)', color:'لون التمييز', tone:'أسلوب المدرب',
+        toneMotiv:'محفّز', toneStrict:'صارم', toneChill:'هادئ',
+        goal:'الهدف الأسبوعي (جلسات في الأسبوع)', goalNone:'بدون هدف', everyDay:'كل يوم',
+        speed:'سرعة الصوت', speedSlow:'بطيء', speedNormal:'عادي', speedFast:'سريع',
+        volume:'مستوى صوت الصوت', lightTheme:'المظهر الفاتح', voiceControl:'التحكم الصوتي (قل "توقف")',
+        language:'اللغة', gymMode:'وضع الصالة الرياضية (شاشة كبيرة)', shareRecord:'مشاركة الرقم القياسي',
+        today:'اليوم', session:'جلسة', sessions:'جلسات', total:'الإجمالي',
+        weekdays:['أحد','إثنين','ثلاثاء','أربعاء','خميس','جمعة','سبت'], now:'الآن',
+        welcomeBack:'مرحبًا بعودتك', appName:'شريك التدريب', readyToTrain:'مستعد للتدريب؟',
+        tips:['تمدد قليلًا قبل أن تبدأ؟', 'لا تنسَ شرب كمية كافية من الماء.', 'قم بتسخين معصميك وكتفيك.', 'الاستمرارية أهم من الشدة، استمر في الحضور.', 'استمر في التنفس بهدوء أثناء الثبات.', 'انتبه لوضعية جسمك، فذلك يحمي ظهرك.'], unlockedEyebrow:'تم فتح إنجاز',
+        goalReached:'تم تحقيق الهدف الأسبوعي!', goalLabel:'الهدف الأسبوعي', daysTrainedOf:(n,g)=>`تم التدريب ${n}/${g} أيام`,
+        dayStreak:'يوم متتالٍ', daysStreak:'أيام متتالية', voiceLoadingMsg:'جارٍ تحميل الصوت...',
+        elevenError:'خطأ ElevenLabs: ', unlockedTag:'تم الفتح ✅', newRecordTag:'رقم قياسي جديد! 🎉',
+        newRecordShare:'رقم قياسي جديد!', proSuffix:'محترف'
+      },
+      speech: { countdown:['ثلاثة','اثنان','واحد'],
+        startWithName:(n)=>`هيا، ${n}!`, startNoName:'ابدأ!',
+        numberWords:(n)=>String(n), secWord:'ثوانٍ', minWord:'دقيقة', minsWord:'دقائق',
+        heldFor:(name,dur)=>(name ? name+'، لقد' : 'لقد')+' صمدت لمدة '+dur+'!',
+        newRecordSuffix:(imp)=>` رقم قياسي جديد، أطول بـ ${imp} من قبل!`, firstRecordSuffix:' هذا رقمك القياسي الأول!',
+        cooldown:'خذ لحظة لتتنفس ببطء.', restWord:'راحة.', roundGo:(n)=>`الجولة ${n}، هيا!`,
+        trainingDone:(name)=> name ? `اكتمل التدريب، ${name}! عمل رائع!` : 'اكتمل التدريب! عمل رائع!',
+        startRoundOne:'ابدأ، الجولة الأولى!', halfRecord:'أنت في منتصف الطريق لرقمك القياسي! استمر!',
+        matchRecord:'لقد وصلت إلى رقمك القياسي! استمر!',
+        cues: { motiverend: {
+            plank: ['حافظ على استقامة ظهرك!', 'لا تدع وركيك يهبطان!', 'شدّ عضلات بطنك، أنت تستطيع!', BREATHING_CUE_BY_LANG.ar, 'أرخِ رقبتك وانظر إلى الأرض.'],
+            deadhang: ['حافظ على نشاط كتفيك، لا تتدلَّ تمامًا!', 'حافظ على قبضتك، أنت تبلي بلاءً حسنًا!', BREATHING_CUE_BY_LANG.ar, 'أرخِ رقبتك.', 'هيا، استمر قليلًا بعد!'],
+            lsit: ['حافظ على ارتفاع رجليك!', 'ركبتاك مستقيمتان، أصابع قدميك ممدودة!', 'شدّ منتصف جسمك، تبدو قويًا!', 'اخفض كتفيك بعيدًا عن أذنيك.', 'ابقَ قويًا، اقتربت من النهاية!']
+          } },
+        badges: {
+          first: { label:'أول ثبات', desc:'أكمل أول جلسة لك.', congrats:'تهانينا على أول ثبات لك!' },
+          count: { desc:(n)=>`أكمل ${n} جلسات إجمالًا.`, congrats:(n)=>`لقد أكملت ${n} جلسات، عمل رائع!` },
+          duration: { desc:(l)=>`اصمد في تمرين لمدة ${l}.`, congrats:(l)=>`تهانينا على أول ثبات لك لمدة ${l}!` },
+          streak: { desc:(n)=>`تدرّب ${n} أيام متتالية.`, congrats:(n)=>`${n} أيام متتالية، استمرارية رائعة!` },
+          allex: { label:'كل التمارين', desc:'جرّب البلانك والتعليق الميت وL-sit.', congrats:'لقد جربت كل التمارين، تنوع رائع!' },
+          special: { desc:(n,ex)=>`قم بـ ${n} جلسات ${ex}.`, congrats:(ex)=>`عشر جلسات ${ex}، عمل رائع!` },
+          cumulative: { desc:(l)=>`تدرّب لمدة ${l} إجمالًا.`, congrats:(l)=>`${l} من إجمالي وقت التدريب، تراكم رائع!` },
+          earlybird: { label:'الطائر المبكر', desc:'تدرّب قبل الساعة 8 صباحًا.', congrats:'تدربت قبل الساعة 8 صباحًا، طائر مبكر حقيقي!' },
+          nightowl: { label:'بومة الليل', desc:'تدرّب بعد الساعة 10 مساءً.', congrats:'تدربت متأخرًا، بومة ليل حقيقية!' }
+        },
+        units: { sec:'ثانية', secs:'ثوانٍ', min:'دقيقة', mins:'دقائق', hour:'ساعة', hours:'ساعات' }
+      }
+    }
+  };
+
+  let currentLang = 'nl';
+  let t = I18N[currentLang];
+  const EX_ID_TO_UI = { plank: 'exPlank', deadhang: 'exDeadhang', lsit: 'exLsit' };
+  function exName_(ex) { return t.ui[EX_ID_TO_UI[ex]]; }
+
+  // Duration -> localized label, e.g. "2 minuten" / "2 minutes" / "2 Minuten".
+  // Shared logic across all languages; only the unit words differ.
+  function formatDurationLabel(totalSec) {
+    const u = t.speech.units;
+    if (totalSec < 60) return `${totalSec} ${totalSec === 1 ? u.sec : u.secs}`;
+    if (totalSec < 3600) { const m = totalSec / 60; return `${m} ${m === 1 ? u.min : u.mins}`; }
+    const h = totalSec / 3600; return `${h} ${h === 1 ? u.hour : u.hours}`;
+  }
+
+  // ====================================================================
   // ====== Shared state ======
   let exerciseIndex = 0;
   let isMuted = false;
   let wakeLock = null;
   let intervalMode = false;
   let timerId = null;
-  let elapsed = 0; // free-hold mode elapsed seconds
-
-  const BREATHING_CUE = 'Rustig doorademen.';
-  const TONE_PHRASES = {
-    motiverend: {
-      plank: [
-        'Hou je rug mooi recht!',
-        'Laat je heupen niet zakken!',
-        'Span je buikspieren aan, jij kan dit!',
-        BREATHING_CUE,
-        'Nek ontspannen, kijk naar de grond.'
-      ],
-      deadhang: [
-        'Schouders actief, niet helemaal hangen!',
-        'Grip vasthouden, je doet het goed!',
-        BREATHING_CUE,
-        'Nek lekker los laten hangen.',
-        'Kom op, nog even volhouden!'
-      ],
-      lsit: [
-        'Houd die benen mooi hoog!',
-        'Knieën strak, tenen gespannen!',
-        'Core aanspannen, je zit er goed bij!',
-        'Schouders naar beneden, weg bij je oren.',
-        'Sterk blijven, nog even!'
-      ]
-    },
-    streng: {
-      plank: ['Rug recht. Nu!', 'Heupen omhoog!', 'Buik strak!', BREATHING_CUE, 'Focus.'],
-      deadhang: ['Grip vast! Niet loslaten!', 'Schouders actief!', BREATHING_CUE, 'Doorzetten!', 'Niet verslappen!'],
-      lsit: ['Benen omhoog! Nu!', 'Knieën op slot!', 'Core aan!', BREATHING_CUE, 'Volhouden!']
-    },
-    chill: {
-      plank: ['Lekker bezig, rustig aan.', 'Voel je core, geen paniek.', BREATHING_CUE, 'Je doet het prima zo.', 'Nog even chillen in de plank.'],
-      deadhang: ['Relax je schouders, hang lekker.', 'Grip losjes maar stevig.', BREATHING_CUE, 'Rustig aan, het komt goed.', 'Je bent lekker bezig.'],
-      lsit: ['Benen omhoog, geen stress.', BREATHING_CUE, 'Focus op je ademhaling.', 'Je zit er goed bij, rustig aan.', 'Nog even volhouden, relaxed.']
-    }
-  };
+  let elapsed = 0;
   let currentTone = 'motiverend';
   let voiceSpeed = 1;
   let voiceVolume = 1;
-  function encouragementsByExerciseNow() { return TONE_PHRASES[currentTone] || TONE_PHRASES.motiverend; }
+  let userName = '';
+  let lastSessionsList = [];
 
   function currentEx() { return EX_KEYS[exerciseIndex]; }
+  function cuesFor(ex) {
+    const langCues = t.speech.cues;
+    const set = langCues[currentTone] || langCues.motiverend;
+    return set[ex] || langCues.motiverend[ex];
+  }
 
   // ====== Elements ======
   const display = document.getElementById('display');
@@ -674,6 +1228,7 @@
   const voiceToggleRow = document.getElementById('voiceToggleRow');
   const voiceToggleInput = document.getElementById('voiceToggleInput');
   const toneSelect = document.getElementById('toneSelect');
+  const langSelect = document.getElementById('langSelect');
   const goalSelect = document.getElementById('goalSelect');
   const goalBarWrap = document.getElementById('goalBarWrap');
   const goalBarFill = document.getElementById('goalBarFill');
@@ -720,11 +1275,88 @@
     });
   });
 
+  // ====== Language ======
+  LANGS.forEach((l) => {
+    const opt = document.createElement('option');
+    opt.value = l.code;
+    opt.textContent = `${l.flag} ${l.name}`;
+    langSelect.appendChild(opt);
+  });
+  function applyStaticText() {
+    document.body.dir = t.dir;
+    document.getElementById('lblName').textContent = t.ui.name;
+    document.getElementById('lblColor').textContent = t.ui.color;
+    document.getElementById('lblLanguage').textContent = t.ui.language;
+    document.getElementById('lblTone').textContent = t.ui.tone;
+    document.getElementById('optToneMotiv').textContent = t.ui.toneMotiv;
+    document.getElementById('optToneStrict').textContent = t.ui.toneStrict;
+    document.getElementById('optToneChill').textContent = t.ui.toneChill;
+    document.getElementById('lblGoal').textContent = t.ui.goal;
+    document.getElementById('optGoal0').textContent = t.ui.goalNone;
+    document.getElementById('optGoal7').textContent = t.ui.everyDay;
+    document.getElementById('lblSpeed').textContent = t.ui.speed;
+    document.getElementById('optSpeedSlow').textContent = t.ui.speedSlow;
+    document.getElementById('optSpeedNormal').textContent = t.ui.speedNormal;
+    document.getElementById('optSpeedFast').textContent = t.ui.speedFast;
+    document.getElementById('lblVolume').textContent = t.ui.volume;
+    document.getElementById('lblLightTheme').textContent = t.ui.lightTheme;
+    document.getElementById('lblVoiceControl').textContent = t.ui.voiceControl;
+    gymModeBtn.textContent = t.ui.gymMode;
+    startBtn.textContent = t.ui.start;
+    stopBtn.textContent = t.ui.stop;
+    resetBtn.textContent = t.ui.reset;
+    freeModeBtn.textContent = t.ui.freeMode;
+    intervalModeBtn.textContent = t.ui.intervalMode;
+    document.getElementById('lblEvery').textContent = t.ui.every;
+    document.getElementById('lblSeconds').textContent = t.ui.seconds;
+    document.getElementById('lblWork').textContent = t.ui.work;
+    document.getElementById('lblRest').textContent = t.ui.rest;
+    document.getElementById('lblRounds').textContent = t.ui.rounds;
+    shareBtn.textContent = t.ui.shareRecord;
+    document.getElementById('lblAchievements').textContent = t.ui.achievements;
+    document.getElementById('lblProgress').textContent = t.ui.progress;
+    document.getElementById('lblExPlank').textContent = t.ui.exPlank;
+    document.getElementById('lblExDeadhang').textContent = t.ui.exDeadhang;
+    document.getElementById('lblExLsit').textContent = t.ui.exLsit;
+    document.getElementById('lblRecent').textContent = t.ui.recent;
+    historyToggle.textContent = historySection.style.display !== 'none' ? t.ui.hideStats : t.ui.statsToggle;
+    document.getElementById('achievementEyebrow').textContent = t.ui.unlockedEyebrow;
+  }
+  function setLanguage(code, persist) {
+    if (!I18N[code]) code = 'nl';
+    currentLang = code;
+    t = I18N[code];
+    langSelect.value = code;
+    applyStaticText();
+    renderExName();
+    updateRecordDisplay();
+    chartDetail.classList.add('empty');
+    chartDetail.textContent = t.ui.tapBar;
+    renderExerciseCharts(lastSessionsList);
+    renderHistory(lastSessionsList);
+    updateStreak(lastSessionsList);
+    updateTodayOverview(lastSessionsList);
+    updateGoalProgress(lastSessionsList);
+    renderBadges(lastSessionsList);
+    if (persist) { try { localStorage.setItem('appLanguage', code); } catch (e) {} }
+    initEleven();
+    if (persist) showLanguageSwitchSplash();
+  }
+  langSelect.addEventListener('change', () => setLanguage(langSelect.value, true));
+  (() => {
+    try {
+      const saved = localStorage.getItem('appLanguage');
+      if (saved && I18N[saved]) currentLang = saved;
+    } catch (e) {}
+    t = I18N[currentLang];
+    langSelect.value = currentLang;
+  })();
+
   // ====== Coach tone ======
   (() => {
     try {
       const saved = localStorage.getItem('coachTone');
-      if (saved && TONE_PHRASES[saved]) currentTone = saved;
+      if (saved) currentTone = saved;
     } catch (e) {}
     toneSelect.value = currentTone;
   })();
@@ -754,7 +1386,6 @@
   });
 
   // ====== Personalized name ======
-  let userName = '';
   (() => {
     try { userName = localStorage.getItem('userName') || ''; } catch (e) {}
     nameInput.value = userName;
@@ -763,13 +1394,12 @@
     userName = nameInput.value.trim();
     try { localStorage.setItem('userName', userName); } catch (e) {}
   });
-  function withName(text) { return userName ? text + ' ' + userName : text; }
 
   settingsBtn.addEventListener('click', () => {
     settingsPanel.style.display = settingsPanel.style.display === 'block' ? 'none' : 'block';
   });
 
-  // ====== Gym mode (big-screen focus view) ======
+  // ====== Gym mode ======
   gymModeBtn.addEventListener('click', () => {
     document.body.classList.add('gym-mode');
     settingsPanel.style.display = 'none';
@@ -779,11 +1409,11 @@
   });
 
   function colorForElapsed(sec) {
-    const t = Math.min(sec / 180, 1);
+    const tt = Math.min(sec / 180, 1);
     const c1 = accentRGB, c2 = [255, 159, 92];
-    const r = Math.round(c1[0] + (c2[0]-c1[0])*t);
-    const g = Math.round(c1[1] + (c2[1]-c1[1])*t);
-    const b = Math.round(c1[2] + (c2[2]-c1[2])*t);
+    const r = Math.round(c1[0] + (c2[0]-c1[0])*tt);
+    const g = Math.round(c1[1] + (c2[1]-c1[1])*tt);
+    const b = Math.round(c1[2] + (c2[2]-c1[2])*tt);
     return `rgb(${r},${g},${b})`;
   }
   function setRingFraction(fraction, color) {
@@ -811,21 +1441,6 @@
     flashScreen();
   }
 
-  // ====== Numbers to Dutch words ======
-  function numberToDutchWords(n) {
-    const ones = ['nul','een','twee','drie','vier','vijf','zes','zeven','acht','negen',
-                  'tien','elf','twaalf','dertien','veertien','vijftien','zestien',
-                  'zeventien','achttien','negentien'];
-    const tens = ['', '', 'twintig', 'dertig', 'veertig', 'vijftig', 'zestig', 'zeventig', 'tachtig', 'negentig'];
-    if (n < 20) return ones[n];
-    if (n < 100) {
-      const t = Math.floor(n / 10), o = n % 10;
-      return o === 0 ? tens[t] : ones[o] + 'en' + tens[t];
-    }
-    const h = Math.floor(n / 100), rest = n % 100;
-    return (h > 1 ? ones[h] + 'honderd' : 'honderd') + (rest ? numberToDutchWords(rest) : '');
-  }
-
   // ====== Mobile audio unlock ======
   const audioPlayer = new Audio();
   const SILENT_WAV = 'data:audio/wav;base64,UklGRiQAAABXQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YQAAAAA=';
@@ -843,7 +1458,7 @@
     }
   }
 
-  // ====== Sound design (synthesized locally, no extra assets or quota) ======
+  // ====== Sound design ======
   let audioCtx = null;
   function getAudioCtx() {
     if (!audioCtx) {
@@ -913,7 +1528,7 @@
   async function updateRecordDisplay() {
     if (intervalMode) { recordDisplay.textContent = ''; return; }
     const rec = await getRecord(currentEx());
-    recordDisplay.textContent = rec > 0 ? 'Record: ' + format(rec) : 'Nog geen record';
+    recordDisplay.textContent = rec > 0 ? t.ui.record + ': ' + format(rec) : t.ui.noRecord;
   }
   async function loadSessions() {
     try { const v = localStorage.getItem('sessions'); return v ? JSON.parse(v) : []; }
@@ -923,8 +1538,9 @@
     try {
       const list = await loadSessions();
       list.unshift({ ex, dur, ts: Date.now() });
-      const trimmed = list.slice(0, 30);
+      const trimmed = list.slice(0, 2000);
       localStorage.setItem('sessions', JSON.stringify(trimmed));
+      lastSessionsList = trimmed;
       renderHistory(trimmed);
       updateTodayOverview(trimmed);
       renderExerciseCharts(trimmed);
@@ -934,11 +1550,11 @@
     } catch (e) {}
   }
   function renderHistory(list) {
-    if (!list.length) { historyList.innerHTML = '<div class="history-empty">Nog geen sessies</div>'; return; }
+    if (!list.length) { historyList.innerHTML = `<div class="history-empty">${t.ui.noSessions}</div>`; return; }
     historyList.innerHTML = list.slice(0, 6).map(s => {
       const d = new Date(s.ts);
-      const dateStr = d.toLocaleDateString('nl-NL', { day: 'numeric', month: 'short' });
-      return `<div class="history-item"><span>${EX_NAMES[s.ex] || s.ex}</span><span>${format(s.dur)} · ${dateStr}</span></div>`;
+      const dateStr = d.toLocaleDateString(t.speechLang, { day: 'numeric', month: 'short' });
+      return `<div class="history-item"><span>${exName_(s.ex)}</span><span>${format(s.dur)} · ${dateStr}</span></div>`;
     }).join('');
   }
   function updateTodayOverview(list) {
@@ -946,11 +1562,12 @@
     const todays = list.filter(s => new Date(s.ts).toDateString() === todayStr);
     if (!todays.length) { todayDisplay.textContent = ''; return; }
     const total = todays.reduce((sum, s) => sum + s.dur, 0);
-    todayDisplay.textContent = `Vandaag: ${todays.length} ${todays.length === 1 ? 'sessie' : 'sessies'}, ${format(total)} totaal`;
+    const word = todays.length === 1 ? t.ui.session : t.ui.sessions;
+    todayDisplay.textContent = `${t.ui.today}: ${todays.length} ${word}, ${format(total)} ${t.ui.total}`;
   }
 
   function renderExerciseCharts(list) {
-    const dayLabels = ['Zo', 'Ma', 'Di', 'Wo', 'Do', 'Vr', 'Za'];
+    const dayLabels = t.ui.weekdays;
     const today = new Date();
     const days = [];
     for (let i = 6; i >= 0; i--) {
@@ -958,26 +1575,21 @@
       d.setDate(d.getDate() - i);
       days.push(d);
     }
-
     EX_KEYS.forEach((ex) => {
       const container = exChartEls[ex];
       if (!container) return;
-
-      // For each of the last 7 days, find the LONGEST single hold for this
-      // exercise that day (not the total) — that's what actually shows progress.
       const maxByDay = days.map((d) => {
         const dayStr = d.toDateString();
         const sessionsThatDay = list.filter((s) => s.ex === ex && new Date(s.ts).toDateString() === dayStr);
         return sessionsThatDay.length ? Math.max(...sessionsThatDay.map((s) => s.dur)) : 0;
       });
       const scaleMax = Math.max(...maxByDay, 30);
-
       container.innerHTML = days.map((d, i) => {
         const dur = maxByDay[i];
         const heightPct = dur > 0 ? Math.max((dur / scaleMax) * 100, 8) : 3;
         const isToday = d.toDateString() === today.toDateString();
-        const dayLabel = isToday ? 'Nu' : dayLabels[d.getDay()];
-        const fullDateLabel = d.toLocaleDateString('nl-NL', { weekday: 'long', day: 'numeric', month: 'short' });
+        const dayLabel = isToday ? t.ui.now : dayLabels[d.getDay()];
+        const fullDateLabel = d.toLocaleDateString(t.speechLang, { weekday: 'long', day: 'numeric', month: 'short' });
         return `<div class="week-bar-col">
           <div class="week-bar ${dur > 0 ? 'has-data' : ''}" data-ex="${ex}" data-date="${fullDateLabel}" data-dur="${dur}"
                style="height:${heightPct}%"></div>
@@ -987,8 +1599,6 @@
     });
   }
 
-  // One click listener for all three charts (event delegation) — shows the
-  // tapped bar's exact time in the detail line below, and highlights the bar.
   document.querySelectorAll('.week-chart').forEach((chart) => {
     chart.addEventListener('click', (e) => {
       const bar = e.target.closest('.week-bar');
@@ -997,7 +1607,7 @@
       bar.classList.add('selected');
       const ex = bar.dataset.ex;
       const dur = parseInt(bar.dataset.dur, 10);
-      const exLabel = EX_NAMES[ex] || ex;
+      const exLabel = exName_(ex);
       const exLetter = exLabel.charAt(0);
       chartDetail.classList.remove('empty');
       chartDetail.innerHTML = dur > 0
@@ -1009,7 +1619,7 @@
         : `<div class="chart-detail-icon">${exLetter}</div>
            <div class="chart-detail-info">
              <div class="chart-detail-sub">${exLabel} · ${bar.dataset.date}</div>
-             <div class="chart-detail-sub">Geen sessie deze dag</div>
+             <div class="chart-detail-sub">${t.ui.noSession}</div>
            </div>`;
     });
   });
@@ -1020,7 +1630,7 @@
     const cursor = new Date();
     if (!days.has(cursor.toDateString())) cursor.setDate(cursor.getDate() - 1);
     while (days.has(cursor.toDateString())) { streak++; cursor.setDate(cursor.getDate() - 1); }
-    streakDisplay.textContent = streak > 0 ? '🔥 ' + streak + (streak === 1 ? ' dag op rij' : ' dagen op rij') : '';
+    streakDisplay.textContent = streak > 0 ? '🔥 ' + streak + ' ' + (streak === 1 ? t.ui.dayStreak : t.ui.daysStreak) : '';
   }
 
   // ====== Weekly goal ======
@@ -1035,12 +1645,11 @@
   goalSelect.addEventListener('change', () => {
     weeklyGoal = parseInt(goalSelect.value, 10);
     try { localStorage.setItem('weeklyGoal', String(weeklyGoal)); } catch (e) {}
-    loadSessions().then(updateGoalProgress);
+    updateGoalProgress(lastSessionsList);
   });
   function startOfWeek(date) {
-    // Monday-based week, matching how most people in NL count "deze week".
     const d = new Date(date);
-    const day = d.getDay(); // 0 = Sunday
+    const day = d.getDay();
     const diff = day === 0 ? -6 : 1 - day;
     d.setDate(d.getDate() + diff);
     d.setHours(0, 0, 0, 0);
@@ -1056,22 +1665,56 @@
     const count = uniqueDaysThisWeek.size;
     const pct = Math.min((count / weeklyGoal) * 100, 100);
     goalBarFill.style.width = pct + '%';
-    goalBarLabel.textContent = count >= weeklyGoal
-      ? `Weekdoel gehaald! (${count}/${weeklyGoal})`
-      : `Weekdoel: ${count}/${weeklyGoal} dagen getraind`;
+    goalBarLabel.textContent = count >= weeklyGoal ? t.ui.goalReached : t.ui.daysTrainedOf(count, weeklyGoal);
   }
 
-  // ====== Badges ======
-  const BADGE_DEFS = [
-    { id: 'first', icon: '🎯', label: 'Eerste hold', desc: 'Rond je allereerste sessie af.', check: (list) => list.length >= 1 },
-    { id: 'twomin', icon: '⏱️', label: '2 minuten', desc: 'Houd één oefening 2 minuten vol.', check: (list) => list.some(s => s.dur >= 120) },
-    { id: 'ten', icon: '🔟', label: '10 sessies', desc: 'Voltooi in totaal 10 sessies.', check: (list) => list.length >= 10 },
-    { id: 'streak7', icon: '🔥', label: '7 dagen streak', desc: 'Train 7 dagen op rij.', check: (list, streak) => streak >= 7 },
-    { id: 'allex', icon: '🏋️', label: 'Alle oefeningen', desc: 'Probeer plank, deadhang én L-sit.', check: (list) => {
+  // ====== Badges (template-driven so translation scales across languages) ======
+  const BADGE_META = [
+    { id: 'first', icon: '🎯', cat: 'first', check: (list) => list.length >= 1 },
+    { id: 'five', icon: '🖐️', cat: 'count', n: 5, check: (list) => list.length >= 5 },
+    { id: 'ten', icon: '🔟', cat: 'count', n: 10, check: (list) => list.length >= 10 },
+    { id: 'twentyfive', icon: '🏅', cat: 'count', n: 25, check: (list) => list.length >= 25 },
+    { id: 'fifty', icon: '🥈', cat: 'count', n: 50, check: (list) => list.length >= 50 },
+    { id: 'hundred', icon: '🥇', cat: 'count', n: 100, check: (list) => list.length >= 100 },
+    { id: 'thirtysec', icon: '⏳', cat: 'duration', sec: 30, check: (list) => list.some(s => s.dur >= 30) },
+    { id: 'onemin', icon: '⏱️', cat: 'duration', sec: 60, check: (list) => list.some(s => s.dur >= 60) },
+    { id: 'twomin', icon: '⏰', cat: 'duration', sec: 120, check: (list) => list.some(s => s.dur >= 120) },
+    { id: 'threemin', icon: '🕒', cat: 'duration', sec: 180, check: (list) => list.some(s => s.dur >= 180) },
+    { id: 'fivemin', icon: '⌛', cat: 'duration', sec: 300, check: (list) => list.some(s => s.dur >= 300) },
+    { id: 'streak3', icon: '✨', cat: 'streak', n: 3, check: (list, streak) => streak >= 3 },
+    { id: 'streak7', icon: '🔥', cat: 'streak', n: 7, check: (list, streak) => streak >= 7 },
+    { id: 'streak14', icon: '💪', cat: 'streak', n: 14, check: (list, streak) => streak >= 14 },
+    { id: 'streak30', icon: '👑', cat: 'streak', n: 30, check: (list, streak) => streak >= 30 },
+    { id: 'allex', icon: '🏋️', cat: 'allex', check: (list) => {
       const set = new Set(list.map(s => s.ex));
       return set.has('plank') && set.has('deadhang') && set.has('lsit');
-    }}
+    } },
+    { id: 'plank10', icon: '🧘', cat: 'special', ex: 'plank', n: 10, check: (list) => list.filter(s => s.ex === 'plank').length >= 10 },
+    { id: 'deadhang10', icon: '🐒', cat: 'special', ex: 'deadhang', n: 10, check: (list) => list.filter(s => s.ex === 'deadhang').length >= 10 },
+    { id: 'lsit10', icon: '🤾', cat: 'special', ex: 'lsit', n: 10, check: (list) => list.filter(s => s.ex === 'lsit').length >= 10 },
+    { id: 'total10min', icon: '🌱', cat: 'cumulative', sec: 600, check: (list) => list.reduce((s, x) => s + x.dur, 0) >= 600 },
+    { id: 'total30min', icon: '🌿', cat: 'cumulative', sec: 1800, check: (list) => list.reduce((s, x) => s + x.dur, 0) >= 1800 },
+    { id: 'total1hour', icon: '🌳', cat: 'cumulative', sec: 3600, check: (list) => list.reduce((s, x) => s + x.dur, 0) >= 3600 },
+    { id: 'total5hour', icon: '🏆', cat: 'cumulative', sec: 18000, check: (list) => list.reduce((s, x) => s + x.dur, 0) >= 18000 },
+    { id: 'earlybird', icon: '🌅', cat: 'earlybird', check: (list) => list.some(s => new Date(s.ts).getHours() < 8) },
+    { id: 'nightowl', icon: '🦉', cat: 'nightowl', check: (list) => list.some(s => new Date(s.ts).getHours() >= 22) }
   ];
+
+  function getBadgeText(meta) {
+    const b = t.speech.badges;
+    switch (meta.cat) {
+      case 'first': return { label: b.first.label, desc: b.first.desc, congrats: b.first.congrats };
+      case 'count': return { label: `${meta.n} ${t.ui.sessions}`, desc: b.count.desc(meta.n), congrats: b.count.congrats(meta.n) };
+      case 'duration': { const l = formatDurationLabel(meta.sec); return { label: l, desc: b.duration.desc(l), congrats: b.duration.congrats(l) }; }
+      case 'streak': return { label: `${meta.n} ${meta.n === 1 ? t.ui.dayStreak : t.ui.daysStreak}`, desc: b.streak.desc(meta.n), congrats: b.streak.congrats(meta.n) };
+      case 'allex': return { label: b.allex.label, desc: b.allex.desc, congrats: b.allex.congrats };
+      case 'special': { const exLabel = exName_(meta.ex); return { label: `${exLabel}-${t.ui.proSuffix}`, desc: b.special.desc(meta.n, exLabel), congrats: b.special.congrats(exLabel) }; }
+      case 'cumulative': { const l = formatDurationLabel(meta.sec); return { label: `${l} ${t.ui.total}`, desc: b.cumulative.desc(l), congrats: b.cumulative.congrats(l) }; }
+      case 'earlybird': return { label: b.earlybird.label, desc: b.earlybird.desc, congrats: b.earlybird.congrats };
+      case 'nightowl': return { label: b.nightowl.label, desc: b.nightowl.desc, congrats: b.nightowl.congrats };
+    }
+  }
+
   function computeStreakCount(list) {
     const days = new Set(list.map(s => new Date(s.ts).toDateString()));
     let streak = 0;
@@ -1083,8 +1726,9 @@
 
   const badgePopup = document.getElementById('badgePopup');
   let badgePopupTimer = null;
-  function showBadgePopup(badgeDef, unlocked) {
-    badgePopup.innerHTML = `<b>${badgeDef.icon} ${badgeDef.label}</b><br><span>${unlocked ? 'Ontgrendeld ✅' : badgeDef.desc}</span>`;
+  function showBadgePopup(meta, unlocked) {
+    const txt = getBadgeText(meta);
+    badgePopup.innerHTML = `<b>${meta.icon} ${txt.label}</b><br><span>${unlocked ? t.ui.unlockedTag : txt.desc}</span>`;
     badgePopup.classList.add('visible');
     clearTimeout(badgePopupTimer);
     badgePopupTimer = setTimeout(() => badgePopup.classList.remove('visible'), 3000);
@@ -1093,23 +1737,26 @@
   const achievementOverlay = document.getElementById('achievementOverlay');
   const achievementIcon = document.getElementById('achievementIcon');
   const achievementTitle = document.getElementById('achievementTitle');
-  function showAchievementOverlay(badgeDef) {
-    achievementIcon.textContent = badgeDef.icon;
-    achievementTitle.textContent = badgeDef.label;
+  function showAchievementOverlay(meta) {
+    const txt = getBadgeText(meta);
+    achievementIcon.textContent = meta.icon;
+    achievementTitle.textContent = txt.label;
+    document.getElementById('achievementEyebrow').textContent = t.ui.unlockedEyebrow;
     achievementOverlay.classList.add('visible');
     playBadgeUnlock();
     spawnConfetti();
     pulseFeedback([80, 50, 80, 50, 150]);
+    speak(txt.congrats);
     const dismiss = () => achievementOverlay.classList.remove('visible');
     achievementOverlay.addEventListener('click', dismiss, { once: true });
-    setTimeout(dismiss, 2600);
+    setTimeout(dismiss, 3800);
   }
 
   badgeRow.addEventListener('click', (e) => {
     const el = e.target.closest('.badge');
     if (!el) return;
-    const def = BADGE_DEFS.find((b) => b.id === el.dataset.id);
-    if (def) showBadgePopup(def, el.classList.contains('unlocked'));
+    const meta = BADGE_META.find((b) => b.id === el.dataset.id);
+    if (meta) showBadgePopup(meta, el.classList.contains('unlocked'));
   });
 
   function renderBadges(list) {
@@ -1117,28 +1764,43 @@
     let unlockedIds = [];
     try { unlockedIds = JSON.parse(localStorage.getItem('unlockedBadges') || '[]'); } catch (e) {}
     const newlyUnlocked = [];
-    badgeRow.innerHTML = BADGE_DEFS.map((b) => {
-      const unlocked = b.check(list, streak);
-      if (unlocked && !unlockedIds.includes(b.id)) newlyUnlocked.push(b);
-      return `<div class="badge ${unlocked ? 'unlocked' : ''}" data-id="${b.id}">
-        <div class="badge-icon">${b.icon}</div>
-        <span>${b.label}</span>
+    badgeRow.innerHTML = BADGE_META.map((meta) => {
+      const unlocked = meta.check(list, streak);
+      if (unlocked && !unlockedIds.includes(meta.id)) newlyUnlocked.push(meta);
+      const txt = getBadgeText(meta);
+      return `<div class="badge ${unlocked ? 'unlocked' : ''}" data-id="${meta.id}">
+        <div class="badge-icon">${meta.icon}</div>
+        <span>${txt.label}</span>
       </div>`;
     }).join('');
     if (newlyUnlocked.length) {
-      const allUnlockedNow = BADGE_DEFS.filter(b => b.check(list, streak)).map(b => b.id);
+      const allUnlockedNow = BADGE_META.filter(m => m.check(list, streak)).map(m => m.id);
       try { localStorage.setItem('unlockedBadges', JSON.stringify(allUnlockedNow)); } catch (e) {}
-      showAchievementOverlay(newlyUnlocked[0]);
+      showAchievementSequence(newlyUnlocked);
     }
   }
 
-  // Converts a duration in seconds to a natural spoken Dutch phrase, e.g.
-  // "een minuut en vijftien seconden" — used for the end-of-session summary.
+  async function showAchievementSequence(metas) {
+    for (const m of metas) {
+      showAchievementOverlay(m);
+      await speechQueue;
+      await new Promise((r) => setTimeout(r, 900));
+    }
+  }
+
   function spokenDuration(sec) {
-    if (sec < 60) return numberToDutchWords(sec) + ' seconden';
+    if (currentLang === 'nl') {
+      if (sec < 60) return numberToDutchWords(sec) + ' seconden';
+      const m = Math.floor(sec / 60), s = sec % 60;
+      let out = numberToDutchWords(m) + (m === 1 ? ' minuut' : ' minuten');
+      if (s > 0) out += ' en ' + numberToDutchWords(s) + ' seconden';
+      return out;
+    }
+    const sp = t.speech;
+    if (sec < 60) return `${sec} ${sp.secWord}`;
     const m = Math.floor(sec / 60), s = sec % 60;
-    let out = numberToDutchWords(m) + (m === 1 ? ' minuut' : ' minuten');
-    if (s > 0) out += ' en ' + numberToDutchWords(s) + ' seconden';
+    let out = `${m} ${m === 1 ? sp.minWord : sp.minsWord}`;
+    if (s > 0) out += ` ${s} ${sp.secWord}`;
     return out;
   }
 
@@ -1164,7 +1826,7 @@
       await setRecord(ex, dur);
       isNewRecord = true;
       improvement = rec > 0 ? dur - rec : 0;
-      status.textContent = 'Nieuw record! 🎉 ' + format(dur);
+      status.textContent = t.ui.newRecordTag + ' ' + format(dur);
       pulseFeedback([100, 60, 100, 60, 200]);
       playRecordFanfare();
       spawnConfetti();
@@ -1175,7 +1837,6 @@
     return { isNewRecord, improvement };
   }
 
-  // ---- Share record as an image ----
   function generateShareCanvas(ex, dur) {
     const canvas = document.createElement('canvas');
     canvas.width = 800; canvas.height = 800;
@@ -1184,13 +1845,13 @@
     ctx.textAlign = 'center';
     ctx.fillStyle = '#9aa0a8';
     ctx.font = '36px -apple-system, sans-serif';
-    ctx.fillText('Nieuw record 🎉', 400, 300);
+    ctx.fillText(t.ui.newRecordShare, 400, 300);
     ctx.fillStyle = '#7fdba8';
     ctx.font = 'bold 130px -apple-system, sans-serif';
     ctx.fillText(format(dur), 400, 440);
     ctx.fillStyle = '#f2f2f2';
     ctx.font = 'bold 44px -apple-system, sans-serif';
-    ctx.fillText(EX_NAMES[ex] || ex, 400, 520);
+    ctx.fillText(exName_(ex), 400, 520);
     return canvas;
   }
   shareBtn.addEventListener('click', () => {
@@ -1199,7 +1860,7 @@
     canvas.toBlob(async (blob) => {
       const file = new File([blob], 'record.png', { type: 'image/png' });
       if (navigator.share && navigator.canShare && navigator.canShare({ files: [file] })) {
-        try { await navigator.share({ files: [file], title: 'Nieuw record!', text: EX_NAMES[lastRecordEx] + ': ' + format(lastRecordDur) }); }
+        try { await navigator.share({ files: [file], title: t.ui.newRecordShare, text: exName_(lastRecordEx) + ': ' + format(lastRecordDur) }); }
         catch (e) {}
       } else {
         const url = URL.createObjectURL(blob);
@@ -1212,13 +1873,13 @@
   historyToggle.addEventListener('click', () => {
     const showing = historySection.style.display !== 'none';
     historySection.style.display = showing ? 'none' : 'block';
-    historyToggle.textContent = showing ? 'Statistieken' : 'Verberg statistieken';
+    historyToggle.textContent = showing ? t.ui.statsToggle : t.ui.hideStats;
   });
 
-  // ====== Exercise picker (swipe + chevrons) ======
-  function renderExName() { exName.textContent = EX_NAMES[currentEx()]; }
+  // ====== Exercise picker ======
+  function renderExName() { exName.textContent = exName_(currentEx()); }
   function changeExercise(delta) {
-    if (!startBtn.disabled === false && timerId) return; // no-op guard, real lock handled by disabling below
+    if (timerId) return;
     exerciseIndex = (exerciseIndex + delta + EX_KEYS.length) % EX_KEYS.length;
     renderExName();
     updateRecordDisplay();
@@ -1237,41 +1898,6 @@
     touchStartX = null;
   }, { passive: true });
 
-  // ====== Voice control ("stop" to stop the timer hands-free) ======
-  // Not supported in iOS Safari — the toggle simply stays hidden there.
-  // It only sets a saved preference; actual listening starts and stops
-  // automatically with the timer, since your hands are busy mid-hold.
-  const SRClass = window.SpeechRecognition || window.webkitSpeechRecognition;
-  let recognition = null;
-  let voiceControlEnabled = false;
-  let isListeningSession = false;
-  if (SRClass) {
-    voiceToggleRow.style.display = 'flex';
-    try { voiceControlEnabled = localStorage.getItem('voiceControlEnabled') === 'true'; } catch (e) {}
-    voiceToggleInput.checked = voiceControlEnabled;
-    recognition = new SRClass();
-    recognition.lang = 'nl-NL';
-    recognition.continuous = true;
-    recognition.interimResults = false;
-    recognition.onresult = (e) => {
-      const transcript = e.results[e.results.length - 1][0].transcript.toLowerCase();
-      if (transcript.includes('stop') && !stopBtn.disabled) stopBtn.click();
-    };
-    recognition.onerror = () => {};
-    recognition.onend = () => { if (isListeningSession) { try { recognition.start(); } catch (e) {} } };
-    voiceToggleInput.addEventListener('change', () => {
-      voiceControlEnabled = voiceToggleInput.checked;
-      try { localStorage.setItem('voiceControlEnabled', String(voiceControlEnabled)); } catch (e) {}
-    });
-  }
-  function startVoiceListening() {
-    if (SRClass && voiceControlEnabled) { isListeningSession = true; try { recognition.start(); } catch (e) {} }
-  }
-  function stopVoiceListening() {
-    isListeningSession = false;
-    if (SRClass) { try { recognition.stop(); } catch (e) {} }
-  }
-
   // ====== Mute ======
   muteBtn.addEventListener('click', () => {
     isMuted = !isMuted;
@@ -1282,10 +1908,13 @@
   // ====== ElevenLabs ======
   let elevenVoiceId = null;
   let elevenReady = false;
+  let elevenLoading = false;
   async function initEleven() {
+    elevenLoading = true;
     if (FIXED_VOICE_ID) {
       elevenVoiceId = FIXED_VOICE_ID;
       elevenReady = true;
+      elevenLoading = false;
       status.textContent = '';
       return;
     }
@@ -1297,22 +1926,34 @@
         elevenVoiceId = data.voices[0].voice_id;
         elevenReady = true;
         status.textContent = '';
-      } else throw new Error('Geen stemmen gevonden');
+      } else throw new Error('No voices found');
     } catch (e) {
       elevenReady = false;
-      status.textContent = 'ElevenLabs fout: ' + (e && e.message ? e.message : e);
+      status.textContent = t.ui.elevenError + (e && e.message ? e.message : e);
     }
+    elevenLoading = false;
   }
   initEleven();
 
-  // ---- Audio cache: repeated phrases (numbers, cues) are reused instead of
-  // re-generated every time. More stable (no risk of a fresh glitch on a phrase
-  // that already sounded fine) and saves ElevenLabs credits.
+  function waitForAudioEnd(audio) {
+    return new Promise((resolve) => {
+      const done = () => {
+        audio.removeEventListener('ended', done);
+        audio.removeEventListener('pause', done);
+        audio.removeEventListener('error', done);
+        resolve();
+      };
+      audio.addEventListener('ended', done, { once: true });
+      audio.addEventListener('pause', done, { once: true });
+      audio.addEventListener('error', done, { once: true });
+    });
+  }
+
   const TTS_CACHE_NAME = 'tts-cache-v1';
   async function getCachedAudio(text) {
     try {
       const cache = await caches.open(TTS_CACHE_NAME);
-      const match = await cache.match('/tts/' + encodeURIComponent(elevenVoiceId + ':' + text));
+      const match = await cache.match('/tts/' + encodeURIComponent(currentLang + ':' + elevenVoiceId + ':' + text));
       if (match) return URL.createObjectURL(await match.blob());
     } catch (e) {}
     return null;
@@ -1320,7 +1961,7 @@
   async function putCachedAudio(text, blob) {
     try {
       const cache = await caches.open(TTS_CACHE_NAME);
-      await cache.put('/tts/' + encodeURIComponent(elevenVoiceId + ':' + text), new Response(blob, { headers: { 'Content-Type': 'audio/mpeg' } }));
+      await cache.put('/tts/' + encodeURIComponent(currentLang + ':' + elevenVoiceId + ':' + text), new Response(blob, { headers: { 'Content-Type': 'audio/mpeg' } }));
     } catch (e) {}
   }
 
@@ -1328,38 +1969,49 @@
     audioPlayer.volume = voiceVolume;
     audioPlayer.playbackRate = voiceSpeed;
     const cachedUrl = await getCachedAudio(text);
-    if (cachedUrl) {
-      audioPlayer.src = cachedUrl;
-      await audioPlayer.play();
-      return;
-    }
-    const res = await fetch('https://api.elevenlabs.io/v1/text-to-speech/' + elevenVoiceId, {
-      method: 'POST',
-      headers: { 'xi-api-key': ELEVEN_API_KEY, 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        text: text, model_id: ELEVEN_MODEL, language_code: 'nl',
-        voice_settings: { stability: 0.88, similarity_boost: 0.75, style: 0.2, use_speaker_boost: true }
-      })
-    });
-    if (!res.ok) throw new Error('HTTP ' + res.status);
-    const blob = await res.blob();
-    audioPlayer.src = URL.createObjectURL(blob);
-    putCachedAudio(text, blob);
+    const url = cachedUrl || await (async () => {
+      const res = await fetch('https://api.elevenlabs.io/v1/text-to-speech/' + elevenVoiceId, {
+        method: 'POST',
+        headers: { 'xi-api-key': ELEVEN_API_KEY, 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          text: text, model_id: ELEVEN_MODEL, language_code: t.elevenLang,
+          voice_settings: { stability: 0.88, similarity_boost: 0.75, style: 0.2, use_speaker_boost: true }
+        })
+      });
+      if (!res.ok) throw new Error('HTTP ' + res.status);
+      const blob = await res.blob();
+      putCachedAudio(text, blob);
+      return URL.createObjectURL(blob);
+    })();
+    audioPlayer.src = url;
     await audioPlayer.play();
+    await waitForAudioEnd(audioPlayer);
   }
+
   function speakBrowser(text) {
-    if (!('speechSynthesis' in window)) return;
-    window.speechSynthesis.cancel();
-    const u = new SpeechSynthesisUtterance(text);
-    u.lang = 'nl-NL'; u.rate = voiceSpeed; u.volume = voiceVolume;
-    window.speechSynthesis.speak(u);
+    return new Promise((resolve) => {
+      if (!('speechSynthesis' in window)) { resolve(); return; }
+      window.speechSynthesis.cancel();
+      const u = new SpeechSynthesisUtterance(text);
+      u.lang = t.speechLang; u.rate = voiceSpeed; u.volume = voiceVolume;
+      u.onend = resolve;
+      u.onerror = resolve;
+      window.speechSynthesis.speak(u);
+    });
   }
-  async function speak(text) {
-    if (isMuted) return;
+
+  let speechQueue = Promise.resolve();
+  function resetSpeechQueue() { speechQueue = Promise.resolve(); }
+  async function speakNow(text) {
+    if (isMuted || !text) return;
     if (elevenReady) {
       try { await speakEleven(text); return; } catch (e) {}
     }
-    speakBrowser(text);
+    await speakBrowser(text);
+  }
+  function speak(text) {
+    speechQueue = speechQueue.then(() => speakNow(text)).catch(() => {});
+    return speechQueue;
   }
 
   function format(sec) {
@@ -1369,7 +2021,7 @@
 
   // ====== Mode switching ======
   function setMode(mode) {
-    if (timerId) return; // don't allow switching mid-run
+    if (timerId) return;
     intervalMode = mode === 'interval';
     freeModeBtn.classList.toggle('active', !intervalMode);
     intervalModeBtn.classList.toggle('active', intervalMode);
@@ -1396,6 +2048,10 @@
   const ENCOURAGE_AFTER = 20;
   const CUE_INTERVAL = 15;
 
+  function speakNumber(n) {
+    return currentLang === 'nl' ? numberToDutchWords(n) : t.speech.numberWords(n);
+  }
+
   function freeTick() {
     elapsed = Math.floor((Date.now() - startTime) / 1000);
     display.textContent = format(elapsed);
@@ -1407,18 +2063,17 @@
     const cueIsDue = elapsed >= ENCOURAGE_AFTER && elapsed - lastCueAt >= CUE_INTERVAL;
     const minuteIsDue = elapsed >= (minuteCount + 1) * 60;
 
-    // Adaptive coaching relative to personal record
     if (sessionRecordSec > 0 && !halfRecordAnnounced && elapsed >= Math.floor(sessionRecordSec / 2)) {
       halfRecordAnnounced = true;
       lastAnnounced = elapsed; lastCueAt = elapsed;
-      speak('Je zit op de helft van je record! Kom op!');
+      speak(t.speech.halfRecord);
       return;
     }
     if (sessionRecordSec > 0 && !matchRecordAnnounced && elapsed >= sessionRecordSec) {
       matchRecordAnnounced = true;
       lastAnnounced = elapsed; lastCueAt = elapsed;
       pulseFeedback(150);
-      speak('Je zit nu op je record! Kom op, ga door!');
+      speak(t.speech.matchRecord);
       return;
     }
 
@@ -1427,18 +2082,24 @@
       lastAnnounced = elapsed; lastCueAt = elapsed;
       pulseFeedback(200);
       playMilestoneChime();
-      speak(numberToDutchWords(minuteCount) + (minuteCount === 1 ? ' minuut' : ' minuten'));
+      const mLabel = currentLang === 'nl'
+        ? (speakNumber(minuteCount) + (minuteCount === 1 ? ' minuut' : ' minuten'))
+        : `${speakNumber(minuteCount)} ${minuteCount === 1 ? t.speech.minWord : t.speech.minsWord}`;
+      speak(mLabel);
     } else if (cueIsDue) {
       lastCueAt = elapsed;
       if (timeIsDue) lastAnnounced = elapsed - (elapsed % step);
-      const list = encouragementsByExerciseNow()[currentEx()] || encouragementsByExerciseNow().plank;
+      const list = cuesFor(currentEx());
       const cueText = list[encourageIndex % list.length];
-      if (cueText === BREATHING_CUE) triggerBreathing();
+      if (cueText === BREATHING_CUE_BY_LANG[currentLang]) triggerBreathing();
       speak(cueText);
       encourageIndex++;
     } else if (timeIsDue) {
       lastAnnounced = elapsed - (elapsed % step);
-      speak(numberToDutchWords(lastAnnounced) + ' seconden');
+      const sLabel = currentLang === 'nl'
+        ? (speakNumber(lastAnnounced) + ' seconden')
+        : `${speakNumber(lastAnnounced)} ${t.speech.secWord}`;
+      speak(sLabel);
     }
   }
 
@@ -1450,7 +2111,7 @@
     lastAnnounced = elapsed - (elapsed % parseInt(intervalSelect.value, 10));
     timerId = setInterval(freeTick, 200);
   }
-  function stopFree() { status.textContent = 'Gestopt op ' + format(elapsed); }
+  function stopFree() { status.textContent = t.ui.stoppedAt + ' ' + format(elapsed); }
   async function resetFree() {
     breathingCircle.classList.remove('active');
     if (elapsed > 0) {
@@ -1458,14 +2119,12 @@
       const finalElapsed = elapsed;
       await saveSession(ex, finalElapsed);
       const { isNewRecord, improvement } = await checkRecord(ex, finalElapsed);
-      let summary = (userName ? userName + ', j' : 'J') + 'e hield het ' + spokenDuration(finalElapsed) + ' vol!';
+      let summary = t.speech.heldFor(userName, spokenDuration(finalElapsed));
       if (isNewRecord) {
-        summary += improvement > 0
-          ? ' Nieuw record, ' + spokenDuration(improvement) + ' langer dan daarvoor!'
-          : ' Dat is meteen je eerste record!';
+        summary += improvement > 0 ? t.speech.newRecordSuffix(spokenDuration(improvement)) : t.speech.firstRecordSuffix;
       }
       await speak(summary);
-      speak('Adem nog even rustig uit.');
+      speak(t.speech.cooldown);
     } else {
       status.textContent = '';
     }
@@ -1489,31 +2148,28 @@
     const fraction = phaseDuration > 0 ? phaseElapsed / phaseDuration : 0;
     const col = phase === 'work' ? colorForElapsed(phaseElapsed) : '#5a9edb';
     setRingFraction(Math.min(fraction, 1), col);
-    phaseLabel.textContent = (phase === 'work' ? 'Werk' : 'Rust') + ' · Ronde ' + currentRound + ' van ' + totalRounds;
+    phaseLabel.textContent = (phase === 'work' ? t.ui.work : t.ui.rest) + ' · ' + t.ui.rounds + ' ' + currentRound + '/' + totalRounds;
 
     if (remaining <= 3 && remaining >= 1 && lastCountdownAt !== remaining) {
       lastCountdownAt = remaining;
-      speak(numberToDutchWords(remaining));
+      speak(speakNumber(remaining));
     }
 
     if (phaseElapsed >= phaseDuration) {
       if (phase === 'work') {
-        if (currentRound >= totalRounds) {
-          finishInterval();
-          return;
-        }
+        if (currentRound >= totalRounds) { finishInterval(); return; }
         phase = 'rest';
         phaseStartTime = Date.now();
         lastCountdownAt = null;
         pulseFeedback(120);
-        speak('Rust.');
+        speak(t.speech.restWord);
       } else {
         currentRound++;
         phase = 'work';
         phaseStartTime = Date.now();
         lastCountdownAt = null;
         pulseFeedback(150);
-        speak('Ronde ' + numberToDutchWords(currentRound) + ', ga!');
+        speak(t.speech.roundGo(speakNumber(currentRound)));
       }
     }
   }
@@ -1524,9 +2180,9 @@
     releaseWakeLock();
     stopVoiceListening();
     pulseFeedback([120, 60, 120, 60, 250]);
-    speak(userName ? 'Training voltooid, ' + userName + '! Goed gedaan!' : 'Training voltooid! Goed gedaan!');
+    speak(t.speech.trainingDone(userName));
     display.textContent = '0:00';
-    phaseLabel.textContent = 'Klaar — ' + totalRounds + ' rondes voltooid';
+    phaseLabel.textContent = '';
     resetRing();
     startBtn.disabled = false;
     stopBtn.disabled = true;
@@ -1542,11 +2198,10 @@
     currentRound = 1;
     phaseStartTime = Date.now();
     lastCountdownAt = null;
-    speak('Start, ronde een!');
+    speak(t.speech.startRoundOne);
     timerId = setInterval(intervalTick, 200);
   }
 
-  // ====== Controls lock helper ======
   function setControlsLockedForRun(locked) {
     intervalSelect.disabled = locked;
     workSecSelect.disabled = locked;
@@ -1558,27 +2213,65 @@
     intervalModeBtn.disabled = locked;
   }
 
-  // ====== Start / Stop / Reset (shared) ======
+  // ====== Voice control ======
+  const SRClass = window.SpeechRecognition || window.webkitSpeechRecognition;
+  let recognition = null;
+  let voiceControlEnabled = false;
+  let isListeningSession = false;
+  if (SRClass) {
+    voiceToggleRow.style.display = 'flex';
+    try { voiceControlEnabled = localStorage.getItem('voiceControlEnabled') === 'true'; } catch (e) {}
+    voiceToggleInput.checked = voiceControlEnabled;
+    recognition = new SRClass();
+    recognition.continuous = true;
+    recognition.interimResults = false;
+    recognition.onresult = (e) => {
+      const transcript = e.results[e.results.length - 1][0].transcript.toLowerCase();
+      const stopWord = t.ui.stop.toLowerCase();
+      if ((transcript.includes(stopWord) || transcript.includes('stop')) && !stopBtn.disabled) stopBtn.click();
+    };
+    recognition.onerror = () => {};
+    recognition.onend = () => { if (isListeningSession) { try { recognition.start(); } catch (e) {} } };
+    voiceToggleInput.addEventListener('change', () => {
+      voiceControlEnabled = voiceToggleInput.checked;
+      try { localStorage.setItem('voiceControlEnabled', String(voiceControlEnabled)); } catch (e) {}
+    });
+  }
+  function startVoiceListening() {
+    if (SRClass && voiceControlEnabled) {
+      recognition.lang = t.speechLang;
+      isListeningSession = true;
+      try { recognition.start(); } catch (e) {}
+    }
+  }
+  function stopVoiceListening() {
+    isListeningSession = false;
+    if (SRClass) { try { recognition.stop(); } catch (e) {} }
+  }
+
+  // ====== Start / Stop / Reset ======
   let countdownCancelled = false;
   async function runCountdown() {
     countdownCancelled = false;
-    const seq = [['3', 'drie'], ['2', 'twee'], ['1', 'één']];
-    for (const [digit, word] of seq) {
+    const seq = t.speech.countdown;
+    const digits = ['3', '2', '1'];
+    for (let i = 0; i < seq.length; i++) {
       if (countdownCancelled) return false;
-      display.textContent = digit;
+      display.textContent = digits[i];
       playTick();
-      speak(word);
+      speak(seq[i]);
       await new Promise((r) => setTimeout(r, 650));
     }
     if (countdownCancelled) return false;
-    display.textContent = 'Start!';
+    display.textContent = t.ui.start + '!';
     playTone(880, 0.18, 'sine', 0.2);
-    speak(userName ? 'Kom op, ' + userName + '!' : 'Start!');
+    speak(userName ? t.speech.startWithName(userName) : t.speech.startNoName);
     await new Promise((r) => setTimeout(r, 350));
     return !countdownCancelled;
   }
 
   startBtn.addEventListener('click', async () => {
+    resetSpeechQueue();
     await unlockAudio();
     requestWakeLock();
     startBtn.disabled = true;
@@ -1588,7 +2281,7 @@
     status.textContent = '';
     const proceeded = await runCountdown();
     if (!proceeded) return;
-    status.textContent = intervalMode ? '' : 'Loopt...';
+    status.textContent = intervalMode ? '' : t.ui.running;
     startVoiceListening();
     if (intervalMode) startInterval(); else startFree();
   });
@@ -1598,12 +2291,13 @@
     clearInterval(timerId); timerId = null;
     window.speechSynthesis.cancel();
     audioPlayer.pause();
+    resetSpeechQueue();
     releaseWakeLock();
     stopVoiceListening();
     startBtn.disabled = false;
     stopBtn.disabled = true;
     setControlsLockedForRun(false);
-    if (intervalMode) { phaseLabel.textContent = 'Gepauzeerd'; }
+    if (intervalMode) { phaseLabel.textContent = ''; }
     else stopFree();
   });
 
@@ -1611,6 +2305,7 @@
     clearInterval(timerId); timerId = null;
     window.speechSynthesis.cancel();
     audioPlayer.pause();
+    resetSpeechQueue();
     releaseWakeLock();
     stopVoiceListening();
     startBtn.disabled = false;
@@ -1627,13 +2322,38 @@
     }
   });
 
-  // ====== Init ======
-  // ====== Init ======
+  // ====== Init / Splash ======
   const splashScreen = document.getElementById('splashScreen');
   const splashTitle = document.getElementById('splashTitle');
   const splashSub = document.getElementById('splashSub');
+  let splashAutoHideTimer = null;
 
-  function hideSplash() { splashScreen.classList.add('hidden'); }
+  function hideSplash() {
+    clearTimeout(splashAutoHideTimer);
+    splashScreen.classList.add('hidden');
+  }
+
+  function randomTip() {
+    const tips = t.ui.tips;
+    return tips[Math.floor(Math.random() * tips.length)];
+  }
+
+  // Splash animations (icon pop/pulse, rings, text fade-up) only play once on
+  // load by default. To reuse the splash for a language switch, we briefly
+  // clear each element's animation inline, force a reflow, then let the CSS
+  // animation restart from scratch — the same trick used for the breathing
+  // circle elsewhere in this file.
+  function replaySplashAnimations() {
+    const els = splashScreen.querySelectorAll(
+      '.splash-icon-wrap, .splash-glow, .splash-ring, .splash-ring-outer, .splash-title, .splash-sub, .splash-wave span'
+    );
+    els.forEach((el) => {
+      el.style.animation = 'none';
+      void el.offsetWidth; // force reflow so the browser "notices" the reset
+      el.style.animation = '';
+    });
+  }
+
   splashScreen.addEventListener('click', () => {
     hideSplash();
     const ctx = getAudioCtx();
@@ -1645,10 +2365,24 @@
     }
   });
 
+  // Shown briefly whenever the language changes, so the switch doesn't feel
+  // abrupt — replays the splash animation and shows a tip in the new language.
+  function showLanguageSwitchSplash() {
+    splashTitle.textContent = t.ui.appName;
+    splashSub.textContent = randomTip();
+    splashScreen.classList.remove('hidden');
+    replaySplashAnimations();
+    clearTimeout(splashAutoHideTimer);
+    splashAutoHideTimer = setTimeout(hideSplash, 2200);
+  }
+
   async function initApp() {
+    applyStaticText();
     renderExName();
     updateRecordDisplay();
+    chartDetail.textContent = t.ui.tapBar;
     const list = await loadSessions();
+    lastSessionsList = list;
     renderHistory(list);
     updateStreak(list);
     updateTodayOverview(list);
@@ -1656,8 +2390,6 @@
     updateGoalProgress(list);
     renderBadges(list);
 
-    // First time opening the app today? Show a gentle stretch reminder instead
-    // of the usual streak/tagline, once, then remember we've shown it.
     let isFirstOpenToday = false;
     try {
       const todayStr = new Date().toDateString();
@@ -1665,11 +2397,9 @@
       localStorage.setItem('lastOpenDate', todayStr);
     } catch (e) {}
 
-    splashTitle.textContent = userName ? 'Welkom terug, ' + userName + '!' : 'Trainingspartner';
-    splashSub.textContent = isFirstOpenToday
-      ? 'Even strekken voor je begint?'
-      : (streakDisplay.textContent || 'Klaar om te trainen?');
-    setTimeout(hideSplash, 2200);
+    splashTitle.textContent = userName ? `${t.ui.welcomeBack}, ${userName}!` : t.ui.appName;
+    splashSub.textContent = isFirstOpenToday ? randomTip() : (streakDisplay.textContent || t.ui.readyToTrain);
+    splashAutoHideTimer = setTimeout(hideSplash, 2200);
   }
   initApp();
 </script>
