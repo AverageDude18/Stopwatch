@@ -12,6 +12,26 @@
 <link rel="icon" type="image/png" sizes="32x32" href="favicon.png">
 <title>Trainingspartner</title>
 <style>
+  :root {
+    --bg: #14171c;
+    --panel: #1a1d23;
+    --panel-alt: #1f232b;
+    --border: #3a3f47;
+    --text: #f2f2f2;
+    --muted: #9aa0a8;
+    --muted2: #6b7077;
+    --accent: #7fdba8;
+  }
+  body.light {
+    --bg: #f4f6f5;
+    --panel: #ffffff;
+    --panel-alt: #eef1ef;
+    --border: #d8dedb;
+    --text: #1a1d23;
+    --muted: #5b6560;
+    --muted2: #7a827d;
+    --accent: #2e7d4f;
+  }
   * { box-sizing: border-box; }
   body {
     margin: 0;
@@ -19,148 +39,127 @@
     display: flex;
     align-items: center;
     justify-content: center;
-    background: #14171c;
+    background: var(--bg);
     font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
-    color: #f2f2f2;
+    color: var(--text);
+    transition: background 0.3s ease, color 0.3s ease;
   }
-  .card {
-    text-align: center;
-    padding: 32px 28px;
-    width: min(90vw, 380px);
-    position: relative;
+  .card { text-align: center; padding: 30px 26px; width: min(90vw, 380px); position: relative; }
+
+  .top-row {
+    display: flex; justify-content: space-between; align-items: center;
+    margin-bottom: 6px; min-height: 22px;
+  }
+  .streak { font-size: 0.85rem; color: var(--muted); }
+  .theme-toggle {
+    background: none; border: none; font-size: 1.1rem; cursor: pointer; padding: 4px;
   }
 
-  /* Ring + time */
   .ring-wrap {
-    position: relative;
-    width: 230px;
-    height: 230px;
-    margin: 0 auto 22px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
+    position: relative; width: 230px; height: 230px; margin: 6px auto 18px;
+    display: flex; align-items: center; justify-content: center;
   }
-  .progress-ring {
-    position: absolute;
-    top: 0; left: 0;
-    width: 100%; height: 100%;
-    transform: rotate(-90deg);
-    z-index: 2;
-  }
-  .ring-bg { fill: none; stroke: #24282f; stroke-width: 10; }
+  .progress-ring { position: absolute; top: 0; left: 0; width: 100%; height: 100%; transform: rotate(-90deg); z-index: 2; }
+  .ring-bg { fill: none; stroke: var(--panel-alt); stroke-width: 10; }
   .ring-fill {
-    fill: none;
-    stroke: #7fdba8;
-    stroke-width: 10;
-    stroke-linecap: round;
+    fill: none; stroke: #7fdba8; stroke-width: 10; stroke-linecap: round;
     transition: stroke-dashoffset 0.2s linear, stroke 0.4s ease;
   }
   .breathing-circle {
-    position: absolute;
-    top: 50%; left: 50%;
-    width: 170px; height: 170px;
-    margin: -85px 0 0 -85px;
-    border-radius: 50%;
-    background: radial-gradient(circle, rgba(127,219,168,0.35), rgba(127,219,168,0) 70%);
-    opacity: 0;
-    z-index: 1;
-    pointer-events: none;
+    position: absolute; top: 50%; left: 50%; width: 170px; height: 170px; margin: -85px 0 0 -85px;
+    border-radius: 50%; background: radial-gradient(circle, rgba(127,219,168,0.35), rgba(127,219,168,0) 70%);
+    opacity: 0; z-index: 1; pointer-events: none;
   }
   .breathing-circle.active { animation: breathe 8s ease-in-out; }
   @keyframes breathe {
-    0%   { transform: scale(0.8);  opacity: 0; }
-    15%  { opacity: 0.6; }
-    50%  { transform: scale(1.18); opacity: 0.45; }
-    85%  { opacity: 0.25; }
-    100% { transform: scale(0.8);  opacity: 0; }
+    0% { transform: scale(0.8); opacity: 0; }
+    15% { opacity: 0.6; }
+    50% { transform: scale(1.18); opacity: 0.45; }
+    85% { opacity: 0.25; }
+    100% { transform: scale(0.8); opacity: 0; }
   }
   .time {
-    position: relative;
-    z-index: 3;
-    font-size: 3.1rem;
-    font-weight: 700;
-    font-variant-numeric: tabular-nums;
-    color: #7fdba8;
-    transition: color 0.4s ease;
+    position: relative; z-index: 3; font-size: 2.9rem; font-weight: 700;
+    font-variant-numeric: tabular-nums; color: #7fdba8; transition: color 0.4s ease;
+  }
+  .phase-label {
+    position: relative; z-index: 3; margin-top: 2px; font-size: 0.85rem; color: var(--muted); min-height: 1.2em;
   }
 
-  .controls { display: flex; gap: 10px; justify-content: center; flex-wrap: wrap; }
+  .controls { display: flex; gap: 8px; justify-content: center; flex-wrap: wrap; }
   button {
-    font-size: 1.05rem;
-    padding: 14px 20px;
-    border-radius: 12px;
-    border: none;
-    cursor: pointer;
-    font-weight: 600;
-    transition: transform 0.1s ease;
+    font-size: 1rem; padding: 13px 18px; border-radius: 12px; border: none;
+    cursor: pointer; font-weight: 600; transition: transform 0.1s ease;
   }
   button:active { transform: scale(0.96); }
   #startBtn { background: #2e7d4f; color: white; }
   #stopBtn { background: #b3413a; color: white; }
-  #resetBtn { background: #3a3f47; color: #f2f2f2; }
-  #muteBtn { background: #3a3f47; color: #f2f2f2; padding: 14px 16px; font-size: 1.2rem; }
+  #resetBtn { background: var(--border); color: var(--text); }
+  #muteBtn { background: var(--border); color: var(--text); padding: 13px 15px; font-size: 1.1rem; }
   button:disabled { opacity: 0.4; cursor: not-allowed; }
 
+  .mode-row { display: flex; gap: 8px; justify-content: center; margin-top: 16px; }
+  .mode-btn {
+    flex: 1; background: var(--panel-alt); color: var(--muted); font-size: 0.85rem;
+    padding: 9px; border: 1px solid var(--border);
+  }
+  .mode-btn.active { background: #2e7d4f; color: white; border-color: #2e7d4f; }
+
+  .ex-picker {
+    display: flex; align-items: center; justify-content: center; gap: 14px;
+    margin-top: 16px; font-size: 0.95rem; color: var(--text);
+  }
+  .chev {
+    background: var(--panel-alt); color: var(--text); border: 1px solid var(--border);
+    width: 34px; height: 34px; padding: 0; border-radius: 8px; font-size: 1.1rem; line-height: 1;
+  }
+  .ex-name { min-width: 130px; font-weight: 600; }
+
   .settings {
-    margin-top: 18px;
-    font-size: 0.9rem;
-    color: #9aa0a8;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    gap: 8px;
+    margin-top: 14px; font-size: 0.9rem; color: var(--muted);
+    display: flex; align-items: center; justify-content: center; gap: 8px; flex-wrap: wrap;
   }
   select {
-    background: #1f232b;
-    color: #f2f2f2;
-    border: 1px solid #3a3f47;
-    border-radius: 6px;
-    padding: 4px 8px;
+    background: var(--panel-alt); color: var(--text); border: 1px solid var(--border);
+    border-radius: 6px; padding: 4px 8px;
   }
-  .record-line {
-    margin-top: 10px;
-    font-size: 0.85rem;
-    color: #7fdba8;
-    min-height: 1.2em;
-  }
-  .status { margin-top: 12px; font-size: 0.85rem; color: #6b7077; min-height: 1.2em; }
+  .record-line { margin-top: 10px; font-size: 0.85rem; color: var(--accent); min-height: 1.2em; }
+  .status { margin-top: 12px; font-size: 0.85rem; color: var(--muted2); min-height: 1.2em; }
 
   .small-btn {
-    background: #1f232b;
-    color: #9aa0a8;
-    font-size: 0.8rem;
-    padding: 8px 14px;
-    border: 1px solid #3a3f47;
+    background: var(--panel-alt); color: var(--muted); font-size: 0.8rem;
+    padding: 8px 14px; border: 1px solid var(--border);
   }
-  .history {
-    margin-top: 16px;
-    text-align: left;
-    background: #1a1d23;
-    border-radius: 12px;
-    padding: 12px 16px;
-    font-size: 0.85rem;
-  }
-  .history-item {
-    display: flex;
-    justify-content: space-between;
-    padding: 5px 0;
-    border-bottom: 1px solid #262a31;
-    color: #d5d8dc;
-  }
+  .history { margin-top: 14px; text-align: left; background: var(--panel); border-radius: 12px; padding: 12px 16px; font-size: 0.85rem; }
+  .history-item { display: flex; justify-content: space-between; padding: 5px 0; border-bottom: 1px solid var(--panel-alt); color: var(--text); }
   .history-item:last-child { border-bottom: none; }
-  .history-date { color: #6b7077; }
-  .history-empty { color: #6b7077; padding: 4px 0; }
+  .history-empty { color: var(--muted2); padding: 4px 0; }
+
+  .flash-overlay {
+    position: fixed; inset: 0; background: var(--accent); opacity: 0; pointer-events: none;
+    z-index: 50; transition: opacity 0.15s ease;
+  }
+  .flash-overlay.active { opacity: 0.22; }
 </style>
 </head>
 <body>
+  <div class="flash-overlay" id="flashOverlay"></div>
   <div class="card">
+    <div class="top-row">
+      <div class="streak" id="streakDisplay"></div>
+      <button class="theme-toggle" id="themeBtn" aria-label="Thema wisselen">🌙</button>
+    </div>
+
     <div class="ring-wrap">
       <svg class="progress-ring" viewBox="0 0 230 230">
         <circle class="ring-bg" cx="115" cy="115" r="100"></circle>
         <circle class="ring-fill" id="ringFill" cx="115" cy="115" r="100"></circle>
       </svg>
       <div class="breathing-circle" id="breathingCircle"></div>
-      <div class="time" id="display">0:00</div>
+      <div>
+        <div class="time" id="display">0:00</div>
+        <div class="phase-label" id="phaseLabel"></div>
+      </div>
     </div>
 
     <div class="controls">
@@ -170,17 +169,18 @@
       <button id="muteBtn" aria-label="Geluid aan/uit">🔊</button>
     </div>
 
-    <div class="record-line" id="recordDisplay">Record: --</div>
-
-    <div class="settings">
-      Oefening
-      <select id="exerciseSelect">
-        <option value="plank">Plank</option>
-        <option value="deadhang">Deadhang</option>
-        <option value="lsit">L-sit deadhang</option>
-      </select>
+    <div class="mode-row">
+      <button class="mode-btn active" id="freeModeBtn">Vrije hold</button>
+      <button class="mode-btn" id="intervalModeBtn">Intervallen</button>
     </div>
-    <div class="settings">
+
+    <div class="ex-picker">
+      <button class="chev" id="exPrev">‹</button>
+      <div class="ex-name" id="exName">Plank</div>
+      <button class="chev" id="exNext">›</button>
+    </div>
+
+    <div class="settings" id="freeSettings">
       Meld elke
       <select id="interval">
         <option value="5">5</option>
@@ -191,9 +191,37 @@
       seconden
     </div>
 
-    <div class="status" id="status">Stem laden...</div>
+    <div id="intervalSettings" style="display:none;">
+      <div class="settings">
+        Werk <select id="workSec">
+          <option value="15">15s</option>
+          <option value="20">20s</option>
+          <option value="30" selected>30s</option>
+          <option value="45">45s</option>
+          <option value="60">60s</option>
+        </select>
+        Rust <select id="restSec">
+          <option value="10">10s</option>
+          <option value="15" selected>15s</option>
+          <option value="20">20s</option>
+          <option value="30">30s</option>
+        </select>
+        Rondes <select id="rounds">
+          <option value="1">1</option><option value="2">2</option>
+          <option value="3" selected>3</option><option value="4">4</option>
+          <option value="5">5</option><option value="6">6</option>
+          <option value="8">8</option><option value="10">10</option>
+        </select>
+      </div>
+    </div>
 
-    <div class="controls" style="margin-top: 14px;">
+    <div class="record-line" id="recordDisplay">Record: --</div>
+    <div class="status" id="status">Stem laden...</div>
+    <div class="controls" style="margin-top: 10px;">
+      <button class="small-btn" id="shareBtn" style="display:none;">Deel record</button>
+    </div>
+
+    <div class="controls" style="margin-top: 10px;">
       <button class="small-btn" id="historyToggle">Geschiedenis</button>
     </div>
     <div class="history" id="historySection" style="display:none;">
@@ -205,23 +233,17 @@
   // ====== CONFIG ======
   const ELEVEN_API_KEY = 'REDACTED_ELEVENLABS_KEY';
   const ELEVEN_MODEL = 'eleven_turbo_v2_5';
+  const EX_KEYS = ['plank', 'deadhang', 'lsit'];
   const EX_NAMES = { plank: 'Plank', deadhang: 'Deadhang', lsit: 'L-sit deadhang' };
 
-  // ====== State ======
-  let startTime = null;
-  let elapsed = 0;
-  let timerId = null;
-  let lastAnnounced = 0;
-  let lastCueAt = -Infinity;
-  let minuteCount = 0;
-  let encourageIndex = 0;
-  let elevenVoiceId = null;
-  let elevenReady = false;
+  // ====== Shared state ======
+  let exerciseIndex = 0;
   let isMuted = false;
   let wakeLock = null;
+  let intervalMode = false;
+  let timerId = null;
+  let elapsed = 0; // free-hold mode elapsed seconds
 
-  const ENCOURAGE_AFTER = 20;
-  const CUE_INTERVAL = 15;
   const BREATHING_CUE = 'Rustig doorademen.';
   const encouragementsByExercise = {
     plank: [
@@ -247,14 +269,20 @@
     ]
   };
 
+  function currentEx() { return EX_KEYS[exerciseIndex]; }
+
   // ====== Elements ======
   const display = document.getElementById('display');
+  const phaseLabel = document.getElementById('phaseLabel');
   const startBtn = document.getElementById('startBtn');
   const stopBtn = document.getElementById('stopBtn');
   const resetBtn = document.getElementById('resetBtn');
   const muteBtn = document.getElementById('muteBtn');
+  const themeBtn = document.getElementById('themeBtn');
   const intervalSelect = document.getElementById('interval');
-  const exerciseSelect = document.getElementById('exerciseSelect');
+  const exName = document.getElementById('exName');
+  const exPrev = document.getElementById('exPrev');
+  const exNext = document.getElementById('exNext');
   const status = document.getElementById('status');
   const ringFill = document.getElementById('ringFill');
   const breathingCircle = document.getElementById('breathingCircle');
@@ -262,42 +290,54 @@
   const historyToggle = document.getElementById('historyToggle');
   const historySection = document.getElementById('historySection');
   const historyList = document.getElementById('historyList');
+  const streakDisplay = document.getElementById('streakDisplay');
+  const shareBtn = document.getElementById('shareBtn');
+  const flashOverlay = document.getElementById('flashOverlay');
+  const freeModeBtn = document.getElementById('freeModeBtn');
+  const intervalModeBtn = document.getElementById('intervalModeBtn');
+  const freeSettings = document.getElementById('freeSettings');
+  const intervalSettings = document.getElementById('intervalSettings');
+  const workSecSelect = document.getElementById('workSec');
+  const restSecSelect = document.getElementById('restSec');
+  const roundsSelect = document.getElementById('rounds');
 
-  // ====== Ring setup ======
+  // ====== Ring ======
   const RING_R = 100;
   const RING_CIRC = 2 * Math.PI * RING_R;
   ringFill.style.strokeDasharray = RING_CIRC;
   ringFill.style.strokeDashoffset = RING_CIRC;
 
   function colorForElapsed(sec) {
-    // Cool green early, shifts warmer (orange) the longer the hold goes, capped at 3 min.
     const t = Math.min(sec / 180, 1);
-    const c1 = [127, 219, 168];
-    const c2 = [255, 159, 92];
-    const r = Math.round(c1[0] + (c2[0] - c1[0]) * t);
-    const g = Math.round(c1[1] + (c2[1] - c1[1]) * t);
-    const b = Math.round(c1[2] + (c2[2] - c1[2]) * t);
+    const c1 = [127, 219, 168], c2 = [255, 159, 92];
+    const r = Math.round(c1[0] + (c2[0]-c1[0])*t);
+    const g = Math.round(c1[1] + (c2[1]-c1[1])*t);
+    const b = Math.round(c1[2] + (c2[2]-c1[2])*t);
     return `rgb(${r},${g},${b})`;
   }
-
-  function updateRing() {
-    const fraction = (elapsed % 60) / 60;
+  function setRingFraction(fraction, color) {
     ringFill.style.strokeDashoffset = RING_CIRC * (1 - fraction);
-    const col = colorForElapsed(elapsed);
-    ringFill.style.stroke = col;
-    display.style.color = col;
+    ringFill.style.stroke = color;
+    display.style.color = color;
   }
-
-  function resetRing() {
-    ringFill.style.strokeDashoffset = RING_CIRC;
-    ringFill.style.stroke = '#7fdba8';
-    display.style.color = '#7fdba8';
-  }
+  function resetRing() { setRingFraction(0, '#7fdba8'); }
 
   function triggerBreathing() {
     breathingCircle.classList.remove('active');
-    void breathingCircle.offsetWidth; // force reflow so the animation restarts
+    void breathingCircle.offsetWidth;
     breathingCircle.classList.add('active');
+  }
+
+  function flashScreen() {
+    flashOverlay.classList.add('active');
+    setTimeout(() => flashOverlay.classList.remove('active'), 150);
+  }
+  function vibrate(pattern) {
+    if ('vibrate' in navigator) { try { navigator.vibrate(pattern); } catch (e) {} }
+  }
+  function pulseFeedback(pattern) {
+    vibrate(pattern);
+    flashScreen();
   }
 
   // ====== Numbers to Dutch words ======
@@ -308,114 +348,146 @@
     const tens = ['', '', 'twintig', 'dertig', 'veertig', 'vijftig', 'zestig', 'zeventig', 'tachtig', 'negentig'];
     if (n < 20) return ones[n];
     if (n < 100) {
-      const t = Math.floor(n / 10);
-      const o = n % 10;
+      const t = Math.floor(n / 10), o = n % 10;
       return o === 0 ? tens[t] : ones[o] + 'en' + tens[t];
     }
-    const h = Math.floor(n / 100);
-    const rest = n % 100;
+    const h = Math.floor(n / 100), rest = n % 100;
     return (h > 1 ? ones[h] + 'honderd' : 'honderd') + (rest ? numberToDutchWords(rest) : '');
   }
 
   // ====== Mobile audio unlock ======
   const audioPlayer = new Audio();
   const SILENT_WAV = 'data:audio/wav;base64,UklGRiQAAABXQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YQAAAAA=';
-
   function unlockAudio() {
     audioPlayer.src = SILENT_WAV;
     audioPlayer.play().catch(() => {});
     if ('speechSynthesis' in window) {
-      const unlockUtter = new SpeechSynthesisUtterance(' ');
-      unlockUtter.volume = 0;
-      window.speechSynthesis.speak(unlockUtter);
+      const u = new SpeechSynthesisUtterance(' ');
+      u.volume = 0;
+      window.speechSynthesis.speak(u);
     }
   }
 
-  // ====== Haptics ======
-  function vibrate(pattern) {
-    if ('vibrate' in navigator) {
-      try { navigator.vibrate(pattern); } catch (e) {}
-    }
-  }
-
-  // ====== Wake lock (keeps the screen on during a hold) ======
+  // ====== Wake lock ======
   async function requestWakeLock() {
-    try {
-      if ('wakeLock' in navigator) {
-        wakeLock = await navigator.wakeLock.request('screen');
-      }
-    } catch (e) {
-      // unsupported or denied — timer still works, screen may just sleep
-    }
+    try { if ('wakeLock' in navigator) wakeLock = await navigator.wakeLock.request('screen'); }
+    catch (e) {}
   }
   function releaseWakeLock() {
-    if (wakeLock) {
-      wakeLock.release().catch(() => {});
-      wakeLock = null;
-    }
+    if (wakeLock) { wakeLock.release().catch(() => {}); wakeLock = null; }
   }
   document.addEventListener('visibilitychange', () => {
-    if (document.visibilityState === 'visible' && !stopBtn.disabled) {
-      requestWakeLock();
-    }
+    if (document.visibilityState === 'visible' && !stopBtn.disabled) requestWakeLock();
   });
 
-  // ====== Personal records & session history (persisted via window.storage) ======
-  async function getRecord(ex) {
+  // ====== Theme ======
+  async function applyTheme(mode, persist) {
+    document.body.classList.toggle('light', mode === 'light');
+    themeBtn.textContent = mode === 'light' ? '🌙' : '☀️';
+    if (persist) { try { localStorage.setItem('theme', mode); } catch (e) {} }
+  }
+  themeBtn.addEventListener('click', () => {
+    const next = document.body.classList.contains('light') ? 'dark' : 'light';
+    applyTheme(next, true);
+  });
+  (() => {
     try {
-      const r = await window.storage.get('record:' + ex, false);
-      return r && r.value ? parseInt(r.value, 10) : 0;
-    } catch (e) {
-      return 0;
-    }
+      const saved = localStorage.getItem('theme');
+      if (saved === 'light') applyTheme('light', false);
+    } catch (e) {}
+  })();
+
+  // ====== Records, history, streak ======
+  async function getRecord(ex) {
+    try { const v = localStorage.getItem('record:' + ex); return v ? parseInt(v, 10) : 0; }
+    catch (e) { return 0; }
   }
   async function setRecord(ex, seconds) {
-    try { await window.storage.set('record:' + ex, String(seconds), false); } catch (e) {}
+    try { localStorage.setItem('record:' + ex, String(seconds)); } catch (e) {}
   }
   async function updateRecordDisplay() {
-    const rec = await getRecord(exerciseSelect.value);
+    if (intervalMode) { recordDisplay.textContent = ''; return; }
+    const rec = await getRecord(currentEx());
     recordDisplay.textContent = rec > 0 ? 'Record: ' + format(rec) : 'Nog geen record';
   }
-
   async function loadSessions() {
-    try {
-      const r = await window.storage.get('sessions', false);
-      return r && r.value ? JSON.parse(r.value) : [];
-    } catch (e) {
-      return [];
-    }
+    try { const v = localStorage.getItem('sessions'); return v ? JSON.parse(v) : []; }
+    catch (e) { return []; }
   }
   async function saveSession(ex, dur) {
     try {
       const list = await loadSessions();
       list.unshift({ ex, dur, ts: Date.now() });
-      const trimmed = list.slice(0, 20);
-      await window.storage.set('sessions', JSON.stringify(trimmed), false);
+      const trimmed = list.slice(0, 30);
+      localStorage.setItem('sessions', JSON.stringify(trimmed));
       renderHistory(trimmed);
+      updateStreak(trimmed);
     } catch (e) {}
   }
   function renderHistory(list) {
-    if (!list.length) {
-      historyList.innerHTML = '<div class="history-empty">Nog geen sessies</div>';
-      return;
-    }
+    if (!list.length) { historyList.innerHTML = '<div class="history-empty">Nog geen sessies</div>'; return; }
     historyList.innerHTML = list.slice(0, 6).map(s => {
       const d = new Date(s.ts);
       const dateStr = d.toLocaleDateString('nl-NL', { day: 'numeric', month: 'short' });
       return `<div class="history-item"><span>${EX_NAMES[s.ex] || s.ex}</span><span>${format(s.dur)} · ${dateStr}</span></div>`;
     }).join('');
   }
+  function updateStreak(list) {
+    const days = new Set(list.map(s => new Date(s.ts).toDateString()));
+    let streak = 0;
+    const cursor = new Date();
+    if (!days.has(cursor.toDateString())) cursor.setDate(cursor.getDate() - 1);
+    while (days.has(cursor.toDateString())) { streak++; cursor.setDate(cursor.getDate() - 1); }
+    streakDisplay.textContent = streak > 0 ? '🔥 ' + streak + (streak === 1 ? ' dag op rij' : ' dagen op rij') : '';
+  }
 
+  let lastRecordEx = null, lastRecordDur = 0;
   async function checkRecord(ex, dur) {
     const rec = await getRecord(ex);
     if (dur > rec) {
       await setRecord(ex, dur);
       status.textContent = 'Nieuw record! 🎉 ' + format(dur);
-      vibrate([100, 60, 100, 60, 200]);
+      pulseFeedback([100, 60, 100, 60, 200]);
       if (!isMuted) speak('Nieuw record! Geweldig gedaan!');
+      lastRecordEx = ex; lastRecordDur = dur;
+      shareBtn.style.display = 'inline-block';
     }
     updateRecordDisplay();
   }
+
+  // ---- Share record as an image ----
+  function generateShareCanvas(ex, dur) {
+    const canvas = document.createElement('canvas');
+    canvas.width = 800; canvas.height = 800;
+    const ctx = canvas.getContext('2d');
+    ctx.fillStyle = '#14171c'; ctx.fillRect(0, 0, 800, 800);
+    ctx.textAlign = 'center';
+    ctx.fillStyle = '#9aa0a8';
+    ctx.font = '36px -apple-system, sans-serif';
+    ctx.fillText('Nieuw record 🎉', 400, 300);
+    ctx.fillStyle = '#7fdba8';
+    ctx.font = 'bold 130px -apple-system, sans-serif';
+    ctx.fillText(format(dur), 400, 440);
+    ctx.fillStyle = '#f2f2f2';
+    ctx.font = 'bold 44px -apple-system, sans-serif';
+    ctx.fillText(EX_NAMES[ex] || ex, 400, 520);
+    return canvas;
+  }
+  shareBtn.addEventListener('click', () => {
+    if (!lastRecordEx) return;
+    const canvas = generateShareCanvas(lastRecordEx, lastRecordDur);
+    canvas.toBlob(async (blob) => {
+      const file = new File([blob], 'record.png', { type: 'image/png' });
+      if (navigator.share && navigator.canShare && navigator.canShare({ files: [file] })) {
+        try { await navigator.share({ files: [file], title: 'Nieuw record!', text: EX_NAMES[lastRecordEx] + ': ' + format(lastRecordDur) }); }
+        catch (e) {}
+      } else {
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url; a.download = 'record.png'; a.click();
+      }
+    });
+  });
 
   historyToggle.addEventListener('click', () => {
     const showing = historySection.style.display !== 'none';
@@ -423,33 +495,48 @@
     historyToggle.textContent = showing ? 'Geschiedenis' : 'Verberg geschiedenis';
   });
 
-  exerciseSelect.addEventListener('change', updateRecordDisplay);
+  // ====== Exercise picker (swipe + chevrons) ======
+  function renderExName() { exName.textContent = EX_NAMES[currentEx()]; }
+  function changeExercise(delta) {
+    if (!startBtn.disabled === false && timerId) return; // no-op guard, real lock handled by disabling below
+    exerciseIndex = (exerciseIndex + delta + EX_KEYS.length) % EX_KEYS.length;
+    renderExName();
+    updateRecordDisplay();
+    shareBtn.style.display = 'none';
+  }
+  exPrev.addEventListener('click', () => changeExercise(-1));
+  exNext.addEventListener('click', () => changeExercise(1));
+
+  let touchStartX = null;
+  const exPickerEl = document.querySelector('.ex-picker');
+  exPickerEl.addEventListener('touchstart', (e) => { touchStartX = e.touches[0].clientX; }, { passive: true });
+  exPickerEl.addEventListener('touchend', (e) => {
+    if (touchStartX === null) return;
+    const dx = e.changedTouches[0].clientX - touchStartX;
+    if (Math.abs(dx) > 40) changeExercise(dx > 0 ? -1 : 1);
+    touchStartX = null;
+  }, { passive: true });
 
   // ====== Mute ======
   muteBtn.addEventListener('click', () => {
     isMuted = !isMuted;
     muteBtn.textContent = isMuted ? '🔇' : '🔊';
-    if (isMuted) {
-      window.speechSynthesis.cancel();
-      audioPlayer.pause();
-    }
+    if (isMuted) { window.speechSynthesis.cancel(); audioPlayer.pause(); }
   });
 
-  // ====== ElevenLabs setup ======
+  // ====== ElevenLabs ======
+  let elevenVoiceId = null;
+  let elevenReady = false;
   async function initEleven() {
     try {
-      const res = await fetch('https://api.elevenlabs.io/v1/voices', {
-        headers: { 'xi-api-key': ELEVEN_API_KEY }
-      });
+      const res = await fetch('https://api.elevenlabs.io/v1/voices', { headers: { 'xi-api-key': ELEVEN_API_KEY } });
       if (!res.ok) throw new Error('HTTP ' + res.status);
       const data = await res.json();
       if (data.voices && data.voices.length) {
         elevenVoiceId = data.voices[0].voice_id;
         elevenReady = true;
         status.textContent = '';
-      } else {
-        throw new Error('Geen stemmen gevonden');
-      }
+      } else throw new Error('Geen stemmen gevonden');
     } catch (e) {
       elevenReady = false;
       status.textContent = 'ElevenLabs fout: ' + (e && e.message ? e.message : e);
@@ -460,73 +547,101 @@
   async function speakEleven(text) {
     const res = await fetch('https://api.elevenlabs.io/v1/text-to-speech/' + elevenVoiceId, {
       method: 'POST',
-      headers: {
-        'xi-api-key': ELEVEN_API_KEY,
-        'Content-Type': 'application/json'
-      },
+      headers: { 'xi-api-key': ELEVEN_API_KEY, 'Content-Type': 'application/json' },
       body: JSON.stringify({
-        text: text,
-        model_id: ELEVEN_MODEL,
-        language_code: 'nl',
+        text: text, model_id: ELEVEN_MODEL, language_code: 'nl',
         voice_settings: { stability: 0.72, similarity_boost: 0.75 }
       })
     });
     if (!res.ok) throw new Error('HTTP ' + res.status);
     const blob = await res.blob();
-    const url = URL.createObjectURL(blob);
-    audioPlayer.src = url;
+    audioPlayer.src = URL.createObjectURL(blob);
     await audioPlayer.play();
   }
-
   function speakBrowser(text) {
     if (!('speechSynthesis' in window)) return;
     window.speechSynthesis.cancel();
-    const utter = new SpeechSynthesisUtterance(text);
-    utter.lang = 'nl-NL';
-    utter.rate = 1;
-    window.speechSynthesis.speak(utter);
+    const u = new SpeechSynthesisUtterance(text);
+    u.lang = 'nl-NL'; u.rate = 1;
+    window.speechSynthesis.speak(u);
   }
-
   async function speak(text) {
     if (isMuted) return;
     if (elevenReady) {
-      try {
-        await speakEleven(text);
-        return;
-      } catch (e) {
-        // silently fall back to browser voice for this utterance
-      }
+      try { await speakEleven(text); return; } catch (e) {}
     }
     speakBrowser(text);
   }
 
-  // ====== Timer logic ======
   function format(sec) {
-    const m = Math.floor(sec / 60);
-    const s = sec % 60;
+    const m = Math.floor(sec / 60), s = sec % 60;
     return m + ':' + String(s).padStart(2, '0');
   }
 
-  function tick() {
+  // ====== Mode switching ======
+  function setMode(mode) {
+    if (timerId) return; // don't allow switching mid-run
+    intervalMode = mode === 'interval';
+    freeModeBtn.classList.toggle('active', !intervalMode);
+    intervalModeBtn.classList.toggle('active', intervalMode);
+    freeSettings.style.display = intervalMode ? 'none' : 'flex';
+    intervalSettings.style.display = intervalMode ? 'block' : 'none';
+    phaseLabel.textContent = '';
+    display.textContent = '0:00';
+    resetRing();
+    updateRecordDisplay();
+    status.textContent = '';
+  }
+  freeModeBtn.addEventListener('click', () => setMode('free'));
+  intervalModeBtn.addEventListener('click', () => setMode('interval'));
+
+  // ====== FREE HOLD MODE ======
+  let startTime = null;
+  let lastAnnounced = 0;
+  let lastCueAt = -Infinity;
+  let minuteCount = 0;
+  let encourageIndex = 0;
+  let sessionRecordSec = 0;
+  let halfRecordAnnounced = false;
+  let matchRecordAnnounced = false;
+  const ENCOURAGE_AFTER = 20;
+  const CUE_INTERVAL = 15;
+
+  function freeTick() {
     elapsed = Math.floor((Date.now() - startTime) / 1000);
     display.textContent = format(elapsed);
-    updateRing();
+    const fraction = (elapsed % 60) / 60;
+    setRingFraction(fraction, colorForElapsed(elapsed));
 
     const step = parseInt(intervalSelect.value, 10);
     const timeIsDue = elapsed > 0 && elapsed - lastAnnounced >= step;
     const cueIsDue = elapsed >= ENCOURAGE_AFTER && elapsed - lastCueAt >= CUE_INTERVAL;
     const minuteIsDue = elapsed >= (minuteCount + 1) * 60;
 
+    // Adaptive coaching relative to personal record
+    if (sessionRecordSec > 0 && !halfRecordAnnounced && elapsed >= Math.floor(sessionRecordSec / 2)) {
+      halfRecordAnnounced = true;
+      lastAnnounced = elapsed; lastCueAt = elapsed;
+      speak('Je zit op de helft van je record! Kom op!');
+      return;
+    }
+    if (sessionRecordSec > 0 && !matchRecordAnnounced && elapsed >= sessionRecordSec) {
+      matchRecordAnnounced = true;
+      lastAnnounced = elapsed; lastCueAt = elapsed;
+      pulseFeedback(150);
+      speak('Je evenaart je record! Ga ervoor!');
+      return;
+    }
+
     if (minuteIsDue) {
       minuteCount++;
-      lastAnnounced = elapsed;
-      lastCueAt = elapsed;
-      vibrate(200);
+      lastAnnounced = elapsed; lastCueAt = elapsed;
+      pulseFeedback(200);
       speak(numberToDutchWords(minuteCount) + (minuteCount === 1 ? ' minuut' : ' minuten'));
     } else if (cueIsDue) {
       lastCueAt = elapsed;
       if (timeIsDue) lastAnnounced = elapsed - (elapsed % step);
-      const list = encouragementsByExercise[exerciseSelect.value] || encouragementsByExercise.plank;
+      const list = encouragementsByExercise[currentEx()] || encouragementsByExercise.plank;
       const cueText = list[encourageIndex % list.length];
       if (cueText === BREATHING_CUE) triggerBreathing();
       speak(cueText);
@@ -537,62 +652,154 @@
     }
   }
 
-  startBtn.addEventListener('click', () => {
-    unlockAudio();
-    requestWakeLock();
-    speak('Start');
+  async function startFree() {
+    sessionRecordSec = await getRecord(currentEx());
+    halfRecordAnnounced = false;
+    matchRecordAnnounced = false;
     startTime = Date.now() - elapsed * 1000;
     lastAnnounced = elapsed - (elapsed % parseInt(intervalSelect.value, 10));
-    timerId = setInterval(tick, 200);
-    startBtn.disabled = true;
-    stopBtn.disabled = false;
-    intervalSelect.disabled = true;
-    exerciseSelect.disabled = true;
-    status.textContent = 'Loopt...';
-  });
-
-  stopBtn.addEventListener('click', () => {
-    clearInterval(timerId);
-    window.speechSynthesis.cancel();
-    audioPlayer.pause();
-    releaseWakeLock();
-    startBtn.disabled = false;
-    stopBtn.disabled = true;
-    intervalSelect.disabled = false;
-    exerciseSelect.disabled = false;
-    status.textContent = 'Gestopt op ' + format(elapsed);
-  });
-
-  resetBtn.addEventListener('click', () => {
-    clearInterval(timerId);
-    window.speechSynthesis.cancel();
-    audioPlayer.pause();
-    releaseWakeLock();
+    timerId = setInterval(freeTick, 200);
+  }
+  function stopFree() { status.textContent = 'Gestopt op ' + format(elapsed); }
+  function resetFree() {
     breathingCircle.classList.remove('active');
+    if (elapsed > 0) { saveSession(currentEx(), elapsed); checkRecord(currentEx(), elapsed); }
+    elapsed = 0; lastAnnounced = 0; lastCueAt = -Infinity; minuteCount = 0; encourageIndex = 0;
+    display.textContent = '0:00';
+    resetRing();
+    status.textContent = '';
+  }
 
-    if (elapsed > 0) {
-      const ex = exerciseSelect.value;
-      saveSession(ex, elapsed);
-      checkRecord(ex, elapsed);
+  // ====== INTERVAL MODE ======
+  let phase = 'work';
+  let currentRound = 1;
+  let phaseStartTime = null;
+  let workSec = 30, restSec = 15, totalRounds = 3;
+  let lastCountdownAt = null;
+
+  function intervalTick() {
+    const phaseElapsed = Math.floor((Date.now() - phaseStartTime) / 1000);
+    const phaseDuration = phase === 'work' ? workSec : restSec;
+    const remaining = Math.max(phaseDuration - phaseElapsed, 0);
+    display.textContent = format(remaining);
+    const fraction = phaseDuration > 0 ? phaseElapsed / phaseDuration : 0;
+    const col = phase === 'work' ? colorForElapsed(phaseElapsed) : '#5a9edb';
+    setRingFraction(Math.min(fraction, 1), col);
+    phaseLabel.textContent = (phase === 'work' ? 'Werk' : 'Rust') + ' · Ronde ' + currentRound + ' van ' + totalRounds;
+
+    if (remaining <= 3 && remaining >= 1 && lastCountdownAt !== remaining) {
+      lastCountdownAt = remaining;
+      speak(numberToDutchWords(remaining));
     }
 
-    elapsed = 0;
-    lastAnnounced = 0;
-    lastCueAt = -Infinity;
-    minuteCount = 0;
-    encourageIndex = 0;
+    if (phaseElapsed >= phaseDuration) {
+      if (phase === 'work') {
+        if (currentRound >= totalRounds) {
+          finishInterval();
+          return;
+        }
+        phase = 'rest';
+        phaseStartTime = Date.now();
+        lastCountdownAt = null;
+        pulseFeedback(120);
+        speak('Rust.');
+      } else {
+        currentRound++;
+        phase = 'work';
+        phaseStartTime = Date.now();
+        lastCountdownAt = null;
+        pulseFeedback(150);
+        speak('Ronde ' + numberToDutchWords(currentRound) + ', ga!');
+      }
+    }
+  }
+
+  function finishInterval() {
+    clearInterval(timerId);
+    timerId = null;
+    releaseWakeLock();
+    pulseFeedback([120, 60, 120, 60, 250]);
+    speak('Training voltooid! Goed gedaan!');
     display.textContent = '0:00';
+    phaseLabel.textContent = 'Klaar — ' + totalRounds + ' rondes voltooid';
     resetRing();
     startBtn.disabled = false;
     stopBtn.disabled = true;
-    intervalSelect.disabled = false;
-    exerciseSelect.disabled = false;
+    setControlsLockedForRun(false);
     status.textContent = '';
+  }
+
+  function startInterval() {
+    workSec = parseInt(workSecSelect.value, 10);
+    restSec = parseInt(restSecSelect.value, 10);
+    totalRounds = parseInt(roundsSelect.value, 10);
+    phase = 'work';
+    currentRound = 1;
+    phaseStartTime = Date.now();
+    lastCountdownAt = null;
+    speak('Start, ronde een!');
+    timerId = setInterval(intervalTick, 200);
+  }
+
+  // ====== Controls lock helper ======
+  function setControlsLockedForRun(locked) {
+    intervalSelect.disabled = locked;
+    workSecSelect.disabled = locked;
+    restSecSelect.disabled = locked;
+    roundsSelect.disabled = locked;
+    exPrev.disabled = locked;
+    exNext.disabled = locked;
+    freeModeBtn.disabled = locked;
+    intervalModeBtn.disabled = locked;
+  }
+
+  // ====== Start / Stop / Reset (shared) ======
+  startBtn.addEventListener('click', () => {
+    unlockAudio();
+    requestWakeLock();
+    startBtn.disabled = true;
+    stopBtn.disabled = false;
+    setControlsLockedForRun(true);
+    status.textContent = intervalMode ? '' : 'Loopt...';
+    shareBtn.style.display = 'none';
+    if (intervalMode) startInterval(); else { speak('Start'); startFree(); }
+  });
+
+  stopBtn.addEventListener('click', () => {
+    clearInterval(timerId); timerId = null;
+    window.speechSynthesis.cancel();
+    audioPlayer.pause();
+    releaseWakeLock();
+    startBtn.disabled = false;
+    stopBtn.disabled = true;
+    setControlsLockedForRun(false);
+    if (intervalMode) { phaseLabel.textContent = 'Gepauzeerd'; }
+    else stopFree();
+  });
+
+  resetBtn.addEventListener('click', () => {
+    clearInterval(timerId); timerId = null;
+    window.speechSynthesis.cancel();
+    audioPlayer.pause();
+    releaseWakeLock();
+    startBtn.disabled = false;
+    stopBtn.disabled = true;
+    setControlsLockedForRun(false);
+    if (intervalMode) {
+      phase = 'work'; currentRound = 1;
+      display.textContent = '0:00';
+      phaseLabel.textContent = '';
+      resetRing();
+      status.textContent = '';
+    } else {
+      resetFree();
+    }
   });
 
   // ====== Init ======
+  renderExName();
   updateRecordDisplay();
-  loadSessions().then(renderHistory);
+  loadSessions().then((list) => { renderHistory(list); updateStreak(list); });
 </script>
 </body>
 </html>
