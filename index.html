@@ -421,6 +421,10 @@
       <label for="nameInput" id="lblName">Jouw naam (voor persoonlijke aanmoedigingen)</label>
       <input type="text" id="nameInput" placeholder="bijv. Ids">
 
+      <label for="apiKeyInput" id="lblApiKey">ElevenLabs API-key (optioneel)</label>
+      <input type="password" id="apiKeyInput" placeholder="sk_..." autocomplete="off">
+      <div class="goal-bar-label" id="apiKeyHint" style="margin:-10px 0 14px;"></div>
+
       <label id="lblColor">Accentkleur</label>
       <div class="swatch-row">
         <button class="swatch selected" data-color="127,219,168" style="background:#7fdba8"></button>
@@ -598,7 +602,10 @@
 
 <script>
   // ====== CONFIG ======
-  const ELEVEN_API_KEY = 'REDACTED_ELEVENLABS_KEY';
+  // No API key ships with the app - each user supplies their own ElevenLabs
+  // key via settings (stored only in their browser's localStorage). Without
+  // a key, speakNow() falls back to the browser's built-in speechSynthesis.
+  let elevenApiKey = '';
   const ELEVEN_MODEL = 'eleven_turbo_v2_5';
   const FIXED_VOICE_ID = '';
   const EX_KEYS = ['plank', 'deadhang', 'lsit', 'sideplank', 'wallsit', 'hollowhold', 'superman', 'glutebridge', 'handstand', 'birddog'];
@@ -652,6 +659,7 @@
         statsToggle:'Statistieken', hideStats:'Verberg statistieken', achievements:'Prestaties',
         progress:'Voortgang per oefening', recent:'Recente sessies', noSessions:'Nog geen sessies',
         name:'Jouw naam (voor persoonlijke aanmoedigingen)', color:'Accentkleur', tone:'Coach-toon',
+        apiKey:'ElevenLabs API-key (optioneel)', apiKeyHint:'Zonder key gebruikt de app de stem van je browser.',
         toneMotiv:'Motiverend', toneStrict:'Streng', toneChill:'Chill',
         goal:'Weekdoel (sessies per week)', goalNone:'Geen doel', everyDay:'Elke dag',
         speed:'Spreeksnelheid van de stem', speedSlow:'Langzaam', speedNormal:'Normaal', speedFast:'Snel',
@@ -737,6 +745,7 @@
         statsToggle:'Stats', hideStats:'Hide stats', achievements:'Achievements',
         progress:'Progress per exercise', recent:'Recent sessions', noSessions:'No sessions yet',
         name:'Your name (for personal encouragement)', color:'Accent color', tone:'Coach tone',
+        apiKey:'ElevenLabs API key (optional)', apiKeyHint:"Without a key the app uses your browser's voice.",
         toneMotiv:'Motivating', toneStrict:'Strict', toneChill:'Chill',
         goal:'Weekly goal (sessions per week)', goalNone:'No goal', everyDay:'Every day',
         speed:'Voice speed', speedSlow:'Slow', speedNormal:'Normal', speedFast:'Fast',
@@ -796,6 +805,7 @@
         statsToggle:'Statistiken', hideStats:'Statistiken ausblenden', achievements:'Erfolge',
         progress:'Fortschritt pro Übung', recent:'Letzte Sitzungen', noSessions:'Noch keine Sitzungen',
         name:'Dein Name (für persönliche Ansprache)', color:'Akzentfarbe', tone:'Coach-Ton',
+        apiKey:'ElevenLabs-API-Schlüssel (optional)', apiKeyHint:'Ohne Schlüssel nutzt die App die Stimme deines Browsers.',
         toneMotiv:'Motivierend', toneStrict:'Streng', toneChill:'Entspannt',
         goal:'Wochenziel (Sitzungen pro Woche)', goalNone:'Kein Ziel', everyDay:'Jeden Tag',
         speed:'Sprechgeschwindigkeit', speedSlow:'Langsam', speedNormal:'Normal', speedFast:'Schnell',
@@ -855,6 +865,7 @@
         statsToggle:'Estadísticas', hideStats:'Ocultar estadísticas', achievements:'Logros',
         progress:'Progreso por ejercicio', recent:'Sesiones recientes', noSessions:'Aún sin sesiones',
         name:'Tu nombre (para ánimos personales)', color:'Color de acento', tone:'Tono del coach',
+        apiKey:'Clave API de ElevenLabs (opcional)', apiKeyHint:'Sin clave, la app usa la voz de tu navegador.',
         toneMotiv:'Motivador', toneStrict:'Estricto', toneChill:'Relajado',
         goal:'Meta semanal (sesiones por semana)', goalNone:'Sin meta', everyDay:'Todos los días',
         speed:'Velocidad de la voz', speedSlow:'Lenta', speedNormal:'Normal', speedFast:'Rápida',
@@ -914,6 +925,7 @@
         statsToggle:'Statistiques', hideStats:'Masquer les statistiques', achievements:'Succès',
         progress:'Progrès par exercice', recent:'Séances récentes', noSessions:'Aucune séance pour le moment',
         name:'Votre prénom (pour des encouragements personnels)', color:'Couleur d\u2019accent', tone:'Ton du coach',
+        apiKey:'Clé API ElevenLabs (facultatif)', apiKeyHint:'Sans clé, l’app utilise la voix de votre navigateur.',
         toneMotiv:'Motivant', toneStrict:'Strict', toneChill:'Détendu',
         goal:'Objectif hebdomadaire (séances par semaine)', goalNone:'Aucun objectif', everyDay:'Tous les jours',
         speed:'Vitesse de la voix', speedSlow:'Lente', speedNormal:'Normale', speedFast:'Rapide',
@@ -973,6 +985,7 @@
         statsToggle:'Estatísticas', hideStats:'Ocultar estatísticas', achievements:'Conquistas',
         progress:'Progresso por exercício', recent:'Sessões recentes', noSessions:'Ainda sem sessões',
         name:'O teu nome (para incentivos pessoais)', color:'Cor de destaque', tone:'Tom do treinador',
+        apiKey:'Chave de API ElevenLabs (opcional)', apiKeyHint:'Sem chave, a app usa a voz do teu navegador.',
         toneMotiv:'Motivador', toneStrict:'Rigoroso', toneChill:'Descontraído',
         goal:'Meta semanal (sessões por semana)', goalNone:'Sem meta', everyDay:'Todos os dias',
         speed:'Velocidade da voz', speedSlow:'Lenta', speedNormal:'Normal', speedFast:'Rápida',
@@ -1032,6 +1045,7 @@
         statsToggle:'Статистика', hideStats:'Скрыть статистику', achievements:'Достижения',
         progress:'Прогресс по упражнению', recent:'Недавние тренировки', noSessions:'Пока нет тренировок',
         name:'Твоё имя (для личных подбадриваний)', color:'Акцентный цвет', tone:'Тон тренера',
+        apiKey:'API-ключ ElevenLabs (необязательно)', apiKeyHint:'Без ключа приложение использует голос браузера.',
         toneMotiv:'Мотивирующий', toneStrict:'Строгий', toneChill:'Расслабленный',
         goal:'Недельная цель (тренировок в неделю)', goalNone:'Без цели', everyDay:'Каждый день',
         speed:'Скорость голоса', speedSlow:'Медленно', speedNormal:'Обычно', speedFast:'Быстро',
@@ -1091,6 +1105,7 @@
         statsToggle:'统计', hideStats:'隐藏统计', achievements:'成就',
         progress:'各动作进度', recent:'最近训练', noSessions:'暂无训练记录',
         name:'你的名字（用于个性化鼓励）', color:'主题色', tone:'教练语气',
+        apiKey:'ElevenLabs API 密钥（可选）', apiKeyHint:'没有密钥时，应用会使用浏览器自带的语音。',
         toneMotiv:'激励型', toneStrict:'严格型', toneChill:'轻松型',
         goal:'每周目标（每周训练次数）', goalNone:'无目标', everyDay:'每天',
         speed:'语音速度', speedSlow:'慢', speedNormal:'正常', speedFast:'快',
@@ -1150,6 +1165,7 @@
         statsToggle:'आँकड़े', hideStats:'आँकड़े छुपाएं', achievements:'उपलब्धियाँ',
         progress:'हर व्यायाम की प्रगति', recent:'हाल के सेशन', noSessions:'अभी तक कोई सेशन नहीं',
         name:'आपका नाम (व्यक्तिगत प्रोत्साहन के लिए)', color:'एक्सेंट रंग', tone:'कोच का लहजा',
+        apiKey:'ElevenLabs API कुंजी (वैकल्पिक)', apiKeyHint:'बिना कुंजी के ऐप आपके ब्राउज़र की आवाज़ का उपयोग करेगा।',
         toneMotiv:'प्रेरक', toneStrict:'सख्त', toneChill:'आरामदायक',
         goal:'साप्ताहिक लक्ष्य (प्रति सप्ताह सेशन)', goalNone:'कोई लक्ष्य नहीं', everyDay:'हर दिन',
         speed:'आवाज़ की गति', speedSlow:'धीमी', speedNormal:'सामान्य', speedFast:'तेज़',
@@ -1209,6 +1225,7 @@
         statsToggle:'الإحصائيات', hideStats:'إخفاء الإحصائيات', achievements:'الإنجازات',
         progress:'التقدم لكل تمرين', recent:'الجلسات الأخيرة', noSessions:'لا توجد جلسات بعد',
         name:'اسمك (للتشجيع الشخصي)', color:'لون التمييز', tone:'أسلوب المدرب',
+        apiKey:'مفتاح API الخاص بـ ElevenLabs (اختياري)', apiKeyHint:'بدون مفتاح، يستخدم التطبيق صوت متصفحك.',
         toneMotiv:'محفّز', toneStrict:'صارم', toneChill:'هادئ',
         goal:'الهدف الأسبوعي (جلسات في الأسبوع)', goalNone:'بدون هدف', everyDay:'كل يوم',
         speed:'سرعة الصوت', speedSlow:'بطيء', speedNormal:'عادي', speedFast:'سريع',
@@ -1389,6 +1406,8 @@
   function applyStaticText() {
     document.body.dir = t.dir;
     document.getElementById('lblName').textContent = t.ui.name;
+    document.getElementById('lblApiKey').textContent = t.ui.apiKey;
+    document.getElementById('apiKeyHint').textContent = t.ui.apiKeyHint;
     document.getElementById('lblColor').textContent = t.ui.color;
     document.getElementById('lblLanguage').textContent = t.ui.language;
     document.getElementById('lblTone').textContent = t.ui.tone;
@@ -1497,6 +1516,18 @@
   nameInput.addEventListener('input', () => {
     userName = nameInput.value.trim();
     try { localStorage.setItem('userName', userName); } catch (e) {}
+  });
+
+  // ====== ElevenLabs API key ======
+  const apiKeyInput = document.getElementById('apiKeyInput');
+  (() => {
+    try { elevenApiKey = localStorage.getItem('elevenApiKey') || ''; } catch (e) {}
+    apiKeyInput.value = elevenApiKey;
+  })();
+  apiKeyInput.addEventListener('change', () => {
+    elevenApiKey = apiKeyInput.value.trim();
+    try { localStorage.setItem('elevenApiKey', elevenApiKey); } catch (e) {}
+    initEleven();
   });
 
   settingsBtn.addEventListener('click', () => {
@@ -2184,8 +2215,14 @@
       status.textContent = '';
       return;
     }
+    if (!elevenApiKey) {
+      elevenReady = false;
+      elevenLoading = false;
+      status.textContent = '';
+      return;
+    }
     try {
-      const res = await fetch('https://api.elevenlabs.io/v1/voices', { headers: { 'xi-api-key': ELEVEN_API_KEY } });
+      const res = await fetch('https://api.elevenlabs.io/v1/voices', { headers: { 'xi-api-key': elevenApiKey } });
       if (!res.ok) throw new Error('HTTP ' + res.status);
       const data = await res.json();
       if (data.voices && data.voices.length) {
@@ -2238,7 +2275,7 @@
     if (cachedUrl) return cachedUrl;
     const res = await fetch('https://api.elevenlabs.io/v1/text-to-speech/' + elevenVoiceId, {
       method: 'POST',
-      headers: { 'xi-api-key': ELEVEN_API_KEY, 'Content-Type': 'application/json' },
+      headers: { 'xi-api-key': elevenApiKey, 'Content-Type': 'application/json' },
       body: JSON.stringify({
         text: text, model_id: ELEVEN_MODEL, language_code: t.elevenLang,
         voice_settings: { stability: 0.88, similarity_boost: 0.75, style: 0.2, use_speaker_boost: true }
