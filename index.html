@@ -920,213 +920,6 @@
     cloudPushTimer = setTimeout(pushToCloud, 1500);
   }
 
-  // Username lives in its own `profiles` table rather than the synced
-  // app-data blob: it's account metadata, not app state, and folding it into
-  // the blob-equality check that gatherAppDataBlob/applyAppDataBlob rely on
-  // would risk reintroducing the reload-loop bug that was just fixed there.
-  async function loadProfile() {
-    if (!currentUser) return;
-    try {
-      const { data } = await sb.from('profiles').select('username').eq('user_id', currentUser.id).maybeSingle();
-      currentUsername = data && data.username ? data.username : '';
-      usernameInput.value = currentUsername;
-    } catch (e) {}
-  }
-  usernameSaveBtn.addEventListener('click', async () => {
-    if (!currentUser) return;
-    const raw = usernameInput.value.trim().toLowerCase();
-    if (!/^[a-z0-9_]{3,20}$/.test(raw)) {
-      usernameStatus.textContent = t.ui.usernameInvalid;
-      return;
-    }
-    usernameStatus.textContent = '...';
-    const { error } = await sb.from('profiles').upsert({
-      user_id: currentUser.id, username: raw, updated_at: new Date().toISOString(),
-    });
-    if (error) {
-      usernameStatus.textContent = error.code === '23505' ? t.ui.usernameTaken : error.message;
-      return;
-    }
-    currentUsername = raw;
-    usernameInput.value = raw;
-    usernameStatus.textContent = t.ui.usernameSaved;
-  });
-
-  // ====== Friends ======
-  async function fetchProfilesByIds(ids) {
-    if (!ids.length) return {};
-    const { data } = await sb.from('profiles').select('user_id, username').in('user_id', ids);
-    const map = {};
-    (data || []).forEach((p) => { map[p.user_id] = p.username; });
-    return map;
-  }
-  function renderModalList(container, items, emptyText, rowFn) {
-    if (!items.length) { container.innerHTML = `<div class="modal-list-empty">${emptyText}</div>`; return; }
-    container.innerHTML = items.map(rowFn).join('');
-  }
-  async function loadFriendsData() {
-    if (!currentUser) return;
-    const [{ data: incoming }, { data: sent }, { data: friends }] = await Promise.all([
-      sb.from('friend_requests').select('id, sender_id').eq('receiver_id', currentUser.id),
-      sb.from('friend_requests').select('id, receiver_id').eq('sender_id', currentUser.id),
-      sb.from('friendships').select('friend_id').eq('user_id', currentUser.id),
-    ]);
-    const ids = new Set();
-    (incoming || []).forEach((r) => ids.add(r.sender_id));
-    (sent || []).forEach((r) => ids.add(r.receiver_id));
-    (friends || []).forEach((f) => ids.add(f.friend_id));
-    const names = await fetchProfilesByIds(Array.from(ids));
-
-    renderModalList(incomingRequestsList, incoming || [], t.ui.noRequests, (r) => `
-      <div class="modal-list-item">
-        <span class="name">${names[r.sender_id] || '?'}</span>
-        <div class="modal-btn-row">
-          <button class="modal-icon-btn accept" data-accept="${r.id}">✓</button>
-          <button class="modal-icon-btn decline" data-decline="${r.id}">✕</button>
-        </div>
-      </div>`);
-    renderModalList(sentRequestsList, sent || [], t.ui.noSentRequests, (r) => `
-      <div class="modal-list-item">
-        <span class="name">${names[r.receiver_id] || '?'}</span>
-        <div class="modal-btn-row">
-          <button class="modal-icon-btn decline" data-cancel="${r.id}">✕</button>
-        </div>
-      </div>`);
-    renderModalList(friendsList, friends || [], t.ui.noFriends, (f) => `
-      <div class="modal-list-item">
-        <span class="name">${names[f.friend_id] || '?'}</span>
-        <div class="modal-btn-row">
-          <button class="modal-icon-btn remove" data-remove="${f.friend_id}">✕</button>
-        </div>
-      </div>`);
-  }
-  friendsBtn.addEventListener('click', () => {
-    settingsPanel.style.display = 'none';
-    friendsOverlay.classList.remove('hidden');
-    friendAddStatus.textContent = '';
-    friendSearchInput.value = '';
-    loadFriendsData();
-  });
-  friendsCloseBtn.addEventListener('click', () => friendsOverlay.classList.add('hidden'));
-  friendAddBtn.addEventListener('click', async () => {
-    const raw = friendSearchInput.value.trim().toLowerCase();
-    if (!raw || !currentUser) return;
-    friendAddStatus.textContent = '...';
-    const { data: profile } = await sb.from('profiles').select('user_id').eq('username', raw).maybeSingle();
-    if (!profile) { friendAddStatus.textContent = t.ui.friendNotFound; return; }
-    const otherId = profile.user_id;
-    if (otherId === currentUser.id) { friendAddStatus.textContent = t.ui.friendCannotAddSelf; return; }
-
-    const { data: existingFriend } = await sb.from('friendships').select('friend_id')
-      .eq('user_id', currentUser.id).eq('friend_id', otherId).maybeSingle();
-    if (existingFriend) { friendAddStatus.textContent = t.ui.friendAlreadyAdded; return; }
-
-    // Check both directions: if they already invited us, accept it outright
-    // instead of leaving two crossed pending requests sitting around.
-    const { data: existingReqs } = await sb.from('friend_requests').select('id, sender_id')
-      .or(`and(sender_id.eq.${currentUser.id},receiver_id.eq.${otherId}),and(sender_id.eq.${otherId},receiver_id.eq.${currentUser.id})`);
-    const reverseReq = (existingReqs || []).find((r) => r.sender_id === otherId);
-    if (reverseReq) {
-      await sb.rpc('accept_friend_request', { request_id: reverseReq.id });
-      friendAddStatus.textContent = t.ui.friendRequestSent;
-      friendSearchInput.value = '';
-      loadFriendsData();
-      return;
-    }
-    if ((existingReqs || []).length) { friendAddStatus.textContent = t.ui.friendRequestPending; return; }
-
-    const { error } = await sb.from('friend_requests').insert({ sender_id: currentUser.id, receiver_id: otherId });
-    if (error) { friendAddStatus.textContent = error.message; return; }
-    friendAddStatus.textContent = t.ui.friendRequestSent;
-    friendSearchInput.value = '';
-    loadFriendsData();
-  });
-  async function handleFriendListClick(e) {
-    const acceptBtn = e.target.closest('[data-accept]');
-    const removeReqBtn = e.target.closest('[data-decline], [data-cancel]');
-    const removeBtn = e.target.closest('[data-remove]');
-    if (acceptBtn) await sb.rpc('accept_friend_request', { request_id: acceptBtn.dataset.accept });
-    else if (removeReqBtn) await sb.from('friend_requests').delete().eq('id', removeReqBtn.dataset.decline || removeReqBtn.dataset.cancel);
-    else if (removeBtn) await sb.rpc('remove_friend', { other_id: removeBtn.dataset.remove });
-    else return;
-    loadFriendsData();
-  }
-  incomingRequestsList.addEventListener('click', handleFriendListClick);
-  sentRequestsList.addEventListener('click', handleFriendListClick);
-  friendsList.addEventListener('click', handleFriendListClick);
-
-  // ====== Leaderboard ======
-  BASE_EX_KEYS.forEach((ex) => {
-    const opt = document.createElement('option');
-    opt.value = ex;
-    lbExerciseSelect.appendChild(opt);
-  });
-  function renderLbExerciseOptions() {
-    Array.from(lbExerciseSelect.options).forEach((opt) => { opt.textContent = exName_(opt.value); });
-  }
-  let lbActiveTab = 'exercise';
-  let lbStatsCache = null;
-  function renderLbRows(sorted, formatFn) {
-    leaderboardList.innerHTML = sorted.map((u, i) => `
-      <div class="modal-list-item${u.isMe ? ' me' : ''}">
-        <span><span class="rank">${i + 1}.</span><span class="name">${u.name}</span></span>
-        <span class="value">${formatFn(u.value)}</span>
-      </div>`).join('');
-  }
-  function renderLeaderboard() {
-    if (!lbStatsCache) return;
-    if (lbStatsCache.length <= 1) {
-      leaderboardList.innerHTML = `<div class="modal-list-empty">${t.ui.lbEmpty}</div>`;
-      return;
-    }
-    if (lbActiveTab === 'exercise') {
-      const ex = lbExerciseSelect.value || BASE_EX_KEYS[0];
-      const sorted = lbStatsCache.map((u) => ({ ...u, value: u.records[ex] || 0 })).sort((a, b) => b.value - a.value);
-      renderLbRows(sorted, format);
-    } else if (lbActiveTab === 'bestday') {
-      const sorted = lbStatsCache.map((u) => ({ ...u, value: u.best_day_seconds })).sort((a, b) => b.value - a.value);
-      renderLbRows(sorted, format);
-    } else {
-      const sorted = lbStatsCache.map((u) => ({ ...u, value: u.longest_streak })).sort((a, b) => b.value - a.value);
-      renderLbRows(sorted, (v) => String(v));
-    }
-  }
-  function setLbTab(tab) {
-    lbActiveTab = tab;
-    [lbTabExerciseBtn, lbTabBestDayBtn, lbTabStreakBtn].forEach((b) => b.classList.remove('active'));
-    ({ exercise: lbTabExerciseBtn, bestday: lbTabBestDayBtn, streak: lbTabStreakBtn })[tab].classList.add('active');
-    lbExerciseSelect.style.display = tab === 'exercise' ? 'block' : 'none';
-    renderLeaderboard();
-  }
-  async function loadLeaderboardData() {
-    if (!currentUser) return;
-    const { data: friendRows } = await sb.from('friendships').select('friend_id').eq('user_id', currentUser.id);
-    const ids = [currentUser.id, ...(friendRows || []).map((f) => f.friend_id)];
-    const [{ data: stats }, names] = await Promise.all([
-      sb.from('leaderboard_stats').select('*').in('user_id', ids),
-      fetchProfilesByIds(ids),
-    ]);
-    lbStatsCache = (stats || []).map((row) => ({
-      isMe: row.user_id === currentUser.id,
-      name: row.user_id === currentUser.id ? t.ui.youLabel : (names[row.user_id] || '?'),
-      records: row.records || {},
-      best_day_seconds: row.best_day_seconds || 0,
-      longest_streak: row.longest_streak || 0,
-    }));
-    renderLeaderboard();
-  }
-  leaderboardBtn.addEventListener('click', () => {
-    settingsPanel.style.display = 'none';
-    leaderboardOverlay.classList.remove('hidden');
-    setLbTab('exercise');
-    loadLeaderboardData();
-  });
-  leaderboardCloseBtn.addEventListener('click', () => leaderboardOverlay.classList.add('hidden'));
-  lbTabExerciseBtn.addEventListener('click', () => setLbTab('exercise'));
-  lbTabBestDayBtn.addEventListener('click', () => setLbTab('bestday'));
-  lbTabStreakBtn.addEventListener('click', () => setLbTab('streak'));
-  lbExerciseSelect.addEventListener('change', renderLeaderboard);
-
   // ====================================================================
   // ====== LANGUAGE / TRANSLATIONS =======================================
   // ====================================================================
@@ -2130,6 +1923,213 @@
   const chartDetail = document.getElementById('chartDetail');
   const exChartsContainer = document.getElementById('exChartsContainer');
   const confettiContainer = document.getElementById('confettiContainer');
+
+  // Username lives in its own `profiles` table rather than the synced
+  // app-data blob: it's account metadata, not app state, and folding it into
+  // the blob-equality check that gatherAppDataBlob/applyAppDataBlob rely on
+  // would risk reintroducing the reload-loop bug that was just fixed there.
+  async function loadProfile() {
+    if (!currentUser) return;
+    try {
+      const { data } = await sb.from('profiles').select('username').eq('user_id', currentUser.id).maybeSingle();
+      currentUsername = data && data.username ? data.username : '';
+      usernameInput.value = currentUsername;
+    } catch (e) {}
+  }
+  usernameSaveBtn.addEventListener('click', async () => {
+    if (!currentUser) return;
+    const raw = usernameInput.value.trim().toLowerCase();
+    if (!/^[a-z0-9_]{3,20}$/.test(raw)) {
+      usernameStatus.textContent = t.ui.usernameInvalid;
+      return;
+    }
+    usernameStatus.textContent = '...';
+    const { error } = await sb.from('profiles').upsert({
+      user_id: currentUser.id, username: raw, updated_at: new Date().toISOString(),
+    });
+    if (error) {
+      usernameStatus.textContent = error.code === '23505' ? t.ui.usernameTaken : error.message;
+      return;
+    }
+    currentUsername = raw;
+    usernameInput.value = raw;
+    usernameStatus.textContent = t.ui.usernameSaved;
+  });
+
+  // ====== Friends ======
+  async function fetchProfilesByIds(ids) {
+    if (!ids.length) return {};
+    const { data } = await sb.from('profiles').select('user_id, username').in('user_id', ids);
+    const map = {};
+    (data || []).forEach((p) => { map[p.user_id] = p.username; });
+    return map;
+  }
+  function renderModalList(container, items, emptyText, rowFn) {
+    if (!items.length) { container.innerHTML = `<div class="modal-list-empty">${emptyText}</div>`; return; }
+    container.innerHTML = items.map(rowFn).join('');
+  }
+  async function loadFriendsData() {
+    if (!currentUser) return;
+    const [{ data: incoming }, { data: sent }, { data: friends }] = await Promise.all([
+      sb.from('friend_requests').select('id, sender_id').eq('receiver_id', currentUser.id),
+      sb.from('friend_requests').select('id, receiver_id').eq('sender_id', currentUser.id),
+      sb.from('friendships').select('friend_id').eq('user_id', currentUser.id),
+    ]);
+    const ids = new Set();
+    (incoming || []).forEach((r) => ids.add(r.sender_id));
+    (sent || []).forEach((r) => ids.add(r.receiver_id));
+    (friends || []).forEach((f) => ids.add(f.friend_id));
+    const names = await fetchProfilesByIds(Array.from(ids));
+
+    renderModalList(incomingRequestsList, incoming || [], t.ui.noRequests, (r) => `
+      <div class="modal-list-item">
+        <span class="name">${names[r.sender_id] || '?'}</span>
+        <div class="modal-btn-row">
+          <button class="modal-icon-btn accept" data-accept="${r.id}">✓</button>
+          <button class="modal-icon-btn decline" data-decline="${r.id}">✕</button>
+        </div>
+      </div>`);
+    renderModalList(sentRequestsList, sent || [], t.ui.noSentRequests, (r) => `
+      <div class="modal-list-item">
+        <span class="name">${names[r.receiver_id] || '?'}</span>
+        <div class="modal-btn-row">
+          <button class="modal-icon-btn decline" data-cancel="${r.id}">✕</button>
+        </div>
+      </div>`);
+    renderModalList(friendsList, friends || [], t.ui.noFriends, (f) => `
+      <div class="modal-list-item">
+        <span class="name">${names[f.friend_id] || '?'}</span>
+        <div class="modal-btn-row">
+          <button class="modal-icon-btn remove" data-remove="${f.friend_id}">✕</button>
+        </div>
+      </div>`);
+  }
+  friendsBtn.addEventListener('click', () => {
+    settingsPanel.style.display = 'none';
+    friendsOverlay.classList.remove('hidden');
+    friendAddStatus.textContent = '';
+    friendSearchInput.value = '';
+    loadFriendsData();
+  });
+  friendsCloseBtn.addEventListener('click', () => friendsOverlay.classList.add('hidden'));
+  friendAddBtn.addEventListener('click', async () => {
+    const raw = friendSearchInput.value.trim().toLowerCase();
+    if (!raw || !currentUser) return;
+    friendAddStatus.textContent = '...';
+    const { data: profile } = await sb.from('profiles').select('user_id').eq('username', raw).maybeSingle();
+    if (!profile) { friendAddStatus.textContent = t.ui.friendNotFound; return; }
+    const otherId = profile.user_id;
+    if (otherId === currentUser.id) { friendAddStatus.textContent = t.ui.friendCannotAddSelf; return; }
+
+    const { data: existingFriend } = await sb.from('friendships').select('friend_id')
+      .eq('user_id', currentUser.id).eq('friend_id', otherId).maybeSingle();
+    if (existingFriend) { friendAddStatus.textContent = t.ui.friendAlreadyAdded; return; }
+
+    // Check both directions: if they already invited us, accept it outright
+    // instead of leaving two crossed pending requests sitting around.
+    const { data: existingReqs } = await sb.from('friend_requests').select('id, sender_id')
+      .or(`and(sender_id.eq.${currentUser.id},receiver_id.eq.${otherId}),and(sender_id.eq.${otherId},receiver_id.eq.${currentUser.id})`);
+    const reverseReq = (existingReqs || []).find((r) => r.sender_id === otherId);
+    if (reverseReq) {
+      await sb.rpc('accept_friend_request', { request_id: reverseReq.id });
+      friendAddStatus.textContent = t.ui.friendRequestSent;
+      friendSearchInput.value = '';
+      loadFriendsData();
+      return;
+    }
+    if ((existingReqs || []).length) { friendAddStatus.textContent = t.ui.friendRequestPending; return; }
+
+    const { error } = await sb.from('friend_requests').insert({ sender_id: currentUser.id, receiver_id: otherId });
+    if (error) { friendAddStatus.textContent = error.message; return; }
+    friendAddStatus.textContent = t.ui.friendRequestSent;
+    friendSearchInput.value = '';
+    loadFriendsData();
+  });
+  async function handleFriendListClick(e) {
+    const acceptBtn = e.target.closest('[data-accept]');
+    const removeReqBtn = e.target.closest('[data-decline], [data-cancel]');
+    const removeBtn = e.target.closest('[data-remove]');
+    if (acceptBtn) await sb.rpc('accept_friend_request', { request_id: acceptBtn.dataset.accept });
+    else if (removeReqBtn) await sb.from('friend_requests').delete().eq('id', removeReqBtn.dataset.decline || removeReqBtn.dataset.cancel);
+    else if (removeBtn) await sb.rpc('remove_friend', { other_id: removeBtn.dataset.remove });
+    else return;
+    loadFriendsData();
+  }
+  incomingRequestsList.addEventListener('click', handleFriendListClick);
+  sentRequestsList.addEventListener('click', handleFriendListClick);
+  friendsList.addEventListener('click', handleFriendListClick);
+
+  // ====== Leaderboard ======
+  BASE_EX_KEYS.forEach((ex) => {
+    const opt = document.createElement('option');
+    opt.value = ex;
+    lbExerciseSelect.appendChild(opt);
+  });
+  function renderLbExerciseOptions() {
+    Array.from(lbExerciseSelect.options).forEach((opt) => { opt.textContent = exName_(opt.value); });
+  }
+  let lbActiveTab = 'exercise';
+  let lbStatsCache = null;
+  function renderLbRows(sorted, formatFn) {
+    leaderboardList.innerHTML = sorted.map((u, i) => `
+      <div class="modal-list-item${u.isMe ? ' me' : ''}">
+        <span><span class="rank">${i + 1}.</span><span class="name">${u.name}</span></span>
+        <span class="value">${formatFn(u.value)}</span>
+      </div>`).join('');
+  }
+  function renderLeaderboard() {
+    if (!lbStatsCache) return;
+    if (lbStatsCache.length <= 1) {
+      leaderboardList.innerHTML = `<div class="modal-list-empty">${t.ui.lbEmpty}</div>`;
+      return;
+    }
+    if (lbActiveTab === 'exercise') {
+      const ex = lbExerciseSelect.value || BASE_EX_KEYS[0];
+      const sorted = lbStatsCache.map((u) => ({ ...u, value: u.records[ex] || 0 })).sort((a, b) => b.value - a.value);
+      renderLbRows(sorted, format);
+    } else if (lbActiveTab === 'bestday') {
+      const sorted = lbStatsCache.map((u) => ({ ...u, value: u.best_day_seconds })).sort((a, b) => b.value - a.value);
+      renderLbRows(sorted, format);
+    } else {
+      const sorted = lbStatsCache.map((u) => ({ ...u, value: u.longest_streak })).sort((a, b) => b.value - a.value);
+      renderLbRows(sorted, (v) => String(v));
+    }
+  }
+  function setLbTab(tab) {
+    lbActiveTab = tab;
+    [lbTabExerciseBtn, lbTabBestDayBtn, lbTabStreakBtn].forEach((b) => b.classList.remove('active'));
+    ({ exercise: lbTabExerciseBtn, bestday: lbTabBestDayBtn, streak: lbTabStreakBtn })[tab].classList.add('active');
+    lbExerciseSelect.style.display = tab === 'exercise' ? 'block' : 'none';
+    renderLeaderboard();
+  }
+  async function loadLeaderboardData() {
+    if (!currentUser) return;
+    const { data: friendRows } = await sb.from('friendships').select('friend_id').eq('user_id', currentUser.id);
+    const ids = [currentUser.id, ...(friendRows || []).map((f) => f.friend_id)];
+    const [{ data: stats }, names] = await Promise.all([
+      sb.from('leaderboard_stats').select('*').in('user_id', ids),
+      fetchProfilesByIds(ids),
+    ]);
+    lbStatsCache = (stats || []).map((row) => ({
+      isMe: row.user_id === currentUser.id,
+      name: row.user_id === currentUser.id ? t.ui.youLabel : (names[row.user_id] || '?'),
+      records: row.records || {},
+      best_day_seconds: row.best_day_seconds || 0,
+      longest_streak: row.longest_streak || 0,
+    }));
+    renderLeaderboard();
+  }
+  leaderboardBtn.addEventListener('click', () => {
+    settingsPanel.style.display = 'none';
+    leaderboardOverlay.classList.remove('hidden');
+    setLbTab('exercise');
+    loadLeaderboardData();
+  });
+  leaderboardCloseBtn.addEventListener('click', () => leaderboardOverlay.classList.add('hidden'));
+  lbTabExerciseBtn.addEventListener('click', () => setLbTab('exercise'));
+  lbTabBestDayBtn.addEventListener('click', () => setLbTab('bestday'));
+  lbTabStreakBtn.addEventListener('click', () => setLbTab('streak'));
+  lbExerciseSelect.addEventListener('change', renderLeaderboard);
 
   // ====== Ring ======
   const RING_R = 100;
