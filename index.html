@@ -370,12 +370,17 @@
   body.gym-mode .card { width: 100vw; background: none; box-shadow: none; border-radius: 0; }
 
   .confetti-piece {
-    position: fixed; top: -20px; width: 8px; height: 14px; z-index: 60; pointer-events: none;
+    position: fixed; top: -20px; width: 8px; height: 14px; z-index: 120; pointer-events: none;
     animation: confetti-fall linear forwards;
   }
   @keyframes confetti-fall {
     to { transform: translateY(110vh) rotate(540deg); opacity: 0.2; }
   }
+  @keyframes duel-drumroll-pulse {
+    0%, 100% { transform: scale(1); }
+    50% { transform: scale(1.2); }
+  }
+  #duelModeDrumrollText { animation: duel-drumroll-pulse 0.3s ease-in-out infinite; }
 
   .splash {
     position: fixed; inset: 0; z-index: 100; background: var(--bg);
@@ -410,6 +415,22 @@
   #gateSignInBtn { background: #2e7d4f; color: white; }
   #gateSignUpBtn { background: var(--border); color: var(--text); }
   .auth-gate-status { font-size: 0.8rem; color: var(--muted); margin-top: 14px; min-height: 1.2em; line-height: 1.4; }
+
+  /* Duel mode: a dedicated fullscreen takeover (above everything else, incl.
+     modals) rather than a modal over the normal app - the whole point is
+     that nothing else is visible or usable while a duel is in progress. */
+  .duel-mode-screen {
+    position: fixed; inset: 0; z-index: 110; background: var(--bg);
+    display: flex; flex-direction: column; align-items: center; justify-content: center;
+    padding: 24px; text-align: center; transition: opacity 0.3s ease, visibility 0.3s ease;
+  }
+  .duel-mode-screen.hidden { opacity: 0; visibility: hidden; pointer-events: none; }
+  .duel-mode-title { font-size: 2rem; font-weight: 800; letter-spacing: 0.05em; color: var(--accent); }
+  .duel-mode-sub { font-size: 0.95rem; color: var(--muted); margin-top: 8px; }
+  .duel-mode-btn {
+    padding: 14px 34px; border-radius: 14px; border: none; cursor: pointer;
+    font-weight: 700; font-size: 1rem; font-family: inherit; background: #2e7d4f; color: white;
+  }
 
   /* Shared overlay/card pattern for the friends and leaderboard panels */
   .modal-overlay {
@@ -815,8 +836,6 @@
       </div>
     </div>
 
-    <div class="modal-list-empty" id="duelActiveBanner" style="display:none; text-align:center; margin-bottom:8px;"></div>
-
     <div class="ring-wrap" id="ringWrap">
       <div class="ring-glow"></div>
       <svg class="progress-ring" viewBox="0 0 230 230">
@@ -1034,23 +1053,33 @@
     </div>
   </div>
 
-  <div class="modal-overlay hidden" id="duelWaitingResultOverlay">
-    <div class="modal-card" style="text-align:center;">
-      <div style="font-size:0.9rem; color:var(--text); margin-bottom:16px;" id="duelWaitingResultTextEl"></div>
-      <div class="auth-gate-buttons">
-        <button id="duelWaitingResultHideBtn" style="background:var(--border); color:var(--text);">Verberg</button>
+  <div class="duel-mode-screen hidden" id="duelModeOverlay">
+    <div id="duelModeIntro">
+      <div class="duel-mode-title" id="duelModeIntroTitle">DUELMODUS</div>
+      <div class="duel-mode-sub" id="duelModeIntroSub"></div>
+    </div>
+    <div id="duelModeStopwatch" style="display:none;">
+      <div class="ring-wrap" id="duelRingWrap">
+        <div class="ring-glow"></div>
+        <svg class="progress-ring" viewBox="0 0 230 230">
+          <circle class="ring-bg" cx="115" cy="115" r="100"></circle>
+          <circle class="ring-fill" id="duelRingFill" cx="115" cy="115" r="100"></circle>
+        </svg>
+        <div><div class="time" id="duelDisplay">0:00</div></div>
+      </div>
+      <div style="margin-top:22px;">
+        <button class="duel-mode-btn" id="duelStartBtn">Start</button>
+        <button class="duel-mode-btn" id="duelStopBtn" style="display:none; background:#b3413a;">Stop</button>
       </div>
     </div>
-  </div>
-
-  <div class="modal-overlay hidden" id="duelRevealOverlay">
-    <div class="modal-card" style="text-align:center;">
-      <div class="modal-card-title" id="duelRevealSuspense" style="margin-bottom:10px;">...</div>
-      <div class="modal-card-title" id="duelRevealResult" style="margin-bottom:6px; display:none;"></div>
-      <div style="font-size:0.85rem; color:var(--muted); margin-bottom:16px;" id="duelRevealScore"></div>
-      <div class="auth-gate-buttons">
-        <button id="duelRevealCloseBtn" style="background:var(--border); color:var(--text); display:none;">Sluiten</button>
-      </div>
+    <div class="duel-mode-sub" id="duelModeWaiting" style="display:none; font-size:1rem;"></div>
+    <div id="duelModeDrumroll" style="display:none;">
+      <div class="duel-mode-title" id="duelModeDrumrollText" style="font-size:2.6rem;">🥁</div>
+    </div>
+    <div id="duelModeReveal" style="display:none;">
+      <div class="duel-mode-title" id="duelModeRevealText" style="font-size:1.4rem; margin-bottom:10px;"></div>
+      <div class="duel-mode-sub" id="duelModeScoreText" style="margin-bottom:22px;"></div>
+      <button class="duel-mode-btn" id="duelModeCloseBtn" style="background:var(--border); color:var(--text);">Sluiten</button>
     </div>
   </div>
 
@@ -1302,6 +1331,7 @@
         notifPromptTitle:'Meldingen inschakelen?',
         notifPromptBody:'Krijg een seintje als een vriend reageert op je scorebord, of als je streak in gevaar is.',
         notifPromptYes:'Ja, graag', notifPromptNo:'Niet nu',
+        duelModeTitle:'DUELMODUS',
         duelInviteBtnTitle:'Daag uit voor een duel', duelInviteModalTitle:'Duel voorstellen', duelInviteExLabel:'Kies de oefening',
         duelInviteSendBtn:'Uitnodigen', duelInviteCancelBtn:'Annuleren',
         duelWaitingText:(name)=>`Wachten op reactie van ${name}...`, duelDeclinedText:'Duel geweigerd.',
@@ -1434,6 +1464,7 @@
         notifPromptTitle:'Enable notifications?',
         notifPromptBody:'Get notified when a friend reacts to your leaderboard entry, or when your streak is at risk.',
         notifPromptYes:'Yes, please', notifPromptNo:'Not now',
+        duelModeTitle:'DUEL MODE',
         duelInviteBtnTitle:'Challenge to a duel', duelInviteModalTitle:'Propose a duel', duelInviteExLabel:'Choose the exercise',
         duelInviteSendBtn:'Invite', duelInviteCancelBtn:'Cancel',
         duelWaitingText:(name)=>`Waiting for ${name}'s response...`, duelDeclinedText:'Duel declined.',
@@ -1565,6 +1596,7 @@
         notifPromptTitle:'Benachrichtigungen aktivieren?',
         notifPromptBody:'Erhalte eine Benachrichtigung, wenn ein Freund auf deine Bestenliste reagiert oder deine Serie in Gefahr ist.',
         notifPromptYes:'Ja, gerne', notifPromptNo:'Nicht jetzt',
+        duelModeTitle:'DUELLMODUS',
         duelInviteBtnTitle:'Zu einem Duell herausfordern', duelInviteModalTitle:'Duell vorschlagen', duelInviteExLabel:'Übung wählen',
         duelInviteSendBtn:'Einladen', duelInviteCancelBtn:'Abbrechen',
         duelWaitingText:(name)=>`Warte auf Antwort von ${name} ...`, duelDeclinedText:'Duell abgelehnt.',
@@ -1696,6 +1728,7 @@
         notifPromptTitle:'¿Activar notificaciones?',
         notifPromptBody:'Recibe un aviso cuando un amigo reaccione a tu clasificación o cuando tu racha esté en peligro.',
         notifPromptYes:'Sí, por favor', notifPromptNo:'Ahora no',
+        duelModeTitle:'MODO DUELO',
         duelInviteBtnTitle:'Retar a un duelo', duelInviteModalTitle:'Proponer un duelo', duelInviteExLabel:'Elige el ejercicio',
         duelInviteSendBtn:'Invitar', duelInviteCancelBtn:'Cancelar',
         duelWaitingText:(name)=>`Esperando la respuesta de ${name}...`, duelDeclinedText:'Duelo rechazado.',
@@ -1827,6 +1860,7 @@
         notifPromptTitle:'Activer les notifications ?',
         notifPromptBody:'Reçois un avis quand un ami réagit à ton classement, ou quand ta série est en danger.',
         notifPromptYes:'Oui, avec plaisir', notifPromptNo:'Pas maintenant',
+        duelModeTitle:'MODE DUEL',
         duelInviteBtnTitle:'Défier en duel', duelInviteModalTitle:'Proposer un duel', duelInviteExLabel:'Choisis ton exercice',
         duelInviteSendBtn:'Inviter', duelInviteCancelBtn:'Annuler',
         duelWaitingText:(name)=>`En attente de la réponse de ${name}...`, duelDeclinedText:'Duel refusé.',
@@ -1958,6 +1992,7 @@
         notifPromptTitle:'Ativar notificações?',
         notifPromptBody:'Recebe um aviso quando um amigo reage à tua classificação, ou quando a tua sequência está em risco.',
         notifPromptYes:'Sim, por favor', notifPromptNo:'Agora não',
+        duelModeTitle:'MODO DUELO',
         duelInviteBtnTitle:'Desafiar para um duelo', duelInviteModalTitle:'Propor um duelo', duelInviteExLabel:'Escolhe o exercício',
         duelInviteSendBtn:'Convidar', duelInviteCancelBtn:'Cancelar',
         duelWaitingText:(name)=>`A aguardar resposta de ${name}...`, duelDeclinedText:'Duelo recusado.',
@@ -2089,6 +2124,7 @@
         notifPromptTitle:'Включить уведомления?',
         notifPromptBody:'Получай уведомление, когда друг реагирует на твой результат в рейтинге, или когда твоя серия под угрозой.',
         notifPromptYes:'Да, включить', notifPromptNo:'Не сейчас',
+        duelModeTitle:'РЕЖИМ ДУЭЛИ',
         duelInviteBtnTitle:'Вызвать на дуэль', duelInviteModalTitle:'Предложить дуэль', duelInviteExLabel:'Выбери упражнение',
         duelInviteSendBtn:'Пригласить', duelInviteCancelBtn:'Отмена',
         duelWaitingText:(name)=>`Ждём ответа от ${name}...`, duelDeclinedText:'Дуэль отклонена.',
@@ -2220,6 +2256,7 @@
         notifPromptTitle:'启用通知？',
         notifPromptBody:'当好友对你的排行榜成绩做出反应，或你的连续记录面临中断时，及时提醒你。',
         notifPromptYes:'好的', notifPromptNo:'暂不',
+        duelModeTitle:'对决模式',
         duelInviteBtnTitle:'发起对决', duelInviteModalTitle:'提议对决', duelInviteExLabel:'选择项目',
         duelInviteSendBtn:'邀请', duelInviteCancelBtn:'取消',
         duelWaitingText:(name)=>`正在等待${name}的回应...`, duelDeclinedText:'对决被拒绝了。',
@@ -2351,6 +2388,7 @@
         notifPromptTitle:'सूचनाएं चालू करें?',
         notifPromptBody:'जब कोई मित्र आपके लीडरबोर्ड पर प्रतिक्रिया दे, या आपकी स्ट्रीक खतरे में हो, तो सूचना पाएं।',
         notifPromptYes:'हां, चालू करें', notifPromptNo:'अभी नहीं',
+        duelModeTitle:'द्वंद्व मोड',
         duelInviteBtnTitle:'द्वंद्व के लिए चुनौती दें', duelInviteModalTitle:'द्वंद्व प्रस्तावित करें', duelInviteExLabel:'व्यायाम चुनें',
         duelInviteSendBtn:'आमंत्रित करें', duelInviteCancelBtn:'रद्द करें',
         duelWaitingText:(name)=>`${name} की प्रतिक्रिया का इंतज़ार...`, duelDeclinedText:'द्वंद्व अस्वीकार किया गया।',
@@ -2482,6 +2520,7 @@
         notifPromptTitle:'تفعيل الإشعارات؟',
         notifPromptBody:'احصل على تنبيه عندما يتفاعل صديق مع نتيجتك في لوحة الصدارة، أو عندما تكون سلسلتك في خطر.',
         notifPromptYes:'نعم من فضلك', notifPromptNo:'ليس الآن',
+        duelModeTitle:'وضع المبارزة',
         duelInviteBtnTitle:'تحدَّ إلى مبارزة', duelInviteModalTitle:'اقتراح مبارزة', duelInviteExLabel:'اختر التمرين',
         duelInviteSendBtn:'دعوة', duelInviteCancelBtn:'إلغاء',
         duelWaitingText:(name)=>`في انتظار رد ${name}...`, duelDeclinedText:'تم رفض المبارزة.',
@@ -2642,15 +2681,21 @@
   const duelIncomingBodyEl = document.getElementById('duelIncomingBodyEl');
   const duelAcceptBtn = document.getElementById('duelAcceptBtn');
   const duelDeclineBtn = document.getElementById('duelDeclineBtn');
-  const duelWaitingResultOverlay = document.getElementById('duelWaitingResultOverlay');
-  const duelWaitingResultTextEl = document.getElementById('duelWaitingResultTextEl');
-  const duelWaitingResultHideBtn = document.getElementById('duelWaitingResultHideBtn');
-  const duelRevealOverlay = document.getElementById('duelRevealOverlay');
-  const duelRevealSuspense = document.getElementById('duelRevealSuspense');
-  const duelRevealResult = document.getElementById('duelRevealResult');
-  const duelRevealScore = document.getElementById('duelRevealScore');
-  const duelRevealCloseBtn = document.getElementById('duelRevealCloseBtn');
-  const duelActiveBanner = document.getElementById('duelActiveBanner');
+  const duelModeOverlay = document.getElementById('duelModeOverlay');
+  const duelModeIntro = document.getElementById('duelModeIntro');
+  const duelModeIntroTitle = document.getElementById('duelModeIntroTitle');
+  const duelModeIntroSub = document.getElementById('duelModeIntroSub');
+  const duelModeStopwatch = document.getElementById('duelModeStopwatch');
+  const duelRingFill = document.getElementById('duelRingFill');
+  const duelDisplay = document.getElementById('duelDisplay');
+  const duelStartBtn = document.getElementById('duelStartBtn');
+  const duelStopBtn = document.getElementById('duelStopBtn');
+  const duelModeWaiting = document.getElementById('duelModeWaiting');
+  const duelModeDrumroll = document.getElementById('duelModeDrumroll');
+  const duelModeReveal = document.getElementById('duelModeReveal');
+  const duelModeRevealText = document.getElementById('duelModeRevealText');
+  const duelModeScoreText = document.getElementById('duelModeScoreText');
+  const duelModeCloseBtn = document.getElementById('duelModeCloseBtn');
   const friendsBtn = document.getElementById('friendsBtn');
   const friendsOverlay = document.getElementById('friendsOverlay');
   const friendsCloseBtn = document.getElementById('friendsCloseBtn');
@@ -2928,15 +2973,20 @@
 
   // ====== Duels ======
   // Asynchronous 1v1 challenge: no fixed start time, whoever logs the longer
-  // hold (via the normal, unmodified start/stop/reset flow) after both have
-  // gone wins. activeDuel tracks the single duel the logged-in user is
-  // currently part of (pending/active) - the app only supports one at a
-  // time, matching the "one live thing at once" scope of the feature.
+  // hold wins. Once active, both players are taken to a dedicated fullscreen
+  // "duelmodus" (#duelModeOverlay) with its own isolated stopwatch
+  // (duelElapsed/duelStartTime/duelTimerId below) - entirely separate from
+  // the main app's timer state, so a duel never has to lock or borrow the
+  // normal exercise/mode UI. activeDuel tracks the single duel the logged-in
+  // user is currently part of (pending/active) - one at a time.
   let activeDuel = null;
   let duelRowChannel = null;
   let incomingDuelChannel = null;
   let pendingDuelInviteTarget = null;
   let pendingIncomingDuel = null;
+  let duelTimerId = null;
+  let duelElapsed = 0;
+  let duelStartTime = null;
 
   function myDuelRole(row) { return row.host_id === currentUser.id ? 'host' : 'guest'; }
   function opponentIdOf(row) { return row.host_id === currentUser.id ? row.guest_id : row.host_id; }
@@ -2967,6 +3017,30 @@
     }
   }
 
+  // ---- Fullscreen duel-mode state machine ----
+  function setDuelRingFraction(fraction, color) {
+    duelRingFill.style.strokeDashoffset = RING_CIRC * (1 - fraction);
+    duelRingFill.style.stroke = color;
+    duelDisplay.style.color = color;
+  }
+  function duelTick() {
+    duelElapsed = Math.floor((Date.now() - duelStartTime) / 1000);
+    duelDisplay.textContent = format(duelElapsed);
+    setDuelRingFraction(Math.min(duelElapsed / 180, 1), colorForElapsed(duelElapsed));
+  }
+  // One function toggling every section's visibility, rather than each
+  // caller flipping multiple .style.display flags - avoids ever leaving two
+  // steps visible at once by accident.
+  function showDuelStep(step) {
+    duelModeIntro.style.display = step === 'intro' ? 'block' : 'none';
+    duelModeStopwatch.style.display = (step === 'ready' || step === 'running') ? 'block' : 'none';
+    duelStartBtn.style.display = step === 'ready' ? 'inline-block' : 'none';
+    duelStopBtn.style.display = step === 'running' ? 'inline-block' : 'none';
+    duelModeWaiting.style.display = step === 'waiting' ? 'block' : 'none';
+    duelModeDrumroll.style.display = step === 'drumroll' ? 'block' : 'none';
+    duelModeReveal.style.display = step === 'reveal' ? 'block' : 'none';
+  }
+
   function enterActiveDuel(row, opponentName) {
     const role = myDuelRole(row);
     activeDuel = {
@@ -2974,18 +3048,34 @@
       opponentId: opponentIdOf(row), opponentName: opponentName || (activeDuel && activeDuel.opponentName) || '?',
       status: 'active',
     };
-    setMode('free'); // duels are hold-based, always resolved via resetFree()
-    const idx = EX_KEYS.indexOf(row.exercise);
-    if (idx >= 0) exerciseIndex = idx;
-    renderExIcon();
-    populateExerciseSelect();
-    exSelect.disabled = true;
-    freeModeBtn.disabled = true;
-    intervalModeBtn.disabled = true;
-    duelActiveBanner.style.display = 'block';
-    duelActiveBanner.textContent = t.ui.duelActiveBanner(activeDuel.opponentName, exName_(row.exercise));
     subscribeToDuelRow(row.id);
+    duelElapsed = 0;
+    duelDisplay.textContent = '0:00';
+    setDuelRingFraction(0, `rgb(${accentRGB.join(',')})`);
+    duelModeIntroSub.textContent = t.ui.duelActiveBanner(activeDuel.opponentName, exName_(row.exercise));
+    showDuelStep('intro');
+    duelModeOverlay.classList.remove('hidden');
+    setTimeout(() => { if (activeDuel && activeDuel.id === row.id) showDuelStep('ready'); }, 1800);
   }
+  duelStartBtn.addEventListener('click', () => {
+    duelStartTime = Date.now();
+    duelElapsed = 0;
+    showDuelStep('running');
+    duelTimerId = setInterval(duelTick, 200);
+  });
+  duelStopBtn.addEventListener('click', async () => {
+    clearInterval(duelTimerId);
+    duelTimerId = null;
+    const dur = duelElapsed;
+    if (!activeDuel) return;
+    if (dur >= MIN_SESSION_SEC) {
+      await saveSession(activeDuel.exercise, dur);
+      await checkRecord(activeDuel.exercise, dur);
+    }
+    duelModeWaiting.textContent = t.ui.duelWaitingResultText(activeDuel.opponentName);
+    showDuelStep('waiting');
+    await handleDuelHoldLogged(activeDuel.exercise, dur);
+  });
 
   function openDuelInviteOverlay(friendId, friendName) {
     pendingDuelInviteTarget = { friendId, friendName };
@@ -3073,8 +3163,8 @@
       .subscribe();
   }
 
-  // Hooked into resetFree() right after a hold is saved normally - the duel
-  // itself never touches the timer engine, it only reacts to its result.
+  // Called right after the duel-mode stopwatch is stopped - writes this
+  // player's duration into their own column only.
   async function handleDuelHoldLogged(ex, dur) {
     if (!activeDuel || activeDuel.status !== 'active' || activeDuel.exercise !== ex) return;
     const myField = activeDuel.role === 'host' ? 'host_duration' : 'guest_duration';
@@ -3084,10 +3174,9 @@
     if (error || !data) return;
     if (data.host_duration != null && data.guest_duration != null) {
       await finalizeDuelResult(data);
-    } else {
-      duelWaitingResultTextEl.textContent = t.ui.duelWaitingResultText(activeDuel.opponentName);
-      duelWaitingResultOverlay.classList.remove('hidden');
     }
+    // else: stay on the 'waiting' step - onDuelRowChange fires
+    // revealDuelResult() once the opponent's side finalizes the row.
   }
   // Conditioned on status still being 'active': if both sides finish at
   // nearly the same moment, only one of these UPDATEs actually matches a
@@ -3125,42 +3214,30 @@
   async function revealDuelResult(row) {
     if (!activeDuel || row.id !== activeDuel.id) return;
     const opponentName = activeDuel.opponentName;
-    duelWaitingResultOverlay.classList.add('hidden');
+    const opponentId = opponentIdOf(row);
     unsubscribeDuelRow();
-    duelActiveBanner.style.display = 'none';
-    exSelect.disabled = false;
-    freeModeBtn.disabled = false;
-    intervalModeBtn.disabled = false;
     activeDuel = null;
 
-    duelRevealSuspense.style.display = 'block';
-    duelRevealSuspense.textContent = '...';
-    duelRevealResult.style.display = 'none';
-    duelRevealCloseBtn.style.display = 'none';
-    duelRevealScore.textContent = '';
-    duelRevealOverlay.classList.remove('hidden');
+    showDuelStep('drumroll');
     playSuspenseRoll();
     await new Promise((r) => setTimeout(r, 1800));
-    duelRevealSuspense.style.display = 'none';
-    duelRevealResult.style.display = 'block';
 
+    showDuelStep('reveal');
     const tie = !row.winner_id;
     const iWon = row.winner_id === currentUser.id;
     if (tie) {
-      duelRevealResult.textContent = t.ui.duelTieText;
+      duelModeRevealText.textContent = t.ui.duelTieText;
     } else if (iWon) {
-      duelRevealResult.textContent = t.ui.duelWinText(opponentName);
+      duelModeRevealText.textContent = t.ui.duelWinText(opponentName);
       spawnConfetti();
       playRecordFanfare();
     } else {
-      duelRevealResult.textContent = t.ui.duelLoseText(opponentName);
+      duelModeRevealText.textContent = t.ui.duelLoseText(opponentName);
     }
-    duelRevealCloseBtn.style.display = 'inline-block';
-    const score = await computeDuelScore(opponentIdOf(row));
-    duelRevealScore.textContent = t.ui.duelScoreLabel(score.mine, score.theirs, opponentName);
+    const score = await computeDuelScore(opponentId);
+    duelModeScoreText.textContent = t.ui.duelScoreLabel(score.mine, score.theirs, opponentName);
   }
-  duelRevealCloseBtn.addEventListener('click', () => duelRevealOverlay.classList.add('hidden'));
-  duelWaitingResultHideBtn.addEventListener('click', () => duelWaitingResultOverlay.classList.add('hidden'));
+  duelModeCloseBtn.addEventListener('click', () => duelModeOverlay.classList.add('hidden'));
 
   // ====== Friends ======
   async function fetchProfilesByIds(ids) {
@@ -3600,6 +3677,10 @@
     startBtn.textContent = t.ui.start;
     stopBtn.textContent = t.ui.stop;
     resetBtn.textContent = t.ui.reset;
+    duelStartBtn.textContent = t.ui.start;
+    duelStopBtn.textContent = t.ui.stop;
+    duelModeIntroTitle.textContent = t.ui.duelModeTitle;
+    duelModeCloseBtn.textContent = t.ui.duelCloseBtn;
     freeModeBtn.textContent = t.ui.freeMode;
     intervalModeBtn.textContent = t.ui.intervalMode;
     document.getElementById('lblEvery').textContent = t.ui.every;
@@ -4890,7 +4971,6 @@
       const finalElapsed = elapsed;
       await saveSession(ex, finalElapsed);
       const { isNewRecord, improvement } = await checkRecord(ex, finalElapsed);
-      handleDuelHoldLogged(ex, finalElapsed);
       let summary = t.speech.heldFor(spokenName(), spokenDuration(finalElapsed));
       if (isNewRecord) {
         summary += improvement > 0 ? t.speech.newRecordSuffix(spokenDuration(improvement)) : t.speech.firstRecordSuffix;
