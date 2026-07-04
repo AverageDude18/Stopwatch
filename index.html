@@ -3354,6 +3354,7 @@
     const { data, error } = await sb.auth.signInWithPassword({ email, password });
     setGateBusy(false);
     if (error) { gateStatus.textContent = error.message; return; }
+    currentUser = data.user;
     await initApp();
     await handleLoggedIn(data.user);
   });
@@ -3369,6 +3370,7 @@
     setGateBusy(false);
     if (error) { gateStatus.textContent = error.message; return; }
     if (data.session) {
+      currentUser = data.user;
       await initApp();
       await handleLoggedIn(data.user);
     } else {
@@ -3384,6 +3386,7 @@
   (async () => {
     const { data: { session } } = await sb.auth.getSession();
     if (session && session.user) {
+      currentUser = session.user;
       await initApp();
       await handleLoggedIn(session.user);
     } else {
