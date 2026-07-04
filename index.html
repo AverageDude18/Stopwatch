@@ -796,6 +796,23 @@
           <button class="small-btn" id="authSignOutBtn" style="width:100%;">Uitloggen</button>
         </div>
       </div>
+
+      <div class="settings-group" data-group="notifications">
+        <button type="button" class="settings-group-header">
+          <span id="lblGroupNotifications">Meldingen</span>
+          <span class="settings-group-chevron">▾</span>
+        </button>
+        <div class="settings-group-content">
+          <div class="toggle-row">
+            <span id="lblNotifEnabled">Pushmeldingen</span>
+            <label class="toggle-switch">
+              <input type="checkbox" id="notifToggleInput">
+              <span class="toggle-slider"></span>
+            </label>
+          </div>
+          <div id="notifStatus" style="font-size:0.78rem; color:var(--muted); min-height:1.2em;"></div>
+        </div>
+      </div>
     </div>
 
     <div class="ring-wrap" id="ringWrap">
@@ -979,6 +996,9 @@
   // (see worker/index.js) - never ship it in client-side code again, since
   // this file is public and view-source would expose it instantly.
   const TTS_PROXY_URL = 'https://stopwatch-tts.averagedude18.deno.net';
+  // Public half of the VAPID key pair used for Web Push - safe to ship in the
+  // client. The private half lives only as a Deno Deploy secret, never here.
+  const VAPID_PUBLIC_KEY = 'BM6TgAgla-Vly6wB0AfQ6oXzU5IYd1bgW1ZGPaP9A9AIFbjiWlAilNlDCJivv7HCk3piscZl0VOmvu2LfgjUfX4';
   const ELEVEN_MODEL = 'eleven_turbo_v2_5';
   // A curated subset of ElevenLabs' premade voice library (same multilingual
   // model for all of them - only the voice itself differs) rather than
@@ -1080,6 +1100,9 @@
       records: stats.records,
       best_day_seconds: stats.best_day_seconds,
       longest_streak: stats.longest_streak,
+      current_streak: stats.current_streak,
+      last_trained_date: stats.last_trained_date,
+      app_language: currentLang,
       updated_at: new Date().toISOString(),
     });
     // One row per user per day, upserted repeatedly - gives the trend graph a
@@ -1207,7 +1230,10 @@
         namePhonetic:'Uitspraak van je naam (optioneel, alleen voor de stem)', namePhoneticPlaceholder:'bijv. Iedss',
         shareWeek:'Deel week', weekShareTitle:'Mijn week', daysTrainedThisWeek:(n)=>`${n} dagen getraind`,
         avatarLabel:'Profielfoto', profileTitle:'Profiel',
-        lbViewRanking:'Ranglijst', lbViewTrend:'Trend', lbTrendEmpty:'Nog niet genoeg gegevens voor een trend'
+        lbViewRanking:'Ranglijst', lbViewTrend:'Trend', lbTrendEmpty:'Nog niet genoeg gegevens voor een trend',
+        groupNotifications:'Meldingen', notifEnabled:'Pushmeldingen', notifDenied:'Toestemming geweigerd', notifEnabledMsg:'Meldingen ingeschakeld',
+        reactionNotifTitle:'Trainingspartner',
+        reactionNotifBody:(from,emoji,label)=>`${from} reageerde met ${emoji} op jouw ${label} op het scorebord`
       },
       speech: { countdown:['drie','twee','één'],
         startWithName:(n)=>`Kom op, ${n}!`, startNoName:'Start!',
@@ -1321,7 +1347,10 @@
         namePhonetic:'Pronunciation of your name (optional, voice only)', namePhoneticPlaceholder:'e.g. Eeds',
         shareWeek:'Share week', weekShareTitle:'My week', daysTrainedThisWeek:(n)=>`${n} days trained`,
         avatarLabel:'Profile picture', profileTitle:'Profile',
-        lbViewRanking:'Ranking', lbViewTrend:'Trend', lbTrendEmpty:'Not enough data yet for a trend'
+        lbViewRanking:'Ranking', lbViewTrend:'Trend', lbTrendEmpty:'Not enough data yet for a trend',
+        groupNotifications:'Notifications', notifEnabled:'Push notifications', notifDenied:'Permission denied', notifEnabledMsg:'Notifications enabled',
+        reactionNotifTitle:'Trainingspartner',
+        reactionNotifBody:(from,emoji,label)=>`${from} reacted with ${emoji} to your ${label} on the leaderboard`
       },
       speech: { countdown:['three','two','one'],
         startWithName:(n)=>`Come on, ${n}!`, startNoName:'Start!',
@@ -1434,7 +1463,10 @@
         namePhonetic:'Aussprache deines Namens (optional, nur für die Stimme)', namePhoneticPlaceholder:'z.B. Iedß',
         shareWeek:'Woche teilen', weekShareTitle:'Meine Woche', daysTrainedThisWeek:(n)=>`${n} Tage trainiert`,
         avatarLabel:'Profilbild', profileTitle:'Profil',
-        lbViewRanking:'Rangliste', lbViewTrend:'Trend', lbTrendEmpty:'Noch nicht genug Daten für einen Trend'
+        lbViewRanking:'Rangliste', lbViewTrend:'Trend', lbTrendEmpty:'Noch nicht genug Daten für einen Trend',
+        groupNotifications:'Benachrichtigungen', notifEnabled:'Push-Benachrichtigungen', notifDenied:'Berechtigung verweigert', notifEnabledMsg:'Benachrichtigungen aktiviert',
+        reactionNotifTitle:'Trainingspartner',
+        reactionNotifBody:(from,emoji,label)=>`${from} hat mit ${emoji} auf deine ${label} auf der Bestenliste reagiert`
       },
       speech: { countdown:['drei','zwei','eins'],
         startWithName:(n)=>`Los geht's, ${n}!`, startNoName:'Start!',
@@ -1547,7 +1579,10 @@
         namePhonetic:'Pronunciación de tu nombre (opcional, solo para la voz)', namePhoneticPlaceholder:'p. ej. Iedss',
         shareWeek:'Compartir semana', weekShareTitle:'Mi semana', daysTrainedThisWeek:(n)=>`${n} días entrenados`,
         avatarLabel:'Foto de perfil', profileTitle:'Perfil',
-        lbViewRanking:'Clasificación', lbViewTrend:'Tendencia', lbTrendEmpty:'Aún no hay suficientes datos para una tendencia'
+        lbViewRanking:'Clasificación', lbViewTrend:'Tendencia', lbTrendEmpty:'Aún no hay suficientes datos para una tendencia',
+        groupNotifications:'Notificaciones', notifEnabled:'Notificaciones push', notifDenied:'Permiso denegado', notifEnabledMsg:'Notificaciones activadas',
+        reactionNotifTitle:'Trainingspartner',
+        reactionNotifBody:(from,emoji,label)=>`${from} reaccionó con ${emoji} a tu ${label} en la clasificación`
       },
       speech: { countdown:['tres','dos','uno'],
         startWithName:(n)=>`¡Vamos, ${n}!`, startNoName:'¡Empieza!',
@@ -1660,7 +1695,10 @@
         namePhonetic:'Prononciation de ton prénom (facultatif, uniquement pour la voix)', namePhoneticPlaceholder:'ex. Iedss',
         shareWeek:'Partager la semaine', weekShareTitle:'Ma semaine', daysTrainedThisWeek:(n)=>`${n} jours d'entraînement`,
         avatarLabel:'Photo de profil', profileTitle:'Profil',
-        lbViewRanking:'Classement', lbViewTrend:'Tendance', lbTrendEmpty:'Pas encore assez de données pour une tendance'
+        lbViewRanking:'Classement', lbViewTrend:'Tendance', lbTrendEmpty:'Pas encore assez de données pour une tendance',
+        groupNotifications:'Notifications', notifEnabled:'Notifications push', notifDenied:'Permission refusée', notifEnabledMsg:'Notifications activées',
+        reactionNotifTitle:'Trainingspartner',
+        reactionNotifBody:(from,emoji,label)=>`${from} a réagi avec ${emoji} à ton ${label} dans le classement`
       },
       speech: { countdown:['trois','deux','un'],
         startWithName:(n)=>`Allez, ${n}\u00a0!`, startNoName:'C\u2019est parti\u00a0!',
@@ -1773,7 +1811,10 @@
         namePhonetic:'Pronúncia do teu nome (opcional, apenas para a voz)', namePhoneticPlaceholder:'ex. Iedss',
         shareWeek:'Partilhar semana', weekShareTitle:'A minha semana', daysTrainedThisWeek:(n)=>`${n} dias treinados`,
         avatarLabel:'Foto de perfil', profileTitle:'Perfil',
-        lbViewRanking:'Classificação', lbViewTrend:'Tendência', lbTrendEmpty:'Ainda não há dados suficientes para uma tendência'
+        lbViewRanking:'Classificação', lbViewTrend:'Tendência', lbTrendEmpty:'Ainda não há dados suficientes para uma tendência',
+        groupNotifications:'Notificações', notifEnabled:'Notificações push', notifDenied:'Permissão negada', notifEnabledMsg:'Notificações ativadas',
+        reactionNotifTitle:'Trainingspartner',
+        reactionNotifBody:(from,emoji,label)=>`${from} reagiu com ${emoji} à tua ${label} na classificação`
       },
       speech: { countdown:['três','dois','um'],
         startWithName:(n)=>`Vamos, ${n}!`, startNoName:'Começar!',
@@ -1886,7 +1927,10 @@
         namePhonetic:'Произношение твоего имени (необязательно, только для голоса)', namePhoneticPlaceholder:'напр. Идсс',
         shareWeek:'Поделиться неделей', weekShareTitle:'Моя неделя', daysTrainedThisWeek:(n)=>`${n} дней тренировок`,
         avatarLabel:'Фото профиля', profileTitle:'Профиль',
-        lbViewRanking:'Рейтинг', lbViewTrend:'Тренд', lbTrendEmpty:'Пока недостаточно данных для тренда'
+        lbViewRanking:'Рейтинг', lbViewTrend:'Тренд', lbTrendEmpty:'Пока недостаточно данных для тренда',
+        groupNotifications:'Уведомления', notifEnabled:'Push-уведомления', notifDenied:'В разрешении отказано', notifEnabledMsg:'Уведомления включены',
+        reactionNotifTitle:'Trainingspartner',
+        reactionNotifBody:(from,emoji,label)=>`${from} отреагировал(а) ${emoji} на твой результат «${label}» в рейтинге`
       },
       speech: { countdown:['три','два','один'],
         startWithName:(n)=>`Давай, ${n}!`, startNoName:'Начали!',
@@ -1999,7 +2043,10 @@
         namePhonetic:'你名字的发音（可选，仅用于语音）', namePhoneticPlaceholder:'例如 Iedss',
         shareWeek:'分享本周', weekShareTitle:'我的一周', daysTrainedThisWeek:(n)=>`训练了${n}天`,
         avatarLabel:'头像', profileTitle:'个人资料',
-        lbViewRanking:'排名', lbViewTrend:'趋势', lbTrendEmpty:'数据还不足以显示趋势'
+        lbViewRanking:'排名', lbViewTrend:'趋势', lbTrendEmpty:'数据还不足以显示趋势',
+        groupNotifications:'通知', notifEnabled:'推送通知', notifDenied:'权限被拒绝', notifEnabledMsg:'通知已启用',
+        reactionNotifTitle:'Trainingspartner',
+        reactionNotifBody:(from,emoji,label)=>`${from} 对你在排行榜上的${label}做出了${emoji}反应`
       },
       speech: { countdown:['三','二','一'],
         startWithName:(n)=>`加油，${n}！`, startNoName:'开始！',
@@ -2112,7 +2159,10 @@
         namePhonetic:'आपके नाम का उच्चारण (वैकल्पिक, केवल आवाज़ के लिए)', namePhoneticPlaceholder:'जैसे Iedss',
         shareWeek:'सप्ताह शेयर करें', weekShareTitle:'मेरा सप्ताह', daysTrainedThisWeek:(n)=>`${n} दिन ट्रेनिंग की`,
         avatarLabel:'प्रोफ़ाइल फ़ोटो', profileTitle:'प्रोफ़ाइल',
-        lbViewRanking:'रैंकिंग', lbViewTrend:'ट्रेंड', lbTrendEmpty:'ट्रेंड के लिए अभी पर्याप्त डेटा नहीं है'
+        lbViewRanking:'रैंकिंग', lbViewTrend:'ट्रेंड', lbTrendEmpty:'ट्रेंड के लिए अभी पर्याप्त डेटा नहीं है',
+        groupNotifications:'सूचनाएं', notifEnabled:'पुश सूचनाएं', notifDenied:'अनुमति अस्वीकृत', notifEnabledMsg:'सूचनाएं सक्षम की गईं',
+        reactionNotifTitle:'Trainingspartner',
+        reactionNotifBody:(from,emoji,label)=>`${from} ने लीडरबोर्ड पर आपकी ${label} पर ${emoji} से प्रतिक्रिया दी`
       },
       speech: { countdown:['तीन','दो','एक'],
         startWithName:(n)=>`चलो, ${n}!`, startNoName:'शुरू!',
@@ -2225,7 +2275,10 @@
         namePhonetic:'نطق اسمك (اختياري، للصوت فقط)', namePhoneticPlaceholder:'مثال Iedss',
         shareWeek:'مشاركة الأسبوع', weekShareTitle:'أسبوعي', daysTrainedThisWeek:(n)=>`${n} أيام تدريب`,
         avatarLabel:'صورة الملف الشخصي', profileTitle:'الملف الشخصي',
-        lbViewRanking:'الترتيب', lbViewTrend:'الاتجاه', lbTrendEmpty:'لا توجد بيانات كافية بعد لعرض اتجاه'
+        lbViewRanking:'الترتيب', lbViewTrend:'الاتجاه', lbTrendEmpty:'لا توجد بيانات كافية بعد لعرض اتجاه',
+        groupNotifications:'الإشعارات', notifEnabled:'إشعارات الدفع', notifDenied:'تم رفض الإذن', notifEnabledMsg:'تم تفعيل الإشعارات',
+        reactionNotifTitle:'Trainingspartner',
+        reactionNotifBody:(from,emoji,label)=>`${from} تفاعل مع ${label} الخاص بك في لوحة الصدارة بـ ${emoji}`
       },
       speech: { countdown:['ثلاثة','اثنان','واحد'],
         startWithName:(n)=>`هيا، ${n}!`, startNoName:'ابدأ!',
@@ -2348,6 +2401,8 @@
   const avatarFileInput = document.getElementById('avatarFileInput');
   const avatarRemoveBtn = document.getElementById('avatarRemoveBtn');
   const avatarStatus = document.getElementById('avatarStatus');
+  const notifToggleInput = document.getElementById('notifToggleInput');
+  const notifStatus = document.getElementById('notifStatus');
   const avatarCornerBtn = document.getElementById('avatarCornerBtn');
   const avatarCornerImg = document.getElementById('avatarCornerImg');
   const profileOverlay = document.getElementById('profileOverlay');
@@ -2540,6 +2595,68 @@
     avatarStatus.textContent = '';
   });
 
+  // ====== Push notifications ======
+  function urlBase64ToUint8Array(base64String) {
+    const padding = '='.repeat((4 - (base64String.length % 4)) % 4);
+    const base64 = (base64String + padding).replace(/-/g, '+').replace(/_/g, '/');
+    const raw = atob(base64);
+    return Uint8Array.from([...raw].map((c) => c.charCodeAt(0)));
+  }
+  async function refreshNotifToggleState() {
+    if (!('serviceWorker' in navigator) || !('PushManager' in window) || !currentUser) {
+      notifToggleInput.checked = false;
+      return;
+    }
+    try {
+      const reg = await navigator.serviceWorker.ready;
+      const sub = await reg.pushManager.getSubscription();
+      notifToggleInput.checked = !!sub && Notification.permission === 'granted';
+    } catch (e) {
+      notifToggleInput.checked = false;
+    }
+  }
+  notifToggleInput.addEventListener('change', async () => {
+    if (!currentUser) { notifToggleInput.checked = false; return; }
+    if (notifToggleInput.checked) {
+      notifStatus.textContent = '...';
+      try {
+        const permission = await Notification.requestPermission();
+        if (permission !== 'granted') {
+          notifToggleInput.checked = false;
+          notifStatus.textContent = t.ui.notifDenied;
+          return;
+        }
+        const reg = await navigator.serviceWorker.ready;
+        const sub = await reg.pushManager.subscribe({
+          userVisibleOnly: true,
+          applicationServerKey: urlBase64ToUint8Array(VAPID_PUBLIC_KEY),
+        });
+        const json = sub.toJSON();
+        const { error } = await sb.from('push_subscriptions').upsert({
+          user_id: currentUser.id, endpoint: json.endpoint, p256dh: json.keys.p256dh, auth: json.keys.auth,
+        }, { onConflict: 'endpoint' });
+        if (error) throw error;
+        notifStatus.textContent = t.ui.notifEnabledMsg;
+      } catch (e) {
+        notifToggleInput.checked = false;
+        notifStatus.textContent = e && e.message ? e.message : String(e);
+      }
+    } else {
+      notifStatus.textContent = '...';
+      try {
+        const reg = await navigator.serviceWorker.ready;
+        const sub = await reg.pushManager.getSubscription();
+        if (sub) {
+          await sb.from('push_subscriptions').delete().eq('endpoint', sub.endpoint);
+          await sub.unsubscribe();
+        }
+        notifStatus.textContent = '';
+      } catch (e) {
+        notifStatus.textContent = e && e.message ? e.message : String(e);
+      }
+    }
+  });
+
   // ====== Friends ======
   async function fetchProfilesByIds(ids) {
     if (!ids.length) return {};
@@ -2701,6 +2818,26 @@
     const reactions = await fetchReactions(sorted.filter((u) => !u.isMe).map((u) => u.userId), metric);
     renderLbRows(sorted, formatFn, metric, reactions);
   }
+  // Fire-and-forget: tells the Deno proxy's /notify route to push a
+  // notification to toUserId. Silently no-ops if the user has no push
+  // subscription, isn't logged in, or the request fails - reactions
+  // shouldn't break just because a notification couldn't be sent.
+  async function notifyUser(toUserId, title, body) {
+    try {
+      const { data } = await sb.auth.getSession();
+      const token = data && data.session && data.session.access_token;
+      if (!token) return;
+      await fetch(TTS_PROXY_URL + '/notify', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', Authorization: 'Bearer ' + token },
+        body: JSON.stringify({ to_user_id: toUserId, title, body }),
+      });
+    } catch (e) {}
+  }
+  function lbMetricLabel(metric) {
+    if (metric.startsWith('exercise:')) return exName_(metric.slice('exercise:'.length));
+    return metric === 'bestday' ? t.ui.lbTabBestDay : t.ui.lbTabStreak;
+  }
   leaderboardList.addEventListener('click', async (e) => {
     const btn = e.target.closest('[data-react-to]');
     if (!btn || !currentUser) return;
@@ -2710,6 +2847,7 @@
       await sb.from('leaderboard_reactions').delete().eq('from_user_id', currentUser.id).eq('to_user_id', toUserId).eq('metric', metric);
     } else {
       await sb.from('leaderboard_reactions').insert({ from_user_id: currentUser.id, to_user_id: toUserId, metric });
+      notifyUser(toUserId, t.ui.reactionNotifTitle, t.ui.reactionNotifBody(currentUsername || '?', '👍', lbMetricLabel(metric)));
     }
     renderLeaderboard();
   });
@@ -2928,6 +3066,8 @@
     document.getElementById('lblGroupTraining').textContent = t.ui.groupTraining;
     document.getElementById('lblGroupDisplay').textContent = t.ui.groupDisplay;
     document.getElementById('lblGroupAccount').textContent = t.ui.groupAccount;
+    document.getElementById('lblGroupNotifications').textContent = t.ui.groupNotifications;
+    document.getElementById('lblNotifEnabled').textContent = t.ui.notifEnabled;
     document.getElementById('lblTone').textContent = t.ui.tone;
     document.getElementById('optToneMotiv').textContent = t.ui.toneMotiv;
     document.getElementById('optToneStrict').textContent = t.ui.toneStrict;
@@ -3517,10 +3657,15 @@
     const list = await loadSessions();
     const records = {};
     for (const ex of BASE_EX_KEYS) records[ex] = await getRecord(ex);
+    const trainedToday = list.some((s) => new Date(s.ts).toDateString() === new Date().toDateString());
     return {
       records,
       best_day_seconds: computeBestDaySeconds(list),
       longest_streak: computeLongestStreakEver(list),
+      // Distinct from longest_streak (an all-time record): the streak-reminder
+      // cron needs "today covered? and what's the live streak" specifically.
+      current_streak: computeStreakCount(list),
+      last_trained_date: trainedToday ? new Date().toISOString().slice(0, 10) : null,
     };
   }
 
@@ -4681,6 +4826,7 @@
     authLoggedInEmail.textContent = 'Ingelogd als ' + user.email;
     loadProfile();
     loadLeaderboardData();
+    refreshNotifToggleState();
 
     const { data: row } = await sb.from('user_data').select('data').eq('user_id', user.id).maybeSingle();
     const localBlob = gatherAppDataBlob();

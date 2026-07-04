@@ -59,3 +59,33 @@ self.addEventListener('fetch', (event) => {
     })
   );
 });
+
+// Web Push: the payload is whatever JSON the /notify route on the Deno proxy
+// sent - { title, body, url }. This is what lets a notification arrive even
+// when no tab is open at all, unlike a plain in-page Notification().
+self.addEventListener('push', (event) => {
+  let data = {};
+  try { data = event.data ? event.data.json() : {}; } catch (e) {}
+  const title = data.title || 'Trainingspartner';
+  event.waitUntil(
+    self.registration.showNotification(title, {
+      body: data.body || '',
+      icon: './icon-192.png',
+      badge: './icon-192.png',
+      data: { url: data.url || './' },
+    })
+  );
+});
+
+self.addEventListener('notificationclick', (event) => {
+  event.notification.close();
+  const url = (event.notification.data && event.notification.data.url) || './';
+  event.waitUntil(
+    self.clients.matchAll({ type: 'window', includeUncontrolled: true }).then((clients) => {
+      for (const client of clients) {
+        if ('focus' in client) return client.focus();
+      }
+      if (self.clients.openWindow) return self.clients.openWindow(url);
+    })
+  );
+});

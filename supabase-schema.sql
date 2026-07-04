@@ -182,3 +182,34 @@ create policy "upsert own leaderboard history"
   on public.leaderboard_history for insert with check (auth.uid() = user_id);
 create policy "update own leaderboard history"
   on public.leaderboard_history for update using (auth.uid() = user_id);
+
+-- ============================================================
+-- Added later: push notifications.
+-- push_subscriptions holds Web Push subscriptions (one per device/browser a
+-- user enabled notifications on). Only the owner can manage their own rows
+-- via the client; the Deno proxy reads across all users with the
+-- service-role key (bypasses RLS) to actually send notifications, since
+-- that's server-side only and never exposed to the client.
+--
+-- current_streak/last_trained_date are new columns on leaderboard_stats: the
+-- existing longest_streak is an all-time record, not "is today covered", so
+-- the streak-reminder cron needs its own fields to know who to remind and
+-- what number to put in the message. appLanguage lets the cron pick the
+-- right translation per user.
+-- ============================================================
+create table public.push_subscriptions (
+  id uuid primary key default gen_random_uuid(),
+  user_id uuid not null references auth.users(id) on delete cascade,
+  endpoint text not null unique,
+  p256dh text not null,
+  auth text not null,
+  created_at timestamptz default now()
+);
+alter table public.push_subscriptions enable row level security;
+create policy "manage own push subscriptions"
+  on public.push_subscriptions for all
+  using (auth.uid() = user_id) with check (auth.uid() = user_id);
+
+alter table public.leaderboard_stats add column if not exists current_streak integer not null default 0;
+alter table public.leaderboard_stats add column if not exists last_trained_date date;
+alter table public.leaderboard_stats add column if not exists app_language text not null default 'nl';
