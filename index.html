@@ -3330,10 +3330,12 @@
       await initApp();
       await handleLoggedIn(session.user);
     } else {
+      splashTitle.textContent = t.ui.appName;
+      splashSub.textContent = randomTip();
       setTimeout(() => {
         splashScreen.classList.add('hidden');
         authGate.classList.remove('hidden');
-      }, 1200);
+      }, 2200);
     }
   })();
 
