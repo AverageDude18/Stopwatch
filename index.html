@@ -740,7 +740,27 @@
     });
     return blob;
   }
+  function blobsEqual(a, b) {
+    const keysA = Object.keys(a || {}).sort();
+    const keysB = Object.keys(b || {}).sort();
+    if (keysA.length !== keysB.length) return false;
+    for (let i = 0; i < keysA.length; i++) {
+      if (keysA[i] !== keysB[i] || a[keysA[i]] !== b[keysB[i]]) return false;
+    }
+    return true;
+  }
+  // Circuit breaker: if something we haven't foreseen still makes cloud vs.
+  // local data look permanently different, this stops the reload after a
+  // few tries instead of refreshing forever - it just proceeds with
+  // whatever is on the device rather than getting the user stuck.
   function applyAppDataBlob(blob) {
+    const guardCount = parseInt(sessionStorage.getItem('syncReloadGuard') || '0', 10);
+    if (guardCount >= 3) {
+      sessionStorage.removeItem('syncReloadGuard');
+      console.warn('Sync reload loop detected, skipping cloud data apply.');
+      return;
+    }
+    sessionStorage.setItem('syncReloadGuard', String(guardCount + 1));
     appLocalStorageKeys().forEach((key) => localStorage.removeItem(key));
     Object.keys(blob || {}).forEach((key) => localStorage.setItem(key, blob[key]));
     location.reload();
@@ -3294,8 +3314,14 @@
       // Compare before touching anything - without this, a cloud blob that
       // (say) never had a 'sessions' key would look "different" from local
       // forever, re-triggering applyAppDataBlob's reload on every single
-      // boot: an infinite refresh loop.
-      if (JSON.stringify(localBlob) === JSON.stringify(cloudData)) return;
+      // boot: an infinite refresh loop. Compares key-by-key rather than
+      // JSON.stringify-ing both sides, because Postgres's jsonb column does
+      // not preserve key order - a round-tripped blob with identical
+      // content can stringify to a different string than the original.
+      if (blobsEqual(localBlob, cloudData)) {
+        sessionStorage.removeItem('syncReloadGuard');
+        return;
+      }
     }
 
     if (cloudHasData && localHasData) {
