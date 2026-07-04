@@ -455,6 +455,23 @@
     border-radius: 8px; padding: 8px 10px; font-size: 0.9rem; font-family: inherit;
   }
 
+  .avatar-preview {
+    width: 48px; height: 48px; border-radius: 50%; background: var(--panel-alt);
+    display: flex; align-items: center; justify-content: center; font-size: 1.6rem;
+    overflow: hidden; flex-shrink: 0; border: 1px solid var(--border);
+  }
+  .avatar-preview img { width: 100%; height: 100%; object-fit: cover; }
+  .avatar-emoji-row { display: flex; flex-wrap: wrap; gap: 6px; }
+  .avatar-emoji-btn {
+    width: 32px; height: 32px; border-radius: 50%; border: 1px solid var(--border);
+    background: var(--panel-alt); font-size: 1.1rem; cursor: pointer;
+    display: flex; align-items: center; justify-content: center; padding: 0;
+  }
+  .avatar-emoji-btn.selected { border-color: var(--accent); background: rgba(var(--accent-rgb,127,219,168),0.18); }
+  .avatar-mini { width: 22px; height: 22px; border-radius: 50%; display: inline-flex; align-items: center;
+    justify-content: center; flex-shrink: 0; font-size: 0.85rem; background: var(--panel-alt); overflow: hidden; }
+  .avatar-mini img { width: 100%; height: 100%; object-fit: cover; }
+
   /* Custom language picker - a native <select><option> can't render an <img>/
      <svg>, so a real flag icon (rather than an emoji subject to the OS font's
      flag support) needs its own dropdown markup. */
@@ -737,6 +754,18 @@
           </div>
           <div id="usernameStatus" style="font-size:0.78rem; color:var(--muted); min-height:1.2em; margin-bottom:10px;"></div>
 
+          <label id="lblAvatar">Profielfoto</label>
+          <div style="display:flex; align-items:center; gap:10px; margin-bottom:8px;">
+            <div class="avatar-preview" id="avatarPreview">👤</div>
+            <div class="avatar-emoji-row" id="avatarEmojiRow"></div>
+          </div>
+          <div class="settings" style="justify-content:flex-start; gap:6px; margin-bottom:6px;">
+            <button class="small-btn" id="avatarUploadBtn">📁</button>
+            <input type="file" id="avatarFileInput" accept="image/*" style="display:none;">
+            <button class="small-btn" id="avatarRemoveBtn">✕</button>
+          </div>
+          <div id="avatarStatus" style="font-size:0.78rem; color:var(--muted); min-height:1.2em; margin-bottom:10px;"></div>
+
           <button class="small-btn" id="authSignOutBtn" style="width:100%;">Uitloggen</button>
         </div>
       </div>
@@ -928,6 +957,14 @@
   const sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
   let currentUser = null;
   let currentUsername = '';
+  let currentAvatarEmoji = null;
+  let currentAvatarUrl = null;
+  const AVATAR_EMOJIS = ['🦾', '💪', '🏃', '🧘', '🔥', '⭐', '🐯', '🦁', '🚀', '🎯'];
+  function avatarHtml(profile) {
+    if (profile && profile.avatar_url) return `<img src="${profile.avatar_url}" alt="">`;
+    if (profile && profile.avatar_emoji) return profile.avatar_emoji;
+    return '👤';
+  }
 
   // Explicit allowlist rather than "all of localStorage" - Supabase's own
   // auth session token also lives in localStorage, and blindly syncing or
@@ -1112,7 +1149,8 @@
         voiceMaleDeep:'mannelijk, diep', voiceFemaleWarm:'vrouwelijk, warm', voiceFemalePlayful:'vrouwelijk, speels',
         voiceSampleTemplate:(label)=>`Dit is ${label}.`,
         namePhonetic:'Uitspraak van je naam (optioneel, alleen voor de stem)', namePhoneticPlaceholder:'bijv. Iedss',
-        shareWeek:'Deel week', weekShareTitle:'Mijn week', daysTrainedThisWeek:(n)=>`${n} dagen getraind`
+        shareWeek:'Deel week', weekShareTitle:'Mijn week', daysTrainedThisWeek:(n)=>`${n} dagen getraind`,
+        avatarLabel:'Profielfoto'
       },
       speech: { countdown:['drie','twee','één'],
         startWithName:(n)=>`Kom op, ${n}!`, startNoName:'Start!',
@@ -1224,7 +1262,8 @@
         voiceMaleDeep:'male, deep', voiceFemaleWarm:'female, warm', voiceFemalePlayful:'female, playful',
         voiceSampleTemplate:(label)=>`This is ${label}.`,
         namePhonetic:'Pronunciation of your name (optional, voice only)', namePhoneticPlaceholder:'e.g. Eeds',
-        shareWeek:'Share week', weekShareTitle:'My week', daysTrainedThisWeek:(n)=>`${n} days trained`
+        shareWeek:'Share week', weekShareTitle:'My week', daysTrainedThisWeek:(n)=>`${n} days trained`,
+        avatarLabel:'Profile picture'
       },
       speech: { countdown:['three','two','one'],
         startWithName:(n)=>`Come on, ${n}!`, startNoName:'Start!',
@@ -1335,7 +1374,8 @@
         voiceMaleDeep:'männlich, sehr tief', voiceFemaleWarm:'weiblich, warm', voiceFemalePlayful:'weiblich, verspielt',
         voiceSampleTemplate:(label)=>`Das ist ${label}.`,
         namePhonetic:'Aussprache deines Namens (optional, nur für die Stimme)', namePhoneticPlaceholder:'z.B. Iedß',
-        shareWeek:'Woche teilen', weekShareTitle:'Meine Woche', daysTrainedThisWeek:(n)=>`${n} Tage trainiert`
+        shareWeek:'Woche teilen', weekShareTitle:'Meine Woche', daysTrainedThisWeek:(n)=>`${n} Tage trainiert`,
+        avatarLabel:'Profilbild'
       },
       speech: { countdown:['drei','zwei','eins'],
         startWithName:(n)=>`Los geht's, ${n}!`, startNoName:'Start!',
@@ -1446,7 +1486,8 @@
         voiceMaleDeep:'masculino, muy grave', voiceFemaleWarm:'femenino, cálido', voiceFemalePlayful:'femenino, juguetón',
         voiceSampleTemplate:(label)=>`Esto es ${label}.`,
         namePhonetic:'Pronunciación de tu nombre (opcional, solo para la voz)', namePhoneticPlaceholder:'p. ej. Iedss',
-        shareWeek:'Compartir semana', weekShareTitle:'Mi semana', daysTrainedThisWeek:(n)=>`${n} días entrenados`
+        shareWeek:'Compartir semana', weekShareTitle:'Mi semana', daysTrainedThisWeek:(n)=>`${n} días entrenados`,
+        avatarLabel:'Foto de perfil'
       },
       speech: { countdown:['tres','dos','uno'],
         startWithName:(n)=>`¡Vamos, ${n}!`, startNoName:'¡Empieza!',
@@ -1557,7 +1598,8 @@
         voiceMaleDeep:'masculin, très grave', voiceFemaleWarm:'féminin, chaleureux', voiceFemalePlayful:'féminin, enjoué',
         voiceSampleTemplate:(label)=>`Ceci est ${label}.`,
         namePhonetic:'Prononciation de ton prénom (facultatif, uniquement pour la voix)', namePhoneticPlaceholder:'ex. Iedss',
-        shareWeek:'Partager la semaine', weekShareTitle:'Ma semaine', daysTrainedThisWeek:(n)=>`${n} jours d'entraînement`
+        shareWeek:'Partager la semaine', weekShareTitle:'Ma semaine', daysTrainedThisWeek:(n)=>`${n} jours d'entraînement`,
+        avatarLabel:'Photo de profil'
       },
       speech: { countdown:['trois','deux','un'],
         startWithName:(n)=>`Allez, ${n}\u00a0!`, startNoName:'C\u2019est parti\u00a0!',
@@ -1668,7 +1710,8 @@
         voiceMaleDeep:'masculino, muito grave', voiceFemaleWarm:'feminino, caloroso', voiceFemalePlayful:'feminino, brincalhão',
         voiceSampleTemplate:(label)=>`Isto é ${label}.`,
         namePhonetic:'Pronúncia do teu nome (opcional, apenas para a voz)', namePhoneticPlaceholder:'ex. Iedss',
-        shareWeek:'Partilhar semana', weekShareTitle:'A minha semana', daysTrainedThisWeek:(n)=>`${n} dias treinados`
+        shareWeek:'Partilhar semana', weekShareTitle:'A minha semana', daysTrainedThisWeek:(n)=>`${n} dias treinados`,
+        avatarLabel:'Foto de perfil'
       },
       speech: { countdown:['três','dois','um'],
         startWithName:(n)=>`Vamos, ${n}!`, startNoName:'Começar!',
@@ -1779,7 +1822,8 @@
         voiceMaleDeep:'мужской, глубокий', voiceFemaleWarm:'женский, тёплый', voiceFemalePlayful:'женский, игривый',
         voiceSampleTemplate:(label)=>`Это ${label}.`,
         namePhonetic:'Произношение твоего имени (необязательно, только для голоса)', namePhoneticPlaceholder:'напр. Идсс',
-        shareWeek:'Поделиться неделей', weekShareTitle:'Моя неделя', daysTrainedThisWeek:(n)=>`${n} дней тренировок`
+        shareWeek:'Поделиться неделей', weekShareTitle:'Моя неделя', daysTrainedThisWeek:(n)=>`${n} дней тренировок`,
+        avatarLabel:'Фото профиля'
       },
       speech: { countdown:['три','два','один'],
         startWithName:(n)=>`Давай, ${n}!`, startNoName:'Начали!',
@@ -1890,7 +1934,8 @@
         voiceMaleDeep:'男性，浑厚', voiceFemaleWarm:'女性，温暖', voiceFemalePlayful:'女性，活泼',
         voiceSampleTemplate:(label)=>`这是${label}。`,
         namePhonetic:'你名字的发音（可选，仅用于语音）', namePhoneticPlaceholder:'例如 Iedss',
-        shareWeek:'分享本周', weekShareTitle:'我的一周', daysTrainedThisWeek:(n)=>`训练了${n}天`
+        shareWeek:'分享本周', weekShareTitle:'我的一周', daysTrainedThisWeek:(n)=>`训练了${n}天`,
+        avatarLabel:'头像'
       },
       speech: { countdown:['三','二','一'],
         startWithName:(n)=>`加油，${n}！`, startNoName:'开始！',
@@ -2001,7 +2046,8 @@
         voiceMaleDeep:'पुरुष, गहरी आवाज़', voiceFemaleWarm:'महिला, गर्मजोशी भरी', voiceFemalePlayful:'महिला, चंचल',
         voiceSampleTemplate:(label)=>`यह ${label} है।`,
         namePhonetic:'आपके नाम का उच्चारण (वैकल्पिक, केवल आवाज़ के लिए)', namePhoneticPlaceholder:'जैसे Iedss',
-        shareWeek:'सप्ताह शेयर करें', weekShareTitle:'मेरा सप्ताह', daysTrainedThisWeek:(n)=>`${n} दिन ट्रेनिंग की`
+        shareWeek:'सप्ताह शेयर करें', weekShareTitle:'मेरा सप्ताह', daysTrainedThisWeek:(n)=>`${n} दिन ट्रेनिंग की`,
+        avatarLabel:'प्रोफ़ाइल फ़ोटो'
       },
       speech: { countdown:['तीन','दो','एक'],
         startWithName:(n)=>`चलो, ${n}!`, startNoName:'शुरू!',
@@ -2112,7 +2158,8 @@
         voiceMaleDeep:'ذكوري، عميق', voiceFemaleWarm:'أنثوي، دافئ', voiceFemalePlayful:'أنثوي، مرح',
         voiceSampleTemplate:(label)=>`هذا ${label}.`,
         namePhonetic:'نطق اسمك (اختياري، للصوت فقط)', namePhoneticPlaceholder:'مثال Iedss',
-        shareWeek:'مشاركة الأسبوع', weekShareTitle:'أسبوعي', daysTrainedThisWeek:(n)=>`${n} أيام تدريب`
+        shareWeek:'مشاركة الأسبوع', weekShareTitle:'أسبوعي', daysTrainedThisWeek:(n)=>`${n} أيام تدريب`,
+        avatarLabel:'صورة الملف الشخصي'
       },
       speech: { countdown:['ثلاثة','اثنان','واحد'],
         startWithName:(n)=>`هيا، ${n}!`, startNoName:'ابدأ!',
@@ -2229,6 +2276,12 @@
   const usernameInput = document.getElementById('usernameInput');
   const usernameSaveBtn = document.getElementById('usernameSaveBtn');
   const usernameStatus = document.getElementById('usernameStatus');
+  const avatarPreview = document.getElementById('avatarPreview');
+  const avatarEmojiRow = document.getElementById('avatarEmojiRow');
+  const avatarUploadBtn = document.getElementById('avatarUploadBtn');
+  const avatarFileInput = document.getElementById('avatarFileInput');
+  const avatarRemoveBtn = document.getElementById('avatarRemoveBtn');
+  const avatarStatus = document.getElementById('avatarStatus');
   const friendsBtn = document.getElementById('friendsBtn');
   const friendsOverlay = document.getElementById('friendsOverlay');
   const friendsCloseBtn = document.getElementById('friendsCloseBtn');
@@ -2313,9 +2366,12 @@
   async function loadProfile() {
     if (!currentUser) return;
     try {
-      const { data } = await sb.from('profiles').select('username').eq('user_id', currentUser.id).maybeSingle();
+      const { data } = await sb.from('profiles').select('username, avatar_emoji, avatar_url').eq('user_id', currentUser.id).maybeSingle();
       currentUsername = data && data.username ? data.username : '';
       usernameInput.value = currentUsername;
+      currentAvatarEmoji = (data && data.avatar_emoji) || null;
+      currentAvatarUrl = (data && data.avatar_url) || null;
+      renderAvatarPreview();
     } catch (e) {}
   }
   usernameSaveBtn.addEventListener('click', async () => {
@@ -2338,12 +2394,69 @@
     usernameStatus.textContent = t.ui.usernameSaved;
   });
 
+  // ====== Avatar (emoji or uploaded photo - only one active at a time) ======
+  function renderAvatarPreview() {
+    avatarPreview.innerHTML = avatarHtml({ avatar_emoji: currentAvatarEmoji, avatar_url: currentAvatarUrl });
+    avatarEmojiRow.querySelectorAll('.avatar-emoji-btn').forEach((btn) => {
+      btn.classList.toggle('selected', !currentAvatarUrl && btn.dataset.emoji === currentAvatarEmoji);
+    });
+  }
+  avatarEmojiRow.innerHTML = AVATAR_EMOJIS.map((e) => `<button type="button" class="avatar-emoji-btn" data-emoji="${e}">${e}</button>`).join('');
+  avatarEmojiRow.addEventListener('click', async (e) => {
+    const btn = e.target.closest('.avatar-emoji-btn');
+    if (!btn || !currentUser) return;
+    const emoji = btn.dataset.emoji;
+    avatarStatus.textContent = '...';
+    const { error } = await sb.from('profiles').upsert({
+      user_id: currentUser.id, avatar_emoji: emoji, avatar_url: null, updated_at: new Date().toISOString(),
+    });
+    if (error) { avatarStatus.textContent = error.message; return; }
+    currentAvatarEmoji = emoji;
+    currentAvatarUrl = null;
+    renderAvatarPreview();
+    avatarStatus.textContent = '';
+  });
+  avatarUploadBtn.addEventListener('click', () => avatarFileInput.click());
+  avatarFileInput.addEventListener('change', async () => {
+    const file = avatarFileInput.files[0];
+    avatarFileInput.value = '';
+    if (!file || !currentUser) return;
+    avatarStatus.textContent = '...';
+    const ext = (file.name.split('.').pop() || 'jpg').toLowerCase();
+    const path = `${currentUser.id}/avatar.${ext}`;
+    const { error: uploadError } = await sb.storage.from('avatars').upload(path, file, { upsert: true });
+    if (uploadError) { avatarStatus.textContent = uploadError.message; return; }
+    const { data: pub } = sb.storage.from('avatars').getPublicUrl(path);
+    // Cache-bust so the new photo shows immediately instead of a stale CDN copy at the same path.
+    const url = pub.publicUrl + '?t=' + Date.now();
+    const { error } = await sb.from('profiles').upsert({
+      user_id: currentUser.id, avatar_url: url, avatar_emoji: null, updated_at: new Date().toISOString(),
+    });
+    if (error) { avatarStatus.textContent = error.message; return; }
+    currentAvatarUrl = url;
+    currentAvatarEmoji = null;
+    renderAvatarPreview();
+    avatarStatus.textContent = '';
+  });
+  avatarRemoveBtn.addEventListener('click', async () => {
+    if (!currentUser) return;
+    avatarStatus.textContent = '...';
+    const { error } = await sb.from('profiles').upsert({
+      user_id: currentUser.id, avatar_emoji: null, avatar_url: null, updated_at: new Date().toISOString(),
+    });
+    if (error) { avatarStatus.textContent = error.message; return; }
+    currentAvatarEmoji = null;
+    currentAvatarUrl = null;
+    renderAvatarPreview();
+    avatarStatus.textContent = '';
+  });
+
   // ====== Friends ======
   async function fetchProfilesByIds(ids) {
     if (!ids.length) return {};
-    const { data } = await sb.from('profiles').select('user_id, username').in('user_id', ids);
+    const { data } = await sb.from('profiles').select('user_id, username, avatar_emoji, avatar_url').in('user_id', ids);
     const map = {};
-    (data || []).forEach((p) => { map[p.user_id] = p.username; });
+    (data || []).forEach((p) => { map[p.user_id] = p; });
     return map;
   }
   function renderModalList(container, items, emptyText, rowFn) {
@@ -2361,11 +2474,11 @@
     (incoming || []).forEach((r) => ids.add(r.sender_id));
     (sent || []).forEach((r) => ids.add(r.receiver_id));
     (friends || []).forEach((f) => ids.add(f.friend_id));
-    const names = await fetchProfilesByIds(Array.from(ids));
+    const profiles = await fetchProfilesByIds(Array.from(ids));
 
     renderModalList(incomingRequestsList, incoming || [], t.ui.noRequests, (r) => `
       <div class="modal-list-item">
-        <span class="name">${names[r.sender_id] || '?'}</span>
+        <span class="name"><span class="avatar-mini">${avatarHtml(profiles[r.sender_id])}</span>${(profiles[r.sender_id] && profiles[r.sender_id].username) || '?'}</span>
         <div class="modal-btn-row">
           <button class="modal-icon-btn accept" data-accept="${r.id}">✓</button>
           <button class="modal-icon-btn decline" data-decline="${r.id}">✕</button>
@@ -2373,14 +2486,14 @@
       </div>`);
     renderModalList(sentRequestsList, sent || [], t.ui.noSentRequests, (r) => `
       <div class="modal-list-item">
-        <span class="name">${names[r.receiver_id] || '?'}</span>
+        <span class="name"><span class="avatar-mini">${avatarHtml(profiles[r.receiver_id])}</span>${(profiles[r.receiver_id] && profiles[r.receiver_id].username) || '?'}</span>
         <div class="modal-btn-row">
           <button class="modal-icon-btn decline" data-cancel="${r.id}">✕</button>
         </div>
       </div>`);
     renderModalList(friendsList, friends || [], t.ui.noFriends, (f) => `
       <div class="modal-list-item">
-        <span class="name">${names[f.friend_id] || '?'}</span>
+        <span class="name"><span class="avatar-mini">${avatarHtml(profiles[f.friend_id])}</span>${(profiles[f.friend_id] && profiles[f.friend_id].username) || '?'}</span>
         <div class="modal-btn-row">
           <button class="modal-icon-btn remove" data-remove="${f.friend_id}">✕</button>
         </div>
@@ -2456,7 +2569,7 @@
   function renderLbRows(sorted, formatFn) {
     leaderboardList.innerHTML = sorted.map((u, i) => `
       <div class="modal-list-item${u.isMe ? ' me' : ''}">
-        <span><span class="rank">${i + 1}.</span><span class="name">${u.name}</span></span>
+        <span><span class="rank">${i + 1}.</span><span class="avatar-mini">${u.avatar}</span><span class="name">${u.name}</span></span>
         <span class="value">${formatFn(u.value)}</span>
       </div>`).join('');
   }
@@ -2489,13 +2602,14 @@
     if (!currentUser) return;
     const { data: friendRows } = await sb.from('friendships').select('friend_id').eq('user_id', currentUser.id);
     const ids = [currentUser.id, ...(friendRows || []).map((f) => f.friend_id)];
-    const [{ data: stats }, names] = await Promise.all([
+    const [{ data: stats }, profiles] = await Promise.all([
       sb.from('leaderboard_stats').select('*').in('user_id', ids),
       fetchProfilesByIds(ids),
     ]);
     lbStatsCache = (stats || []).map((row) => ({
       isMe: row.user_id === currentUser.id,
-      name: row.user_id === currentUser.id ? t.ui.youLabel : (names[row.user_id] || '?'),
+      name: row.user_id === currentUser.id ? t.ui.youLabel : ((profiles[row.user_id] && profiles[row.user_id].username) || '?'),
+      avatar: avatarHtml(profiles[row.user_id]),
       records: row.records || {},
       best_day_seconds: row.best_day_seconds || 0,
       longest_streak: row.longest_streak || 0,
@@ -2514,7 +2628,7 @@
   }
   function lbPreviewRowHtml(u, i) {
     return `<div class="modal-list-item${u.isMe ? ' me' : ''}">
-      <span><span class="rank">${i + 1}.</span><span class="name">${u.name}</span></span>
+      <span><span class="rank">${i + 1}.</span><span class="avatar-mini">${u.avatar}</span><span class="name">${u.name}</span></span>
       <span class="value">${format(u.value)}</span>
     </div>`;
   }
@@ -2608,6 +2722,7 @@
     document.getElementById('lblColor').textContent = t.ui.color;
     document.getElementById('lblLanguage').textContent = t.ui.language;
     document.getElementById('lblUsername').textContent = t.ui.username;
+    document.getElementById('lblAvatar').textContent = t.ui.avatarLabel;
     usernameInput.placeholder = t.ui.usernamePlaceholder;
     document.getElementById('friendsTitle').textContent = t.ui.friendsTitle;
     friendSearchInput.placeholder = t.ui.friendSearchPlaceholder;

@@ -92,3 +92,30 @@ create policy "upsert own leaderboard stats"
   on public.leaderboard_stats for insert with check (auth.uid() = user_id);
 create policy "update own leaderboard stats"
   on public.leaderboard_stats for update using (auth.uid() = user_id);
+
+-- ============================================================
+-- Added later: profile avatars (emoji OR an uploaded photo).
+-- Only run this block if you already ran everything above in an
+-- earlier session - it's additive to the existing profiles table.
+-- ============================================================
+
+alter table public.profiles add column if not exists avatar_emoji text;
+alter table public.profiles add column if not exists avatar_url text;
+
+-- Storage bucket for uploaded profile photos. Public read (avatars are
+-- shown to friends/leaderboard viewers), but only the owner can write to
+-- their own folder (path convention: avatars/<user_id>/<filename>).
+insert into storage.buckets (id, name, public) values ('avatars', 'avatars', true)
+  on conflict (id) do nothing;
+
+create policy "avatar images are publicly accessible"
+  on storage.objects for select using (bucket_id = 'avatars');
+create policy "users can upload their own avatar"
+  on storage.objects for insert
+  with check (bucket_id = 'avatars' and (storage.foldername(name))[1] = auth.uid()::text);
+create policy "users can update their own avatar"
+  on storage.objects for update
+  using (bucket_id = 'avatars' and (storage.foldername(name))[1] = auth.uid()::text);
+create policy "users can delete their own avatar"
+  on storage.objects for delete
+  using (bucket_id = 'avatars' and (storage.foldername(name))[1] = auth.uid()::text);
