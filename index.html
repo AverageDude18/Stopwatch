@@ -10,6 +10,7 @@
 <link rel="apple-touch-icon" href="apple-touch-icon.png">
 <link rel="icon" type="image/png" sizes="512x512" href="icon-512.png">
 <link rel="icon" type="image/png" sizes="32x32" href="favicon.png">
+<link rel="manifest" href="manifest.json">
 <title>Trainingspartner</title>
 <style>
   :root {
@@ -635,7 +636,10 @@
 
 <script>
   // ====== CONFIG ======
-  const ELEVEN_API_KEY = 'sk_d375daf6d7952008627591b6167351d0d7a4814d3d44b4d3';
+  // The real ElevenLabs API key lives server-side in a Cloudflare Worker
+  // (see worker/index.js) - never ship it in client-side code again, since
+  // this file is public and view-source would expose it instantly.
+  const TTS_PROXY_URL = 'https://REPLACE-WITH-YOUR-WORKER-URL.workers.dev';
   const ELEVEN_MODEL = 'eleven_turbo_v2_5';
   const FIXED_VOICE_ID = '';
   const BASE_EX_KEYS = ['plank', 'deadhang', 'lsit', 'sideplank', 'wallsit', 'hollowhold', 'superman', 'glutebridge', 'handstand', 'birddog'];
@@ -2501,7 +2505,7 @@
       return;
     }
     try {
-      const res = await fetch('https://api.elevenlabs.io/v1/voices', { headers: { 'xi-api-key': ELEVEN_API_KEY } });
+      const res = await fetch(TTS_PROXY_URL + '/voices');
       if (!res.ok) throw new Error('HTTP ' + res.status);
       const data = await res.json();
       if (data.voices && data.voices.length) {
@@ -2552,9 +2556,9 @@
   async function fetchAndCacheAudioUrl(text) {
     const cachedUrl = await getCachedAudio(text);
     if (cachedUrl) return cachedUrl;
-    const res = await fetch('https://api.elevenlabs.io/v1/text-to-speech/' + elevenVoiceId, {
+    const res = await fetch(TTS_PROXY_URL + '/tts/' + elevenVoiceId, {
       method: 'POST',
-      headers: { 'xi-api-key': ELEVEN_API_KEY, 'Content-Type': 'application/json' },
+      headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
         text: text, model_id: ELEVEN_MODEL, language_code: t.elevenLang,
         voice_settings: { stability: 0.88, similarity_boost: 0.75, style: 0.2, use_speaker_boost: true }
@@ -3135,6 +3139,12 @@
     splashAutoHideTimer = setTimeout(hideSplash, 2200);
   }
   initApp();
+
+  if ('serviceWorker' in navigator) {
+    window.addEventListener('load', () => {
+      navigator.serviceWorker.register('service-worker.js').catch(() => {});
+    });
+  }
 </script>
 </body>
 </html>
