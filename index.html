@@ -629,6 +629,8 @@
 
       <button class="small-btn" id="friendsBtn" style="width:100%; margin-bottom:8px;">👥 Vrienden</button>
 
+      <button class="small-btn" id="leaderboardBtn" style="width:100%; margin-bottom:8px;">🏆 Scorebord</button>
+
       <button class="small-btn" id="authSignOutBtn" style="width:100%; margin-bottom:14px;">Uitloggen</button>
 
       <button class="small-btn" id="gymModeBtn" style="width:100%;">Gym-modus (groot scherm)</button>
@@ -771,6 +773,22 @@
     </div>
   </div>
 
+  <div class="modal-overlay hidden" id="leaderboardOverlay">
+    <div class="modal-card">
+      <div class="modal-card-header">
+        <div class="modal-card-title" id="leaderboardTitle">Scorebord</div>
+        <button class="modal-close-btn" id="leaderboardCloseBtn" aria-label="Close">✕</button>
+      </div>
+      <div class="modal-tabs">
+        <button class="modal-tab active" id="lbTabExerciseBtn" data-tab="exercise">Per oefening</button>
+        <button class="modal-tab" id="lbTabBestDayBtn" data-tab="bestday">Meeste tijd/dag</button>
+        <button class="modal-tab" id="lbTabStreakBtn" data-tab="streak">Langste streak</button>
+      </div>
+      <select id="lbExerciseSelect" style="width:100%; margin-bottom:10px;"></select>
+      <div id="leaderboardList"></div>
+    </div>
+  </div>
+
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
 <script>
   // ====== CONFIG ======
@@ -852,6 +870,14 @@
     await sb.from('user_data').upsert({
       user_id: currentUser.id,
       data: gatherAppDataBlob(),
+      updated_at: new Date().toISOString(),
+    });
+    const stats = await computeLeaderboardStats();
+    await sb.from('leaderboard_stats').upsert({
+      user_id: currentUser.id,
+      records: stats.records,
+      best_day_seconds: stats.best_day_seconds,
+      longest_streak: stats.longest_streak,
       updated_at: new Date().toISOString(),
     });
   }
@@ -997,6 +1023,78 @@
   sentRequestsList.addEventListener('click', handleFriendListClick);
   friendsList.addEventListener('click', handleFriendListClick);
 
+  // ====== Leaderboard ======
+  BASE_EX_KEYS.forEach((ex) => {
+    const opt = document.createElement('option');
+    opt.value = ex;
+    lbExerciseSelect.appendChild(opt);
+  });
+  function renderLbExerciseOptions() {
+    Array.from(lbExerciseSelect.options).forEach((opt) => { opt.textContent = exName_(opt.value); });
+  }
+  let lbActiveTab = 'exercise';
+  let lbStatsCache = null;
+  function renderLbRows(sorted, formatFn) {
+    leaderboardList.innerHTML = sorted.map((u, i) => `
+      <div class="modal-list-item${u.isMe ? ' me' : ''}">
+        <span><span class="rank">${i + 1}.</span><span class="name">${u.name}</span></span>
+        <span class="value">${formatFn(u.value)}</span>
+      </div>`).join('');
+  }
+  function renderLeaderboard() {
+    if (!lbStatsCache) return;
+    if (lbStatsCache.length <= 1) {
+      leaderboardList.innerHTML = `<div class="modal-list-empty">${t.ui.lbEmpty}</div>`;
+      return;
+    }
+    if (lbActiveTab === 'exercise') {
+      const ex = lbExerciseSelect.value || BASE_EX_KEYS[0];
+      const sorted = lbStatsCache.map((u) => ({ ...u, value: u.records[ex] || 0 })).sort((a, b) => b.value - a.value);
+      renderLbRows(sorted, format);
+    } else if (lbActiveTab === 'bestday') {
+      const sorted = lbStatsCache.map((u) => ({ ...u, value: u.best_day_seconds })).sort((a, b) => b.value - a.value);
+      renderLbRows(sorted, format);
+    } else {
+      const sorted = lbStatsCache.map((u) => ({ ...u, value: u.longest_streak })).sort((a, b) => b.value - a.value);
+      renderLbRows(sorted, (v) => String(v));
+    }
+  }
+  function setLbTab(tab) {
+    lbActiveTab = tab;
+    [lbTabExerciseBtn, lbTabBestDayBtn, lbTabStreakBtn].forEach((b) => b.classList.remove('active'));
+    ({ exercise: lbTabExerciseBtn, bestday: lbTabBestDayBtn, streak: lbTabStreakBtn })[tab].classList.add('active');
+    lbExerciseSelect.style.display = tab === 'exercise' ? 'block' : 'none';
+    renderLeaderboard();
+  }
+  async function loadLeaderboardData() {
+    if (!currentUser) return;
+    const { data: friendRows } = await sb.from('friendships').select('friend_id').eq('user_id', currentUser.id);
+    const ids = [currentUser.id, ...(friendRows || []).map((f) => f.friend_id)];
+    const [{ data: stats }, names] = await Promise.all([
+      sb.from('leaderboard_stats').select('*').in('user_id', ids),
+      fetchProfilesByIds(ids),
+    ]);
+    lbStatsCache = (stats || []).map((row) => ({
+      isMe: row.user_id === currentUser.id,
+      name: row.user_id === currentUser.id ? t.ui.youLabel : (names[row.user_id] || '?'),
+      records: row.records || {},
+      best_day_seconds: row.best_day_seconds || 0,
+      longest_streak: row.longest_streak || 0,
+    }));
+    renderLeaderboard();
+  }
+  leaderboardBtn.addEventListener('click', () => {
+    settingsPanel.style.display = 'none';
+    leaderboardOverlay.classList.remove('hidden');
+    setLbTab('exercise');
+    loadLeaderboardData();
+  });
+  leaderboardCloseBtn.addEventListener('click', () => leaderboardOverlay.classList.add('hidden'));
+  lbTabExerciseBtn.addEventListener('click', () => setLbTab('exercise'));
+  lbTabBestDayBtn.addEventListener('click', () => setLbTab('bestday'));
+  lbTabStreakBtn.addEventListener('click', () => setLbTab('streak'));
+  lbExerciseSelect.addEventListener('change', renderLeaderboard);
+
   // ====================================================================
   // ====== LANGUAGE / TRANSLATIONS =======================================
   // ====================================================================
@@ -1076,7 +1174,10 @@
         incomingRequests:'Inkomende verzoeken', sentRequests:'Verzonden verzoeken', friendsListLabel:'Vrienden',
         noRequests:'Geen openstaande verzoeken', noSentRequests:'Geen verzonden verzoeken', noFriends:'Nog geen vrienden',
         friendNotFound:'Gebruikersnaam niet gevonden', friendCannotAddSelf:'Je kunt jezelf niet toevoegen',
-        friendAlreadyAdded:'Jullie zijn al vrienden', friendRequestPending:'Verzoek staat al open', friendRequestSent:'Verzoek verstuurd'
+        friendAlreadyAdded:'Jullie zijn al vrienden', friendRequestPending:'Verzoek staat al open', friendRequestSent:'Verzoek verstuurd',
+        leaderboardBtn:'Scorebord', leaderboardTitle:'Scorebord', lbTabExercise:'Per oefening',
+        lbTabBestDay:'Meeste tijd/dag', lbTabStreak:'Langste streak', youLabel:'Jij',
+        lbEmpty:'Voeg vrienden toe om het scorebord te zien'
       },
       speech: { countdown:['drie','twee','één'],
         startWithName:(n)=>`Kom op, ${n}!`, startNoName:'Start!',
@@ -1179,7 +1280,10 @@
         incomingRequests:'Incoming requests', sentRequests:'Sent requests', friendsListLabel:'Friends',
         noRequests:'No pending requests', noSentRequests:'No sent requests', noFriends:'No friends yet',
         friendNotFound:'Username not found', friendCannotAddSelf:"You can't add yourself",
-        friendAlreadyAdded:'You are already friends', friendRequestPending:'Request already pending', friendRequestSent:'Request sent'
+        friendAlreadyAdded:'You are already friends', friendRequestPending:'Request already pending', friendRequestSent:'Request sent',
+        leaderboardBtn:'Leaderboard', leaderboardTitle:'Leaderboard', lbTabExercise:'Per exercise',
+        lbTabBestDay:'Most time/day', lbTabStreak:'Longest streak', youLabel:'You',
+        lbEmpty:'Add friends to see the leaderboard'
       },
       speech: { countdown:['three','two','one'],
         startWithName:(n)=>`Come on, ${n}!`, startNoName:'Start!',
@@ -1256,7 +1360,10 @@
         incomingRequests:'Eingehende Anfragen', sentRequests:'Gesendete Anfragen', friendsListLabel:'Freunde',
         noRequests:'Keine offenen Anfragen', noSentRequests:'Keine gesendeten Anfragen', noFriends:'Noch keine Freunde',
         friendNotFound:'Benutzername nicht gefunden', friendCannotAddSelf:'Du kannst dich nicht selbst hinzufügen',
-        friendAlreadyAdded:'Ihr seid bereits befreundet', friendRequestPending:'Anfrage bereits offen', friendRequestSent:'Anfrage gesendet'
+        friendAlreadyAdded:'Ihr seid bereits befreundet', friendRequestPending:'Anfrage bereits offen', friendRequestSent:'Anfrage gesendet',
+        leaderboardBtn:'Bestenliste', leaderboardTitle:'Bestenliste', lbTabExercise:'Pro Übung',
+        lbTabBestDay:'Meiste Zeit/Tag', lbTabStreak:'Längste Serie', youLabel:'Du',
+        lbEmpty:'Füge Freunde hinzu, um die Bestenliste zu sehen'
       },
       speech: { countdown:['drei','zwei','eins'],
         startWithName:(n)=>`Los geht's, ${n}!`, startNoName:'Start!',
@@ -1333,7 +1440,10 @@
         incomingRequests:'Solicitudes recibidas', sentRequests:'Solicitudes enviadas', friendsListLabel:'Amigos',
         noRequests:'No hay solicitudes pendientes', noSentRequests:'No hay solicitudes enviadas', noFriends:'Aún no tienes amigos',
         friendNotFound:'Nombre de usuario no encontrado', friendCannotAddSelf:'No puedes añadirte a ti mismo',
-        friendAlreadyAdded:'Ya sois amigos', friendRequestPending:'La solicitud ya está pendiente', friendRequestSent:'Solicitud enviada'
+        friendAlreadyAdded:'Ya sois amigos', friendRequestPending:'La solicitud ya está pendiente', friendRequestSent:'Solicitud enviada',
+        leaderboardBtn:'Clasificación', leaderboardTitle:'Clasificación', lbTabExercise:'Por ejercicio',
+        lbTabBestDay:'Más tiempo/día', lbTabStreak:'Racha más larga', youLabel:'Tú',
+        lbEmpty:'Añade amigos para ver la clasificación'
       },
       speech: { countdown:['tres','dos','uno'],
         startWithName:(n)=>`¡Vamos, ${n}!`, startNoName:'¡Empieza!',
@@ -1410,7 +1520,10 @@
         incomingRequests:'Demandes reçues', sentRequests:'Demandes envoyées', friendsListLabel:'Amis',
         noRequests:'Aucune demande en attente', noSentRequests:'Aucune demande envoyée', noFriends:"Pas encore d'amis",
         friendNotFound:"Nom d'utilisateur introuvable", friendCannotAddSelf:"Tu ne peux pas t'ajouter toi-même",
-        friendAlreadyAdded:'Vous êtes déjà amis', friendRequestPending:'Demande déjà en attente', friendRequestSent:'Demande envoyée'
+        friendAlreadyAdded:'Vous êtes déjà amis', friendRequestPending:'Demande déjà en attente', friendRequestSent:'Demande envoyée',
+        leaderboardBtn:'Classement', leaderboardTitle:'Classement', lbTabExercise:'Par exercice',
+        lbTabBestDay:'Plus de temps/jour', lbTabStreak:'Plus longue série', youLabel:'Toi',
+        lbEmpty:'Ajoute des amis pour voir le classement'
       },
       speech: { countdown:['trois','deux','un'],
         startWithName:(n)=>`Allez, ${n}\u00a0!`, startNoName:'C\u2019est parti\u00a0!',
@@ -1487,7 +1600,10 @@
         incomingRequests:'Pedidos recebidos', sentRequests:'Pedidos enviados', friendsListLabel:'Amigos',
         noRequests:'Sem pedidos pendentes', noSentRequests:'Sem pedidos enviados', noFriends:'Ainda sem amigos',
         friendNotFound:'Nome de utilizador não encontrado', friendCannotAddSelf:'Não te podes adicionar a ti próprio',
-        friendAlreadyAdded:'Já são amigos', friendRequestPending:'Pedido já pendente', friendRequestSent:'Pedido enviado'
+        friendAlreadyAdded:'Já são amigos', friendRequestPending:'Pedido já pendente', friendRequestSent:'Pedido enviado',
+        leaderboardBtn:'Classificação', leaderboardTitle:'Classificação', lbTabExercise:'Por exercício',
+        lbTabBestDay:'Mais tempo/dia', lbTabStreak:'Sequência mais longa', youLabel:'Tu',
+        lbEmpty:'Adiciona amigos para ver a classificação'
       },
       speech: { countdown:['três','dois','um'],
         startWithName:(n)=>`Vamos, ${n}!`, startNoName:'Começar!',
@@ -1564,7 +1680,10 @@
         incomingRequests:'Входящие запросы', sentRequests:'Отправленные запросы', friendsListLabel:'Друзья',
         noRequests:'Нет ожидающих запросов', noSentRequests:'Нет отправленных запросов', noFriends:'Пока нет друзей',
         friendNotFound:'Имя пользователя не найдено', friendCannotAddSelf:'Нельзя добавить самого себя',
-        friendAlreadyAdded:'Вы уже друзья', friendRequestPending:'Запрос уже ожидает', friendRequestSent:'Запрос отправлен'
+        friendAlreadyAdded:'Вы уже друзья', friendRequestPending:'Запрос уже ожидает', friendRequestSent:'Запрос отправлен',
+        leaderboardBtn:'Таблица лидеров', leaderboardTitle:'Таблица лидеров', lbTabExercise:'По упражнению',
+        lbTabBestDay:'Больше всего времени/день', lbTabStreak:'Самая длинная серия', youLabel:'Ты',
+        lbEmpty:'Добавь друзей, чтобы увидеть таблицу лидеров'
       },
       speech: { countdown:['три','два','один'],
         startWithName:(n)=>`Давай, ${n}!`, startNoName:'Начали!',
@@ -1641,7 +1760,10 @@
         incomingRequests:'收到的请求', sentRequests:'已发送的请求', friendsListLabel:'好友',
         noRequests:'暂无待处理请求', noSentRequests:'暂无已发送请求', noFriends:'暂无好友',
         friendNotFound:'未找到该用户名', friendCannotAddSelf:'不能添加自己',
-        friendAlreadyAdded:'你们已经是好友', friendRequestPending:'请求已在等待中', friendRequestSent:'请求已发送'
+        friendAlreadyAdded:'你们已经是好友', friendRequestPending:'请求已在等待中', friendRequestSent:'请求已发送',
+        leaderboardBtn:'排行榜', leaderboardTitle:'排行榜', lbTabExercise:'按训练项目',
+        lbTabBestDay:'单日最长时间', lbTabStreak:'最长连续天数', youLabel:'你',
+        lbEmpty:'添加好友以查看排行榜'
       },
       speech: { countdown:['三','二','一'],
         startWithName:(n)=>`加油，${n}！`, startNoName:'开始！',
@@ -1718,7 +1840,10 @@
         incomingRequests:'आने वाले अनुरोध', sentRequests:'भेजे गए अनुरोध', friendsListLabel:'मित्र',
         noRequests:'कोई लंबित अनुरोध नहीं', noSentRequests:'कोई भेजा गया अनुरोध नहीं', noFriends:'अभी तक कोई मित्र नहीं',
         friendNotFound:'उपयोगकर्ता नाम नहीं मिला', friendCannotAddSelf:'आप खुद को नहीं जोड़ सकते',
-        friendAlreadyAdded:'आप पहले से ही मित्र हैं', friendRequestPending:'अनुरोध पहले से लंबित है', friendRequestSent:'अनुरोध भेजा गया'
+        friendAlreadyAdded:'आप पहले से ही मित्र हैं', friendRequestPending:'अनुरोध पहले से लंबित है', friendRequestSent:'अनुरोध भेजा गया',
+        leaderboardBtn:'लीडरबोर्ड', leaderboardTitle:'लीडरबोर्ड', lbTabExercise:'प्रति व्यायाम',
+        lbTabBestDay:'सबसे ज्यादा समय/दिन', lbTabStreak:'सबसे लंबी स्ट्रीक', youLabel:'आप',
+        lbEmpty:'लीडरबोर्ड देखने के लिए मित्र जोड़ें'
       },
       speech: { countdown:['तीन','दो','एक'],
         startWithName:(n)=>`चलो, ${n}!`, startNoName:'शुरू!',
@@ -1795,7 +1920,10 @@
         incomingRequests:'الطلبات الواردة', sentRequests:'الطلبات المرسلة', friendsListLabel:'الأصدقاء',
         noRequests:'لا توجد طلبات معلقة', noSentRequests:'لا توجد طلبات مرسلة', noFriends:'لا يوجد أصدقاء بعد',
         friendNotFound:'اسم المستخدم غير موجود', friendCannotAddSelf:'لا يمكنك إضافة نفسك',
-        friendAlreadyAdded:'أنتما صديقان بالفعل', friendRequestPending:'الطلب معلق بالفعل', friendRequestSent:'تم إرسال الطلب'
+        friendAlreadyAdded:'أنتما صديقان بالفعل', friendRequestPending:'الطلب معلق بالفعل', friendRequestSent:'تم إرسال الطلب',
+        leaderboardBtn:'لوحة الصدارة', leaderboardTitle:'لوحة الصدارة', lbTabExercise:'حسب التمرين',
+        lbTabBestDay:'أكثر وقت/يوم', lbTabStreak:'أطول سلسلة متتالية', youLabel:'أنت',
+        lbEmpty:'أضف أصدقاء لرؤية لوحة الصدارة'
       },
       speech: { countdown:['ثلاثة','اثنان','واحد'],
         startWithName:(n)=>`هيا، ${n}!`, startNoName:'ابدأ!',
@@ -1892,6 +2020,14 @@
   const incomingRequestsList = document.getElementById('incomingRequestsList');
   const sentRequestsList = document.getElementById('sentRequestsList');
   const friendsList = document.getElementById('friendsList');
+  const leaderboardBtn = document.getElementById('leaderboardBtn');
+  const leaderboardOverlay = document.getElementById('leaderboardOverlay');
+  const leaderboardCloseBtn = document.getElementById('leaderboardCloseBtn');
+  const lbTabExerciseBtn = document.getElementById('lbTabExerciseBtn');
+  const lbTabBestDayBtn = document.getElementById('lbTabBestDayBtn');
+  const lbTabStreakBtn = document.getElementById('lbTabStreakBtn');
+  const lbExerciseSelect = document.getElementById('lbExerciseSelect');
+  const leaderboardList = document.getElementById('leaderboardList');
   const display = document.getElementById('display');
   const phaseLabel = document.getElementById('phaseLabel');
   const startBtn = document.getElementById('startBtn');
@@ -1995,6 +2131,11 @@
     document.getElementById('lblIncomingRequests').textContent = t.ui.incomingRequests;
     document.getElementById('lblSentRequests').textContent = t.ui.sentRequests;
     document.getElementById('lblFriendsList').textContent = t.ui.friendsListLabel;
+    leaderboardBtn.textContent = '🏆 ' + t.ui.leaderboardBtn;
+    document.getElementById('leaderboardTitle').textContent = t.ui.leaderboardTitle;
+    lbTabExerciseBtn.textContent = t.ui.lbTabExercise;
+    lbTabBestDayBtn.textContent = t.ui.lbTabBestDay;
+    lbTabStreakBtn.textContent = t.ui.lbTabStreak;
     document.getElementById('lblTone').textContent = t.ui.tone;
     document.getElementById('optToneMotiv').textContent = t.ui.toneMotiv;
     document.getElementById('optToneStrict').textContent = t.ui.toneStrict;
@@ -2043,6 +2184,7 @@
     langSelect.value = code;
     applyStaticText();
     renderExName();
+    renderLbExerciseOptions();
     renderPrograms();
     updateRecordDisplay();
     chartDetail.classList.add('empty');
@@ -2493,6 +2635,45 @@
     if (!days.has(cursor.toDateString())) cursor.setDate(cursor.getDate() - 1);
     while (days.has(cursor.toDateString())) { streak++; cursor.setDate(cursor.getDate() - 1); }
     streakDisplay.textContent = streak > 0 ? '🔥 ' + streak + ' ' + (streak === 1 ? t.ui.dayStreak : t.ui.daysStreak) : '';
+  }
+
+  // ====== Leaderboard stats ======
+  // Longest-ever run of consecutive training days, as opposed to
+  // updateStreak's "current streak counting back from today".
+  function computeLongestStreakEver(list) {
+    const days = Array.from(new Set(list.map((s) => new Date(s.ts).toDateString())))
+      .map((d) => new Date(d)).sort((a, b) => a - b);
+    let longest = 0, run = 0;
+    for (let i = 0; i < days.length; i++) {
+      if (i > 0) {
+        const prevNext = new Date(days[i - 1]);
+        prevNext.setDate(prevNext.getDate() + 1);
+        run = prevNext.toDateString() === days[i].toDateString() ? run + 1 : 1;
+      } else {
+        run = 1;
+      }
+      longest = Math.max(longest, run);
+    }
+    return longest;
+  }
+  function computeBestDaySeconds(list) {
+    const totals = {};
+    list.forEach((s) => {
+      const key = new Date(s.ts).toDateString();
+      totals[key] = (totals[key] || 0) + s.dur;
+    });
+    const values = Object.values(totals);
+    return values.length ? Math.max(...values) : 0;
+  }
+  async function computeLeaderboardStats() {
+    const list = await loadSessions();
+    const records = {};
+    for (const ex of BASE_EX_KEYS) records[ex] = await getRecord(ex);
+    return {
+      records,
+      best_day_seconds: computeBestDaySeconds(list),
+      longest_streak: computeLongestStreakEver(list),
+    };
   }
 
   // ====== Weekly goal ======
@@ -3587,6 +3768,7 @@
     syncCustomBadge();
     applyStaticText();
     renderExName();
+    renderLbExerciseOptions();
     renderPrograms();
     updateRecordDisplay();
     chartDetail.textContent = t.ui.tapBar;
