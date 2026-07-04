@@ -58,7 +58,7 @@
     margin-bottom: 6px; min-height: 22px;
   }
   .top-row-actions { display: flex; align-items: center; gap: 2px; flex-shrink: 0; }
-  .streak { font-size: 0.85rem; color: var(--muted); }
+  .streak { font-size: 1.5rem; font-weight: 700; color: var(--text); display: flex; align-items: center; gap: 4px; }
   .streak-fire { filter: grayscale(1); opacity: 0.55; }
   .streak-fire.active { filter: none; opacity: 1; }
 
@@ -474,14 +474,14 @@
     justify-content: center; flex-shrink: 0; font-size: 0.85rem; background: var(--panel-alt); overflow: hidden; }
   .avatar-mini img { width: 100%; height: 100%; object-fit: cover; }
   .avatar-corner-btn {
-    width: 34px; height: 34px; border-radius: 50%; border: 1px solid var(--border);
+    width: 46px; height: 46px; border-radius: 50%; border: 1px solid var(--border);
     background: var(--panel-alt); padding: 0; cursor: pointer; flex-shrink: 0;
-    display: flex; align-items: center; justify-content: center; font-size: 1.2rem; overflow: hidden;
+    display: flex; align-items: center; justify-content: center; font-size: 1.6rem; overflow: hidden;
   }
   .avatar-corner-btn img { width: 100%; height: 100%; object-fit: cover; }
   .profile-overlay-avatar {
-    width: 110px; height: 110px; border-radius: 50%; background: var(--panel-alt);
-    display: flex; align-items: center; justify-content: center; font-size: 3.5rem;
+    width: 150px; height: 150px; border-radius: 50%; background: var(--panel-alt);
+    display: flex; align-items: center; justify-content: center; font-size: 4.8rem;
     margin: 8px auto 14px; overflow: hidden; border: 1px solid var(--border);
   }
   .profile-overlay-avatar img { width: 100%; height: 100%; object-fit: cover; }
@@ -609,13 +609,9 @@
   <div class="flash-overlay" id="flashOverlay"></div>
   <div class="card">
     <div class="top-row">
-      <div style="display:flex; align-items:center; gap:8px;">
+      <div style="display:flex; align-items:center; gap:10px;">
         <button class="avatar-corner-btn" id="avatarCornerBtn" aria-label="Profile"><span id="avatarCornerImg">👤</span></button>
-        <div>
-          <div class="streak" id="streakDisplay"></div>
-          <div class="today-line" id="todayDisplay"></div>
-          <div class="today-line" id="smartTip" style="color:var(--accent);"></div>
-        </div>
+        <div class="streak" id="streakDisplay"></div>
       </div>
       <div class="top-row-actions">
         <button class="icon-btn" id="friendsBtn" aria-label="Friends">👥</button>
@@ -623,6 +619,8 @@
         <button class="icon-btn" id="settingsBtn" aria-label="Settings">⚙️</button>
       </div>
     </div>
+    <div class="today-line" id="todayDisplay" style="text-align:center;"></div>
+    <div class="today-line" id="smartTip" style="text-align:center; color:var(--accent);"></div>
 
     <div class="lb-preview hidden" id="lbPreview">
       <div class="lb-preview-header">
