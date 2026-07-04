@@ -10,7 +10,6 @@
 <link rel="apple-touch-icon" href="apple-touch-icon.png">
 <link rel="icon" type="image/png" sizes="512x512" href="icon-512.png">
 <link rel="icon" type="image/png" sizes="32x32" href="favicon.png">
-<link rel="manifest" href="manifest.json">
 <title>Trainingspartner</title>
 <style>
   :root {
@@ -85,6 +84,7 @@
     85% { opacity: 0.25; }
     100% { transform: scale(0.8); opacity: 0; }
   }
+  body.big-font .time { font-size: 3.7rem; }
   .time {
     position: relative; z-index: 3; font-size: 2.9rem; font-weight: 700;
     font-variant-numeric: tabular-nums; color: #7fdba8; transition: color 0.4s ease;
@@ -110,6 +110,19 @@
     background: var(--panel-alt); border: 1px solid var(--border); border-radius: 16px;
     padding: 16px 14px 14px; margin-top: 16px;
   }
+  #programsToggle.expanded { background: var(--panel); border-color: var(--accent); color: var(--text); }
+  .programs-section { margin-top: 10px; }
+  .program-card {
+    background: var(--panel-alt); border: 1px solid var(--border); border-radius: 14px;
+    padding: 12px 14px; margin-bottom: 10px;
+  }
+  .program-card-head { display: flex; align-items: center; gap: 8px; margin-bottom: 6px; }
+  .program-icon { font-size: 1.2rem; }
+  .program-name { font-weight: 700; font-size: 0.95rem; color: var(--text); }
+  .program-desc { font-size: 0.72rem; color: var(--muted); line-height: 1.5; margin-bottom: 10px; }
+  .program-row { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+  .program-progress { font-size: 0.75rem; color: var(--accent); font-weight: 600; }
+  .program-start-btn { padding: 7px 16px; }
   .mode-row { display: flex; gap: 8px; justify-content: center; }
   .mode-btn {
     flex: 1; background: var(--panel); color: var(--muted); font-size: 0.85rem;
@@ -414,6 +427,7 @@
       <div>
         <div class="streak" id="streakDisplay"></div>
         <div class="today-line" id="todayDisplay"></div>
+        <div class="today-line" id="smartTip" style="color:var(--accent);"></div>
       </div>
       <button class="icon-btn" id="settingsBtn" aria-label="Settings">⚙️</button>
     </div>
@@ -421,10 +435,6 @@
     <div class="settings-panel" id="settingsPanel">
       <label for="nameInput" id="lblName">Jouw naam (voor persoonlijke aanmoedigingen)</label>
       <input type="text" id="nameInput" placeholder="bijv. Ids">
-
-      <label for="apiKeyInput" id="lblApiKey">ElevenLabs API-key (optioneel)</label>
-      <input type="password" id="apiKeyInput" placeholder="sk_..." autocomplete="off">
-      <div class="goal-bar-label" id="apiKeyHint" style="margin:-10px 0 14px;"></div>
 
       <label id="lblColor">Accentkleur</label>
       <div class="swatch-row">
@@ -485,6 +495,27 @@
         </label>
       </div>
 
+      <div class="toggle-row">
+        <span id="lblBigFont">Groot lettertype</span>
+        <label class="toggle-switch">
+          <input type="checkbox" id="bigFontToggleInput">
+          <span class="toggle-slider"></span>
+        </label>
+      </div>
+
+      <label for="ambientSelect" id="lblAmbient">Achtergrondgeluid</label>
+      <select id="ambientSelect" style="width:100%; margin-bottom:14px;">
+        <option value="off" id="optAmbientOff">Uit</option>
+        <option value="rain" id="optAmbientRain">Regen</option>
+        <option value="waves" id="optAmbientWaves">Golven</option>
+      </select>
+
+      <label for="customExInput" id="lblCustomEx">Eigen oefening</label>
+      <div class="settings" style="justify-content:flex-start; gap:6px; margin-bottom:14px;">
+        <input type="text" id="customExInput" placeholder="bijv. Squat hold" style="flex:1; background:var(--panel-alt); color:var(--text); border:1px solid var(--border); border-radius:8px; padding:8px 10px; font-size:0.9rem; font-family:inherit;">
+        <button class="small-btn" id="customExSaveBtn">✓</button>
+      </div>
+
       <button class="small-btn" id="gymModeBtn" style="width:100%;">Gym-modus (groot scherm)</button>
     </div>
 
@@ -533,8 +564,10 @@
       <div id="intervalSettings" style="display:none;">
         <div class="settings">
           <span id="lblWork">Werk</span> <select id="workSec">
+            <option value="10">10s</option>
             <option value="15">15s</option>
             <option value="20">20s</option>
+            <option value="25">25s</option>
             <option value="30" selected>30s</option>
             <option value="45">45s</option>
             <option value="60">60s</option>
@@ -555,6 +588,13 @@
       </div>
     </div>
 
+    <div class="controls" style="margin-top: 10px;">
+      <button class="small-btn" id="programsToggle">📋 Programma's</button>
+    </div>
+    <div class="programs-section" id="programsSection" style="display:none;">
+      <div id="programsList"></div>
+    </div>
+
     <div class="record-line" id="recordDisplay">Record: --</div>
     <div class="status" id="status">Stem laden...</div>
     <div class="controls" style="margin-top: 10px;">
@@ -569,19 +609,11 @@
       <div class="badge-row" id="badgeRow"></div>
       <div class="badge-popup" id="badgePopup"></div>
       <hr class="stats-divider">
+      <div class="stats-heading" id="lblRecordProgress">Recordverloop</div>
+      <div id="recordProgressChart" style="margin-bottom:16px;"></div>
+      <hr class="stats-divider">
       <div class="stats-heading" id="lblProgress">Voortgang per oefening</div>
-      <div class="ex-chart-block">
-        <div class="ex-chart-label" id="lblExPlank">Plank</div>
-        <div class="week-chart" id="chart-plank"></div>
-      </div>
-      <div class="ex-chart-block">
-        <div class="ex-chart-label" id="lblExDeadhang">Deadhang</div>
-        <div class="week-chart" id="chart-deadhang"></div>
-      </div>
-      <div class="ex-chart-block">
-        <div class="ex-chart-label" id="lblExLsit">L-sit deadhang</div>
-        <div class="week-chart" id="chart-lsit"></div>
-      </div>
+      <div id="exChartsContainer"></div>
       <div class="chart-detail-card empty" id="chartDetail">Tik op een staafje voor de langst volgehouden tijd die dag</div>
       <hr class="stats-divider">
       <div class="stats-heading" id="lblRecent">Recente sessies</div>
@@ -603,13 +635,11 @@
 
 <script>
   // ====== CONFIG ======
-  // No API key ships with the app - each user supplies their own ElevenLabs
-  // key via settings (stored only in their browser's localStorage). Without
-  // a key, speakNow() falls back to the browser's built-in speechSynthesis.
-  let elevenApiKey = '';
+  const ELEVEN_API_KEY = 'sk_d375daf6d7952008627591b6167351d0d7a4814d3d44b4d3';
   const ELEVEN_MODEL = 'eleven_turbo_v2_5';
   const FIXED_VOICE_ID = '';
-  const EX_KEYS = ['plank', 'deadhang', 'lsit', 'sideplank', 'wallsit', 'hollowhold', 'superman', 'glutebridge', 'handstand', 'birddog'];
+  const BASE_EX_KEYS = ['plank', 'deadhang', 'lsit', 'sideplank', 'wallsit', 'hollowhold', 'superman', 'glutebridge', 'handstand', 'birddog'];
+  let EX_KEYS = BASE_EX_KEYS.slice();
 
   // ====================================================================
   // ====== LANGUAGE / TRANSLATIONS =======================================
@@ -660,7 +690,6 @@
         statsToggle:'Statistieken', hideStats:'Verberg statistieken', achievements:'Prestaties',
         progress:'Voortgang per oefening', recent:'Recente sessies', noSessions:'Nog geen sessies',
         name:'Jouw naam (voor persoonlijke aanmoedigingen)', color:'Accentkleur', tone:'Coach-toon',
-        apiKey:'ElevenLabs API-key (optioneel)', apiKeyHint:'Zonder key gebruikt de app de stem van je browser.',
         toneMotiv:'Motiverend', toneStrict:'Streng', toneChill:'Chill',
         goal:'Weekdoel (sessies per week)', goalNone:'Geen doel', everyDay:'Elke dag',
         speed:'Spreeksnelheid van de stem', speedSlow:'Langzaam', speedNormal:'Normaal', speedFast:'Snel',
@@ -673,7 +702,17 @@
         goalReached:'Weekdoel gehaald!', goalLabel:'Weekdoel', daysTrainedOf:(n,g)=>`${n}/${g} dagen getraind`,
         dayStreak:'dag op rij', daysStreak:'dagen op rij', voiceLoadingMsg:'Stem laden...',
         elevenError:'ElevenLabs fout: ', unlockedTag:'Ontgrendeld ✅', newRecordTag:'Nieuw record! 🎉',
-        newRecordShare:'Nieuw record!', proSuffix:'pro'
+        newRecordShare:'Nieuw record!', proSuffix:'pro',
+        restDayTip:(n)=>`Je traint al ${n} dagen op rij - een rustdag is ook goed!`,
+        weeklyTip:(ex)=>`Nog niet geprobeerd deze week: ${ex}`,
+        bigFont:'Groot lettertype', customExercise:'Eigen oefening', customExerciseLabel:'Naam van je eigen oefening',
+        customExercisePlaceholder:'bijv. Squat hold', ambientSound:'Achtergrondgeluid',
+        ambientOff:'Uit', ambientRain:'Regen', ambientWaves:'Golven',
+        challenges:'Programma\'s', challenge5day:'5-dagen challenge', startChallenge:'Start challenge',
+        challengeDayOf:(d,tot)=>`Dag ${d} van ${tot}`, challengeComplete:'Challenge voltooid! 🎉',
+        recordProgress:'Recordverloop', noRecordProgress:'Nog geen verloop om te tonen',
+        notTrainedToday:'Nog niet getraind vandaag',
+        programs:{fiveday:'5-daagse variatie',plankProg:'Plank progressie',gripHang:'Grip & hang',coreKick:'Core kickstart'}
       },
       speech: { countdown:['drie','twee','één'],
         startWithName:(n)=>`Kom op, ${n}!`, startNoName:'Start!',
@@ -746,7 +785,6 @@
         statsToggle:'Stats', hideStats:'Hide stats', achievements:'Achievements',
         progress:'Progress per exercise', recent:'Recent sessions', noSessions:'No sessions yet',
         name:'Your name (for personal encouragement)', color:'Accent color', tone:'Coach tone',
-        apiKey:'ElevenLabs API key (optional)', apiKeyHint:"Without a key the app uses your browser's voice.",
         toneMotiv:'Motivating', toneStrict:'Strict', toneChill:'Chill',
         goal:'Weekly goal (sessions per week)', goalNone:'No goal', everyDay:'Every day',
         speed:'Voice speed', speedSlow:'Slow', speedNormal:'Normal', speedFast:'Fast',
@@ -759,7 +797,17 @@
         goalReached:'Weekly goal reached!', goalLabel:'Weekly goal', daysTrainedOf:(n,g)=>`${n}/${g} days trained`,
         dayStreak:'day streak', daysStreak:'day streak', voiceLoadingMsg:'Loading voice...',
         elevenError:'ElevenLabs error: ', unlockedTag:'Unlocked ✅', newRecordTag:'New record! 🎉',
-        newRecordShare:'New record!', proSuffix:'pro'
+        newRecordShare:'New record!', proSuffix:'pro',
+        restDayTip:(n)=>`You've trained ${n} days in a row - a rest day is good too!`,
+        weeklyTip:(ex)=>`Not tried yet this week: ${ex}`,
+        bigFont:'Large digits', customExercise:'Custom exercise', customExerciseLabel:'Name of your exercise',
+        customExercisePlaceholder:'e.g. Squat hold', ambientSound:'Background sound',
+        ambientOff:'Off', ambientRain:'Rain', ambientWaves:'Waves',
+        challenges:'Programs', challenge5day:'5-day challenge', startChallenge:'Start challenge',
+        challengeDayOf:(d,tot)=>`Day ${d} of ${tot}`, challengeComplete:'Challenge complete! 🎉',
+        recordProgress:'Record progress', noRecordProgress:'No progress to show yet',
+        notTrainedToday:'Not trained yet today',
+        programs:{fiveday:'5-day variety',plankProg:'Plank progression',gripHang:'Grip & hang',coreKick:'Core kickstart'}
       },
       speech: { countdown:['three','two','one'],
         startWithName:(n)=>`Come on, ${n}!`, startNoName:'Start!',
@@ -806,7 +854,6 @@
         statsToggle:'Statistiken', hideStats:'Statistiken ausblenden', achievements:'Erfolge',
         progress:'Fortschritt pro Übung', recent:'Letzte Sitzungen', noSessions:'Noch keine Sitzungen',
         name:'Dein Name (für persönliche Ansprache)', color:'Akzentfarbe', tone:'Coach-Ton',
-        apiKey:'ElevenLabs-API-Schlüssel (optional)', apiKeyHint:'Ohne Schlüssel nutzt die App die Stimme deines Browsers.',
         toneMotiv:'Motivierend', toneStrict:'Streng', toneChill:'Entspannt',
         goal:'Wochenziel (Sitzungen pro Woche)', goalNone:'Kein Ziel', everyDay:'Jeden Tag',
         speed:'Sprechgeschwindigkeit', speedSlow:'Langsam', speedNormal:'Normal', speedFast:'Schnell',
@@ -819,7 +866,17 @@
         goalReached:'Wochenziel erreicht!', goalLabel:'Wochenziel', daysTrainedOf:(n,g)=>`${n}/${g} Tage trainiert`,
         dayStreak:'Tag in Folge', daysStreak:'Tage in Folge', voiceLoadingMsg:'Stimme wird geladen...',
         elevenError:'ElevenLabs-Fehler: ', unlockedTag:'Freigeschaltet ✅', newRecordTag:'Neuer Rekord! 🎉',
-        newRecordShare:'Neuer Rekord!', proSuffix:'Profi'
+        newRecordShare:'Neuer Rekord!', proSuffix:'Profi',
+        restDayTip:(n)=>`Du trainierst schon ${n} Tage in Folge - ein Ruhetag tut auch gut!`,
+        weeklyTip:(ex)=>`Diese Woche noch nicht probiert: ${ex}`,
+        bigFont:'Große Zahlen', customExercise:'Eigene Übung', customExerciseLabel:'Name deiner Übung',
+        customExercisePlaceholder:'z.B. Squat Hold', ambientSound:'Hintergrundgeräusch',
+        ambientOff:'Aus', ambientRain:'Regen', ambientWaves:'Wellen',
+        challenges:'Programme', challenge5day:'5-Tage-Challenge', startChallenge:'Challenge starten',
+        challengeDayOf:(d,tot)=>`Tag ${d} von ${tot}`, challengeComplete:'Challenge abgeschlossen! 🎉',
+        recordProgress:'Rekordverlauf', noRecordProgress:'Noch kein Verlauf zum Anzeigen',
+        notTrainedToday:'Heute noch nicht trainiert',
+        programs:{fiveday:'5-Tage-Mix',plankProg:'Plank-Progression',gripHang:'Griff & Hang',coreKick:'Core-Kickstart'}
       },
       speech: { countdown:['drei','zwei','eins'],
         startWithName:(n)=>`Los geht's, ${n}!`, startNoName:'Start!',
@@ -866,7 +923,6 @@
         statsToggle:'Estadísticas', hideStats:'Ocultar estadísticas', achievements:'Logros',
         progress:'Progreso por ejercicio', recent:'Sesiones recientes', noSessions:'Aún sin sesiones',
         name:'Tu nombre (para ánimos personales)', color:'Color de acento', tone:'Tono del coach',
-        apiKey:'Clave API de ElevenLabs (opcional)', apiKeyHint:'Sin clave, la app usa la voz de tu navegador.',
         toneMotiv:'Motivador', toneStrict:'Estricto', toneChill:'Relajado',
         goal:'Meta semanal (sesiones por semana)', goalNone:'Sin meta', everyDay:'Todos los días',
         speed:'Velocidad de la voz', speedSlow:'Lenta', speedNormal:'Normal', speedFast:'Rápida',
@@ -879,7 +935,17 @@
         goalReached:'¡Meta semanal alcanzada!', goalLabel:'Meta semanal', daysTrainedOf:(n,g)=>`${n}/${g} días entrenados`,
         dayStreak:'día seguido', daysStreak:'días seguidos', voiceLoadingMsg:'Cargando voz...',
         elevenError:'Error de ElevenLabs: ', unlockedTag:'Desbloqueado ✅', newRecordTag:'¡Nuevo récord! 🎉',
-        newRecordShare:'¡Nuevo récord!', proSuffix:'pro'
+        newRecordShare:'¡Nuevo récord!', proSuffix:'pro',
+        restDayTip:(n)=>`Llevas ${n} días seguidos entrenando - ¡un día de descanso también viene bien!`,
+        weeklyTip:(ex)=>`Aún no probado esta semana: ${ex}`,
+        bigFont:'Números grandes', customExercise:'Ejercicio propio', customExerciseLabel:'Nombre de tu ejercicio',
+        customExercisePlaceholder:'ej. Squat hold', ambientSound:'Sonido de fondo',
+        ambientOff:'Apagado', ambientRain:'Lluvia', ambientWaves:'Olas',
+        challenges:'Programas', challenge5day:'Reto de 5 días', startChallenge:'Iniciar reto',
+        challengeDayOf:(d,tot)=>`Día ${d} de ${tot}`, challengeComplete:'¡Reto completado! 🎉',
+        recordProgress:'Progreso del récord', noRecordProgress:'Aún no hay progreso que mostrar',
+        notTrainedToday:'Aún no has entrenado hoy',
+        programs:{fiveday:'Variedad de 5 días',plankProg:'Progresión de plancha',gripHang:'Agarre y suspensión',coreKick:'Inicio de core'}
       },
       speech: { countdown:['tres','dos','uno'],
         startWithName:(n)=>`¡Vamos, ${n}!`, startNoName:'¡Empieza!',
@@ -926,7 +992,6 @@
         statsToggle:'Statistiques', hideStats:'Masquer les statistiques', achievements:'Succès',
         progress:'Progrès par exercice', recent:'Séances récentes', noSessions:'Aucune séance pour le moment',
         name:'Votre prénom (pour des encouragements personnels)', color:'Couleur d\u2019accent', tone:'Ton du coach',
-        apiKey:'Clé API ElevenLabs (facultatif)', apiKeyHint:'Sans clé, l’app utilise la voix de votre navigateur.',
         toneMotiv:'Motivant', toneStrict:'Strict', toneChill:'Détendu',
         goal:'Objectif hebdomadaire (séances par semaine)', goalNone:'Aucun objectif', everyDay:'Tous les jours',
         speed:'Vitesse de la voix', speedSlow:'Lente', speedNormal:'Normale', speedFast:'Rapide',
@@ -939,7 +1004,17 @@
         goalReached:'Objectif hebdomadaire atteint !', goalLabel:'Objectif hebdo', daysTrainedOf:(n,g)=>`${n}/${g} jours d\u2019entraînement`,
         dayStreak:'jour de suite', daysStreak:'jours de suite', voiceLoadingMsg:'Chargement de la voix...',
         elevenError:'Erreur ElevenLabs\u00a0: ', unlockedTag:'Débloqué ✅', newRecordTag:'Nouveau record\u00a0! 🎉',
-        newRecordShare:'Nouveau record\u00a0!', proSuffix:'pro'
+        newRecordShare:'Nouveau record\u00a0!', proSuffix:'pro',
+        restDayTip:(n)=>`Tu t'entraînes depuis ${n} jours de suite - un jour de repos fait aussi du bien\u00a0!`,
+        weeklyTip:(ex)=>`Pas encore essayé cette semaine\u00a0: ${ex}`,
+        bigFont:'Grands chiffres', customExercise:'Exercice personnalisé', customExerciseLabel:'Nom de ton exercice',
+        customExercisePlaceholder:'ex. Squat hold', ambientSound:'Son d\'ambiance',
+        ambientOff:'Désactivé', ambientRain:'Pluie', ambientWaves:'Vagues',
+        challenges:'Programmes', challenge5day:'Défi de 5 jours', startChallenge:'Démarrer le défi',
+        challengeDayOf:(d,tot)=>`Jour ${d} sur ${tot}`, challengeComplete:'Défi terminé\u00a0! 🎉',
+        recordProgress:'Évolution du record', noRecordProgress:'Pas encore d\'évolution à afficher',
+        notTrainedToday:'Pas encore entraîné aujourd\'hui',
+        programs:{fiveday:'Variété 5 jours',plankProg:'Progression planche',gripHang:'Prise et suspension',coreKick:'Démarrage core'}
       },
       speech: { countdown:['trois','deux','un'],
         startWithName:(n)=>`Allez, ${n}\u00a0!`, startNoName:'C\u2019est parti\u00a0!',
@@ -986,7 +1061,6 @@
         statsToggle:'Estatísticas', hideStats:'Ocultar estatísticas', achievements:'Conquistas',
         progress:'Progresso por exercício', recent:'Sessões recentes', noSessions:'Ainda sem sessões',
         name:'O teu nome (para incentivos pessoais)', color:'Cor de destaque', tone:'Tom do treinador',
-        apiKey:'Chave de API ElevenLabs (opcional)', apiKeyHint:'Sem chave, a app usa a voz do teu navegador.',
         toneMotiv:'Motivador', toneStrict:'Rigoroso', toneChill:'Descontraído',
         goal:'Meta semanal (sessões por semana)', goalNone:'Sem meta', everyDay:'Todos os dias',
         speed:'Velocidade da voz', speedSlow:'Lenta', speedNormal:'Normal', speedFast:'Rápida',
@@ -999,7 +1073,17 @@
         goalReached:'Meta semanal atingida!', goalLabel:'Meta semanal', daysTrainedOf:(n,g)=>`${n}/${g} dias treinados`,
         dayStreak:'dia seguido', daysStreak:'dias seguidos', voiceLoadingMsg:'A carregar a voz...',
         elevenError:'Erro do ElevenLabs: ', unlockedTag:'Desbloqueado ✅', newRecordTag:'Novo recorde! 🎉',
-        newRecordShare:'Novo recorde!', proSuffix:'pro'
+        newRecordShare:'Novo recorde!', proSuffix:'pro',
+        restDayTip:(n)=>`Já treinas há ${n} dias seguidos - um dia de descanso também faz bem!`,
+        weeklyTip:(ex)=>`Ainda não experimentado esta semana: ${ex}`,
+        bigFont:'Números grandes', customExercise:'Exercício próprio', customExerciseLabel:'Nome do teu exercício',
+        customExercisePlaceholder:'ex. Squat hold', ambientSound:'Som de fundo',
+        ambientOff:'Desligado', ambientRain:'Chuva', ambientWaves:'Ondas',
+        challenges:'Programas', challenge5day:'Desafio de 5 dias', startChallenge:'Iniciar desafio',
+        challengeDayOf:(d,tot)=>`Dia ${d} de ${tot}`, challengeComplete:'Desafio concluído! 🎉',
+        recordProgress:'Progresso do recorde', noRecordProgress:'Ainda sem progresso para mostrar',
+        notTrainedToday:'Ainda não treinaste hoje',
+        programs:{fiveday:'Variedade de 5 dias',plankProg:'Progressão de prancha',gripHang:'Pega e suspensão',coreKick:'Início de core'}
       },
       speech: { countdown:['três','dois','um'],
         startWithName:(n)=>`Vamos, ${n}!`, startNoName:'Começar!',
@@ -1046,7 +1130,6 @@
         statsToggle:'Статистика', hideStats:'Скрыть статистику', achievements:'Достижения',
         progress:'Прогресс по упражнению', recent:'Недавние тренировки', noSessions:'Пока нет тренировок',
         name:'Твоё имя (для личных подбадриваний)', color:'Акцентный цвет', tone:'Тон тренера',
-        apiKey:'API-ключ ElevenLabs (необязательно)', apiKeyHint:'Без ключа приложение использует голос браузера.',
         toneMotiv:'Мотивирующий', toneStrict:'Строгий', toneChill:'Расслабленный',
         goal:'Недельная цель (тренировок в неделю)', goalNone:'Без цели', everyDay:'Каждый день',
         speed:'Скорость голоса', speedSlow:'Медленно', speedNormal:'Обычно', speedFast:'Быстро',
@@ -1059,7 +1142,17 @@
         goalReached:'Недельная цель достигнута!', goalLabel:'Недельная цель', daysTrainedOf:(n,g)=>`${n}/${g} дней тренировок`,
         dayStreak:'день подряд', daysStreak:'дней подряд', voiceLoadingMsg:'Загрузка голоса...',
         elevenError:'Ошибка ElevenLabs: ', unlockedTag:'Получено ✅', newRecordTag:'Новый рекорд! 🎉',
-        newRecordShare:'Новый рекорд!', proSuffix:'про'
+        newRecordShare:'Новый рекорд!', proSuffix:'про',
+        restDayTip:(n)=>`Ты тренируешься уже ${n} дней подряд - день отдыха тоже полезен!`,
+        weeklyTip:(ex)=>`Ещё не пробовал(а) на этой неделе: ${ex}`,
+        bigFont:'Крупные цифры', customExercise:'Своё упражнение', customExerciseLabel:'Название твоего упражнения',
+        customExercisePlaceholder:'напр. Squat hold', ambientSound:'Фоновый звук',
+        ambientOff:'Выкл', ambientRain:'Дождь', ambientWaves:'Волны',
+        challenges:'Программы', challenge5day:'5-дневный челлендж', startChallenge:'Начать челлендж',
+        challengeDayOf:(d,tot)=>`День ${d} из ${tot}`, challengeComplete:'Челлендж завершён! 🎉',
+        recordProgress:'Прогресс рекорда', noRecordProgress:'Пока нет прогресса для показа',
+        notTrainedToday:'Сегодня ещё не тренировался(лась)',
+        programs:{fiveday:'5-дневное разнообразие',plankProg:'Прогрессия планки',gripHang:'Хват и вис',coreKick:'Старт кора'}
       },
       speech: { countdown:['три','два','один'],
         startWithName:(n)=>`Давай, ${n}!`, startNoName:'Начали!',
@@ -1106,7 +1199,6 @@
         statsToggle:'统计', hideStats:'隐藏统计', achievements:'成就',
         progress:'各动作进度', recent:'最近训练', noSessions:'暂无训练记录',
         name:'你的名字（用于个性化鼓励）', color:'主题色', tone:'教练语气',
-        apiKey:'ElevenLabs API 密钥（可选）', apiKeyHint:'没有密钥时，应用会使用浏览器自带的语音。',
         toneMotiv:'激励型', toneStrict:'严格型', toneChill:'轻松型',
         goal:'每周目标（每周训练次数）', goalNone:'无目标', everyDay:'每天',
         speed:'语音速度', speedSlow:'慢', speedNormal:'正常', speedFast:'快',
@@ -1119,7 +1211,17 @@
         goalReached:'已达成每周目标！', goalLabel:'每周目标', daysTrainedOf:(n,g)=>`已训练 ${n}/${g} 天`,
         dayStreak:'天连续', daysStreak:'天连续', voiceLoadingMsg:'语音加载中…',
         elevenError:'ElevenLabs 错误：', unlockedTag:'已解锁 ✅', newRecordTag:'新纪录！🎉',
-        newRecordShare:'新纪录！', proSuffix:'达人'
+        newRecordShare:'新纪录！', proSuffix:'达人',
+        restDayTip:(n)=>`你已经连续训练${n}天了 - 休息一天也很好！`,
+        weeklyTip:(ex)=>`本周还未尝试：${ex}`,
+        bigFont:'大号数字', customExercise:'自定义动作', customExerciseLabel:'你的动作名称',
+        customExercisePlaceholder:'例如 深蹲静止', ambientSound:'背景音',
+        ambientOff:'关闭', ambientRain:'雨声', ambientWaves:'海浪声',
+        challenges:'训练计划', challenge5day:'5天挑战', startChallenge:'开始挑战',
+        challengeDayOf:(d,tot)=>`第${d}天，共${tot}天`, challengeComplete:'挑战完成！🎉',
+        recordProgress:'纪录变化', noRecordProgress:'暂无变化可显示',
+        notTrainedToday:'今天还没有训练',
+        programs:{fiveday:'5天多样计划',plankProg:'平板支撑进阶',gripHang:'抓握与悬垂',coreKick:'核心启动'}
       },
       speech: { countdown:['三','二','一'],
         startWithName:(n)=>`加油，${n}！`, startNoName:'开始！',
@@ -1166,7 +1268,6 @@
         statsToggle:'आँकड़े', hideStats:'आँकड़े छुपाएं', achievements:'उपलब्धियाँ',
         progress:'हर व्यायाम की प्रगति', recent:'हाल के सेशन', noSessions:'अभी तक कोई सेशन नहीं',
         name:'आपका नाम (व्यक्तिगत प्रोत्साहन के लिए)', color:'एक्सेंट रंग', tone:'कोच का लहजा',
-        apiKey:'ElevenLabs API कुंजी (वैकल्पिक)', apiKeyHint:'बिना कुंजी के ऐप आपके ब्राउज़र की आवाज़ का उपयोग करेगा।',
         toneMotiv:'प्रेरक', toneStrict:'सख्त', toneChill:'आरामदायक',
         goal:'साप्ताहिक लक्ष्य (प्रति सप्ताह सेशन)', goalNone:'कोई लक्ष्य नहीं', everyDay:'हर दिन',
         speed:'आवाज़ की गति', speedSlow:'धीमी', speedNormal:'सामान्य', speedFast:'तेज़',
@@ -1179,7 +1280,17 @@
         goalReached:'साप्ताहिक लक्ष्य पूरा हुआ!', goalLabel:'साप्ताहिक लक्ष्य', daysTrainedOf:(n,g)=>`${n}/${g} दिन ट्रेन किया`,
         dayStreak:'दिन की स्ट्रीक', daysStreak:'दिनों की स्ट्रीक', voiceLoadingMsg:'आवाज़ लोड हो रही है...',
         elevenError:'ElevenLabs त्रुटि: ', unlockedTag:'अनलॉक हुआ ✅', newRecordTag:'नया रिकॉर्ड! 🎉',
-        newRecordShare:'नया रिकॉर्ड!', proSuffix:'प्रो'
+        newRecordShare:'नया रिकॉर्ड!', proSuffix:'प्रो',
+        restDayTip:(n)=>`आप ${n} दिनों से लगातार ट्रेन कर रहे हैं - एक आराम का दिन भी अच्छा है!`,
+        weeklyTip:(ex)=>`इस सप्ताह अभी तक नहीं आज़माया: ${ex}`,
+        bigFont:'बड़े अंक', customExercise:'खुद का व्यायाम', customExerciseLabel:'आपके व्यायाम का नाम',
+        customExercisePlaceholder:'जैसे Squat hold', ambientSound:'बैकग्राउंड साउंड',
+        ambientOff:'बंद', ambientRain:'बारिश', ambientWaves:'लहरें',
+        challenges:'प्रोग्राम', challenge5day:'5-दिन चैलेंज', startChallenge:'चैलेंज शुरू करें',
+        challengeDayOf:(d,tot)=>`दिन ${d} में से ${tot}`, challengeComplete:'चैलेंज पूरा हुआ! 🎉',
+        recordProgress:'रिकॉर्ड प्रगति', noRecordProgress:'अभी दिखाने के लिए कोई प्रगति नहीं',
+        notTrainedToday:'आज अभी तक ट्रेन नहीं किया',
+        programs:{fiveday:'5-दिन विविधता',plankProg:'प्लैंक प्रगति',gripHang:'ग्रिप और हैंग',coreKick:'कोर किकस्टार्ट'}
       },
       speech: { countdown:['तीन','दो','एक'],
         startWithName:(n)=>`चलो, ${n}!`, startNoName:'शुरू!',
@@ -1226,7 +1337,6 @@
         statsToggle:'الإحصائيات', hideStats:'إخفاء الإحصائيات', achievements:'الإنجازات',
         progress:'التقدم لكل تمرين', recent:'الجلسات الأخيرة', noSessions:'لا توجد جلسات بعد',
         name:'اسمك (للتشجيع الشخصي)', color:'لون التمييز', tone:'أسلوب المدرب',
-        apiKey:'مفتاح API الخاص بـ ElevenLabs (اختياري)', apiKeyHint:'بدون مفتاح، يستخدم التطبيق صوت متصفحك.',
         toneMotiv:'محفّز', toneStrict:'صارم', toneChill:'هادئ',
         goal:'الهدف الأسبوعي (جلسات في الأسبوع)', goalNone:'بدون هدف', everyDay:'كل يوم',
         speed:'سرعة الصوت', speedSlow:'بطيء', speedNormal:'عادي', speedFast:'سريع',
@@ -1239,7 +1349,17 @@
         goalReached:'تم تحقيق الهدف الأسبوعي!', goalLabel:'الهدف الأسبوعي', daysTrainedOf:(n,g)=>`تم التدريب ${n}/${g} أيام`,
         dayStreak:'يوم متتالٍ', daysStreak:'أيام متتالية', voiceLoadingMsg:'جارٍ تحميل الصوت...',
         elevenError:'خطأ ElevenLabs: ', unlockedTag:'تم الفتح ✅', newRecordTag:'رقم قياسي جديد! 🎉',
-        newRecordShare:'رقم قياسي جديد!', proSuffix:'محترف'
+        newRecordShare:'رقم قياسي جديد!', proSuffix:'محترف',
+        restDayTip:(n)=>`أنت تتدرب منذ ${n} أيام متتالية - يوم راحة مفيد أيضًا!`,
+        weeklyTip:(ex)=>`لم تجرّب بعد هذا الأسبوع: ${ex}`,
+        bigFont:'أرقام كبيرة', customExercise:'تمرين خاص', customExerciseLabel:'اسم تمرينك',
+        customExercisePlaceholder:'مثال Squat hold', ambientSound:'صوت خلفية',
+        ambientOff:'إيقاف', ambientRain:'مطر', ambientWaves:'أمواج',
+        challenges:'برامج', challenge5day:'تحدي 5 أيام', startChallenge:'ابدأ التحدي',
+        challengeDayOf:(d,tot)=>`اليوم ${d} من ${tot}`, challengeComplete:'اكتمل التحدي! 🎉',
+        recordProgress:'تقدم الرقم القياسي', noRecordProgress:'لا يوجد تقدم لعرضه بعد',
+        notTrainedToday:'لم تتدرب بعد اليوم',
+        programs:{fiveday:'تنوع 5 أيام',plankProg:'تقدم البلانك',gripHang:'القبضة والتعليق',coreKick:'بداية القلب'}
       },
       speech: { countdown:['ثلاثة','اثنان','واحد'],
         startWithName:(n)=>`هيا، ${n}!`, startNoName:'ابدأ!',
@@ -1282,7 +1402,8 @@
   let currentLang = 'nl';
   let t = I18N[currentLang];
   const EX_ID_TO_UI = { plank: 'exPlank', deadhang: 'exDeadhang', lsit: 'exLsit', sideplank: 'exSidePlank', wallsit: 'exWallSit', hollowhold: 'exHollowHold', superman: 'exSuperman', glutebridge: 'exGluteBridge', handstand: 'exHandstand', birddog: 'exBirdDog' };
-  function exName_(ex) { return t.ui[EX_ID_TO_UI[ex]]; }
+  let customExerciseName = '';
+  function exName_(ex) { return ex === 'custom' ? customExerciseName : t.ui[EX_ID_TO_UI[ex]]; }
 
   // Duration -> localized label, e.g. "2 minuten" / "2 minutes" / "2 Minuten".
   // Shared logic across all languages; only the unit words differ.
@@ -1311,7 +1432,7 @@
   function cuesFor(ex) {
     const langCues = t.speech.cues;
     const set = langCues[currentTone] || langCues.motiverend;
-    return set[ex] || langCues.motiverend[ex];
+    return set[ex] || langCues.motiverend[ex] || langCues.motiverend.plank;
   }
 
   // ====== Elements ======
@@ -1342,6 +1463,7 @@
   const restSecSelect = document.getElementById('restSec');
   const roundsSelect = document.getElementById('rounds');
   const todayDisplay = document.getElementById('todayDisplay');
+  const smartTip = document.getElementById('smartTip');
   const settingsBtn = document.getElementById('settingsBtn');
   const settingsPanel = document.getElementById('settingsPanel');
   const nameInput = document.getElementById('nameInput');
@@ -1360,7 +1482,7 @@
   const badgeRow = document.getElementById('badgeRow');
   const ringWrap = document.getElementById('ringWrap');
   const chartDetail = document.getElementById('chartDetail');
-  const exChartEls = { plank: document.getElementById('chart-plank'), deadhang: document.getElementById('chart-deadhang'), lsit: document.getElementById('chart-lsit') };
+  const exChartsContainer = document.getElementById('exChartsContainer');
   const confettiContainer = document.getElementById('confettiContainer');
 
   // ====== Ring ======
@@ -1407,8 +1529,6 @@
   function applyStaticText() {
     document.body.dir = t.dir;
     document.getElementById('lblName').textContent = t.ui.name;
-    document.getElementById('lblApiKey').textContent = t.ui.apiKey;
-    document.getElementById('apiKeyHint').textContent = t.ui.apiKeyHint;
     document.getElementById('lblColor').textContent = t.ui.color;
     document.getElementById('lblLanguage').textContent = t.ui.language;
     document.getElementById('lblTone').textContent = t.ui.tone;
@@ -1439,10 +1559,16 @@
     shareBtn.textContent = t.ui.shareRecord;
     document.getElementById('lblAchievements').textContent = t.ui.achievements;
     document.getElementById('lblProgress').textContent = t.ui.progress;
-    document.getElementById('lblExPlank').textContent = t.ui.exPlank;
-    document.getElementById('lblExDeadhang').textContent = t.ui.exDeadhang;
-    document.getElementById('lblExLsit').textContent = t.ui.exLsit;
     document.getElementById('lblRecent').textContent = t.ui.recent;
+    document.getElementById('lblBigFont').textContent = t.ui.bigFont;
+    document.getElementById('lblAmbient').textContent = t.ui.ambientSound;
+    document.getElementById('optAmbientOff').textContent = t.ui.ambientOff;
+    document.getElementById('optAmbientRain').textContent = t.ui.ambientRain;
+    document.getElementById('optAmbientWaves').textContent = t.ui.ambientWaves;
+    document.getElementById('lblCustomEx').textContent = t.ui.customExercise;
+    document.getElementById('customExInput').placeholder = t.ui.customExercisePlaceholder;
+    document.getElementById('lblRecordProgress').textContent = t.ui.recordProgress;
+    programsToggle.textContent = '📋 ' + t.ui.challenges;
     historyToggle.textContent = historySection.style.display !== 'none' ? t.ui.hideStats : t.ui.statsToggle;
     document.getElementById('achievementEyebrow').textContent = t.ui.unlockedEyebrow;
   }
@@ -1453,6 +1579,7 @@
     langSelect.value = code;
     applyStaticText();
     renderExName();
+    renderPrograms();
     updateRecordDisplay();
     chartDetail.classList.add('empty');
     chartDetail.textContent = t.ui.tapBar;
@@ -1461,6 +1588,8 @@
     updateStreak(lastSessionsList);
     updateTodayOverview(lastSessionsList);
     updateGoalProgress(lastSessionsList);
+    updateSmartTip(lastSessionsList);
+    renderRecordProgressChart(lastSessionsList);
     renderBadges(lastSessionsList);
     if (persist) { try { localStorage.setItem('appLanguage', code); } catch (e) {} }
     initEleven();
@@ -1517,18 +1646,6 @@
   nameInput.addEventListener('input', () => {
     userName = nameInput.value.trim();
     try { localStorage.setItem('userName', userName); } catch (e) {}
-  });
-
-  // ====== ElevenLabs API key ======
-  const apiKeyInput = document.getElementById('apiKeyInput');
-  (() => {
-    try { elevenApiKey = localStorage.getItem('elevenApiKey') || ''; } catch (e) {}
-    apiKeyInput.value = elevenApiKey;
-  })();
-  apiKeyInput.addEventListener('change', () => {
-    elevenApiKey = apiKeyInput.value.trim();
-    try { localStorage.setItem('elevenApiKey', elevenApiKey); } catch (e) {}
-    initEleven();
   });
 
   settingsBtn.addEventListener('click', () => {
@@ -1653,6 +1770,104 @@
     } catch (e) {}
   })();
 
+  // ====== Big font ======
+  const bigFontToggleInput = document.getElementById('bigFontToggleInput');
+  (() => {
+    try {
+      const saved = localStorage.getItem('bigFont') === 'true';
+      document.body.classList.toggle('big-font', saved);
+      bigFontToggleInput.checked = saved;
+    } catch (e) {}
+  })();
+  bigFontToggleInput.addEventListener('change', () => {
+    document.body.classList.toggle('big-font', bigFontToggleInput.checked);
+    try { localStorage.setItem('bigFont', String(bigFontToggleInput.checked)); } catch (e) {}
+  });
+
+  // ====== Ambient background sound (plays only while a session is running) ======
+  // Generated with the Web Audio API — filtered noise for rain, a slow
+  // volume-swelling noise for waves — no audio files needed.
+  const ambientSelect = document.getElementById('ambientSelect');
+  let ambientNodes = null;
+  (() => {
+    try { ambientSelect.value = localStorage.getItem('ambientSound') || 'off'; } catch (e) {}
+  })();
+  ambientSelect.addEventListener('change', () => {
+    try { localStorage.setItem('ambientSound', ambientSelect.value); } catch (e) {}
+  });
+  function startAmbient() {
+    const kind = ambientSelect.value;
+    if (kind === 'off') return;
+    const ctx = getAudioCtx();
+    if (!ctx || ctx.state !== 'running') return;
+    stopAmbient();
+    const bufferSize = 2 * ctx.sampleRate;
+    const buffer = ctx.createBuffer(1, bufferSize, ctx.sampleRate);
+    const data = buffer.getChannelData(0);
+    for (let i = 0; i < bufferSize; i++) data[i] = Math.random() * 2 - 1;
+    const noise = ctx.createBufferSource();
+    noise.buffer = buffer;
+    noise.loop = true;
+    const filter = ctx.createBiquadFilter();
+    filter.type = 'lowpass';
+    filter.frequency.value = kind === 'rain' ? 1400 : 600;
+    const gain = ctx.createGain();
+    gain.gain.value = kind === 'rain' ? 0.05 : 0.06;
+    noise.connect(filter).connect(gain).connect(ctx.destination);
+    noise.start();
+    ambientNodes = { noise, gain };
+    if (kind === 'waves') {
+      const lfo = ctx.createOscillator();
+      lfo.frequency.value = 0.12;
+      const lfoGain = ctx.createGain();
+      lfoGain.gain.value = 0.045;
+      lfo.connect(lfoGain).connect(gain.gain);
+      lfo.start();
+      ambientNodes.lfo = lfo;
+    }
+  }
+  function stopAmbient() {
+    if (!ambientNodes) return;
+    try { ambientNodes.noise.stop(); ambientNodes.lfo && ambientNodes.lfo.stop(); } catch (e) {}
+    ambientNodes = null;
+  }
+
+  // ====== Custom exercise ======
+  const customExInput = document.getElementById('customExInput');
+  const customExSaveBtn = document.getElementById('customExSaveBtn');
+  function rebuildExerciseKeys() {
+    EX_KEYS = BASE_EX_KEYS.slice();
+    if (customExerciseName) EX_KEYS.push('custom');
+  }
+  function syncCustomBadge() {
+    const idx = BADGE_META.findIndex((b) => b.id === 'custom10');
+    if (customExerciseName) {
+      if (idx === -1) {
+        BADGE_META.push({ id: 'custom10', icon: '⭐', cat: 'special', ex: 'custom', n: 10,
+          check: (list) => list.filter((s) => s.ex === 'custom').length >= 10 });
+      }
+    } else if (idx !== -1) {
+      BADGE_META.splice(idx, 1);
+    }
+  }
+  (() => {
+    try { customExerciseName = localStorage.getItem('customExerciseName') || ''; } catch (e) {}
+    customExInput.value = customExerciseName;
+    rebuildExerciseKeys();
+  })();
+  customExSaveBtn.addEventListener('click', () => {
+    customExerciseName = customExInput.value.trim();
+    try { localStorage.setItem('customExerciseName', customExerciseName); } catch (e) {}
+    rebuildExerciseKeys();
+    syncCustomBadge();
+    if (exerciseIndex >= EX_KEYS.length) exerciseIndex = 0;
+    renderExName();
+    updateRecordDisplay();
+    renderRecordProgressChart(lastSessionsList);
+    renderBadges(lastSessionsList);
+    updateSmartTip(lastSessionsList);
+  });
+
   // ====== Records, history, streak ======
   async function getRecord(ex) {
     try { const v = localStorage.getItem('record:' + ex); return v ? parseInt(v, 10) : 0; }
@@ -1682,6 +1897,8 @@
       renderExerciseCharts(trimmed);
       updateStreak(trimmed);
       updateGoalProgress(trimmed);
+      updateSmartTip(trimmed);
+      renderRecordProgressChart(trimmed);
       renderBadges(trimmed);
     } catch (e) {}
   }
@@ -1721,6 +1938,8 @@
     renderExerciseCharts(remaining);
     updateStreak(remaining);
     updateGoalProgress(remaining);
+    updateSmartTip(remaining);
+    renderRecordProgressChart(remaining);
     renderBadges(remaining);
     updateRecordDisplay();
   }
@@ -1742,8 +1961,20 @@
       d.setDate(d.getDate() - i);
       days.push(d);
     }
+
+    // Build one chart block per exercise currently in EX_KEYS (all 10
+    // built-ins, plus the custom one if the user has set one). We rebuild
+    // the container's HTML each time since the exercise list itself can
+    // change (adding/removing a custom exercise, or switching language).
+    exChartsContainer.innerHTML = EX_KEYS.map((ex) => `
+      <div class="ex-chart-block">
+        <div class="ex-chart-label">${exName_(ex)}</div>
+        <div class="week-chart" data-ex-chart="${ex}"></div>
+      </div>
+    `).join('');
+
     EX_KEYS.forEach((ex) => {
-      const container = exChartEls[ex];
+      const container = exChartsContainer.querySelector(`[data-ex-chart="${ex}"]`);
       if (!container) return;
       const maxByDay = days.map((d) => {
         const dayStr = d.toDateString();
@@ -1766,30 +1997,28 @@
     });
   }
 
-  document.querySelectorAll('.week-chart').forEach((chart) => {
-    chart.addEventListener('click', (e) => {
-      const bar = e.target.closest('.week-bar');
-      if (!bar) return;
-      document.querySelectorAll('.week-bar.selected').forEach((b) => b.classList.remove('selected'));
-      bar.classList.add('selected');
-      const ex = bar.dataset.ex;
-      const dur = parseInt(bar.dataset.dur, 10);
-      const exLabel = exName_(ex);
-      const exLetter = exLabel.charAt(0);
-      chartDetail.classList.remove('empty');
-      chartDetail.innerHTML = dur > 0
-        ? `<div class="chart-detail-icon">${exLetter}</div>
-           <div class="chart-detail-info">
-             <div class="chart-detail-time">${format(dur)}</div>
-             <div class="chart-detail-sub">${exLabel} · ${bar.dataset.date}</div>
-           </div>`
-        : `<div class="chart-detail-icon">${exLetter}</div>
-           <div class="chart-detail-info">
-             <div class="chart-detail-sub">${exLabel} · ${bar.dataset.date}</div>
-             <div class="chart-detail-sub">${t.ui.noSession}</div>
-           </div>`;
+  exChartsContainer.addEventListener('click', (e) => {
+    const bar = e.target.closest('.week-bar');
+    if (!bar) return;
+    document.querySelectorAll('.week-bar.selected').forEach((b) => b.classList.remove('selected'));
+    bar.classList.add('selected');
+    const ex = bar.dataset.ex;
+    const dur = parseInt(bar.dataset.dur, 10);
+    const exLabel = exName_(ex);
+    const exLetter = exLabel.charAt(0);
+    chartDetail.classList.remove('empty');
+    chartDetail.innerHTML = dur > 0
+      ? `<div class="chart-detail-icon">${exLetter}</div>
+         <div class="chart-detail-info">
+           <div class="chart-detail-time">${format(dur)}</div>
+           <div class="chart-detail-sub">${exLabel} · ${bar.dataset.date}</div>
+         </div>`
+      : `<div class="chart-detail-icon">${exLetter}</div>
+         <div class="chart-detail-info">
+           <div class="chart-detail-sub">${exLabel} · ${bar.dataset.date}</div>
+           <div class="chart-detail-sub">${t.ui.noSession}</div>
+         </div>`;
     });
-  });
 
   function updateStreak(list) {
     const days = new Set(list.map(s => new Date(s.ts).toDateString()));
@@ -1813,6 +2042,8 @@
     weeklyGoal = parseInt(goalSelect.value, 10);
     try { localStorage.setItem('weeklyGoal', String(weeklyGoal)); } catch (e) {}
     updateGoalProgress(lastSessionsList);
+    updateSmartTip(lastSessionsList);
+    renderRecordProgressChart(lastSessionsList);
   });
   function startOfWeek(date) {
     const d = new Date(date);
@@ -1833,6 +2064,50 @@
     const pct = Math.min((count / weeklyGoal) * 100, 100);
     goalBarFill.style.width = pct + '%';
     goalBarLabel.textContent = count >= weeklyGoal ? t.ui.goalReached : t.ui.daysTrainedOf(count, weeklyGoal);
+  }
+
+  // Priority: a long streak gets a friendly "rest is fine too" nudge first,
+  // then a same-day reminder if you haven't trained yet and have a goal set,
+  // then finally a gentle suggestion for an exercise you haven't tried this
+  // week. Shows nothing if none of that applies — no need to nag.
+  function updateSmartTip(list) {
+    const streak = computeStreakCount(list);
+    if (streak >= 10) {
+      smartTip.textContent = t.ui.restDayTip(streak);
+      return;
+    }
+    const todayStr = new Date().toDateString();
+    const trainedToday = list.some((s) => new Date(s.ts).toDateString() === todayStr);
+    if (!trainedToday && weeklyGoal > 0) {
+      smartTip.textContent = t.ui.notTrainedToday;
+      return;
+    }
+    const weekStart = startOfWeek(new Date());
+    const doneThisWeek = new Set(list.filter((s) => new Date(s.ts) >= weekStart).map((s) => s.ex));
+    const untried = EX_KEYS.find((k) => !doneThisWeek.has(k));
+    smartTip.textContent = untried ? t.ui.weeklyTip(exName_(untried)) : '';
+  }
+
+  function renderRecordProgressChart(list) {
+    const container = document.getElementById('recordProgressChart');
+    const exSessions = list.filter((s) => s.ex === currentEx()).sort((a, b) => a.ts - b.ts);
+    if (!exSessions.length) {
+      container.innerHTML = `<div class="chart-detail-card empty">${t.ui.noRecordProgress}</div>`;
+      return;
+    }
+    let running = 0;
+    const points = exSessions.map((s) => { running = Math.max(running, s.dur); return running; });
+    const maxVal = Math.max(...points, 1);
+    const w = 280, h = 60, pad = 6;
+    const stepX = points.length > 1 ? (w - pad * 2) / (points.length - 1) : 0;
+    const coords = points.map((v, i) => {
+      const x = pad + i * stepX;
+      const y = h - pad - (v / maxVal) * (h - pad * 2);
+      return `${x.toFixed(1)},${y.toFixed(1)}`;
+    }).join(' ');
+    container.innerHTML = `<svg viewBox="0 0 ${w} ${h}" style="width:100%; height:${h}px; display:block;">
+      <polyline points="${coords}" fill="none" stroke="var(--accent)" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+    </svg>`;
   }
 
   // ====== Badges (template-driven so translation scales across languages) ======
@@ -2092,6 +2367,14 @@
   const ICON_FIXTURE = '#5b6169';
 
   const EX_ICONS = {
+    custom: `<ellipse cx="32.5" cy="7.2" rx="4.2" ry="3.4" fill="${ICON_HAIR}"/>
+      <circle cx="35" cy="10" r="5.4" fill="${ICON_SKIN}"/>
+      <path d="M35 15.5 L35 30" stroke="${ICON_SHIRT}" stroke-width="8"/>
+      <circle cx="35" cy="30" r="4.6" fill="${ICON_SHORTS}"/>
+      <path d="M31 30 L31 44" stroke="${ICON_SKIN}" stroke-width="6.5"/>
+      <path d="M39 30 L39 44" stroke="${ICON_SKIN}" stroke-width="6.5"/>
+      <path d="M35 17 L25 26" stroke="${ICON_SKIN}" stroke-width="5.5"/><circle cx="25" cy="26" r="2.4" fill="${ICON_SKIN}"/>
+      <path d="M35 17 L45 26" stroke="${ICON_SKIN}" stroke-width="5.5"/><circle cx="45" cy="26" r="2.4" fill="${ICON_SKIN}"/>`,
     plank: `<ellipse cx="10.5" cy="11.2" rx="4.2" ry="3.4" fill="${ICON_HAIR}"/>
       <circle cx="12.8" cy="14.1" r="5.4" fill="${ICON_SKIN}"/>
       <path d="M20.5 19.2 L58.9 29.4" stroke="${ICON_SHIRT}" stroke-width="8"/>
@@ -2193,6 +2476,7 @@
     exerciseIndex = EX_KEYS.indexOf(exSelect.value);
     renderExIcon();
     updateRecordDisplay();
+    renderRecordProgressChart(lastSessionsList);
     shareBtn.style.display = 'none';
   });
 
@@ -2216,14 +2500,8 @@
       status.textContent = '';
       return;
     }
-    if (!elevenApiKey) {
-      elevenReady = false;
-      elevenLoading = false;
-      status.textContent = '';
-      return;
-    }
     try {
-      const res = await fetch('https://api.elevenlabs.io/v1/voices', { headers: { 'xi-api-key': elevenApiKey } });
+      const res = await fetch('https://api.elevenlabs.io/v1/voices', { headers: { 'xi-api-key': ELEVEN_API_KEY } });
       if (!res.ok) throw new Error('HTTP ' + res.status);
       const data = await res.json();
       if (data.voices && data.voices.length) {
@@ -2276,7 +2554,7 @@
     if (cachedUrl) return cachedUrl;
     const res = await fetch('https://api.elevenlabs.io/v1/text-to-speech/' + elevenVoiceId, {
       method: 'POST',
-      headers: { 'xi-api-key': elevenApiKey, 'Content-Type': 'application/json' },
+      headers: { 'xi-api-key': ELEVEN_API_KEY, 'Content-Type': 'application/json' },
       body: JSON.stringify({
         text: text, model_id: ELEVEN_MODEL, language_code: t.elevenLang,
         voice_settings: { stability: 0.88, similarity_boost: 0.75, style: 0.2, use_speaker_boost: true }
@@ -2490,21 +2768,148 @@
     timerId = null;
     releaseWakeLock();
     stopVoiceListening();
+    stopAmbient();
     pulseFeedback([120, 60, 120, 60, 250]);
     speak(t.speech.trainingDone(userName));
     display.textContent = '0:00';
-    phaseLabel.textContent = '';
     resetRing();
     startBtn.disabled = false;
     stopBtn.disabled = true;
     setControlsLockedForRun(false);
     status.textContent = '';
+
+    if (activeProgramId) {
+      const program = PROGRAMS.find((p) => p.id === activeProgramId);
+      const day = getProgramDay(activeProgramId);
+      if (day < program.days.length) {
+        setProgramDay(activeProgramId, day + 1);
+        phaseLabel.textContent = t.ui.challengeDayOf(day, program.days.length) + ' ✓';
+      } else {
+        setProgramDay(activeProgramId, program.days.length + 1);
+        phaseLabel.textContent = t.ui.challengeComplete;
+        spawnConfetti();
+        playRecordFanfare();
+        speak(t.ui.challengeComplete);
+      }
+      activeProgramId = null;
+      renderPrograms();
+    } else {
+      phaseLabel.textContent = '';
+    }
   }
 
+  // ====== Training programs ======
+  // Each program's description is auto-generated from its day list using
+  // exercise names + work/rest/rounds we already have translated — instead
+  // of hand-writing a paragraph per program per language (4 programs × 10
+  // languages would mean 40 paragraphs to maintain; this way it's just 4
+  // short program names per language, and the description always stays
+  // accurate if a day's numbers ever change).
+  const PROGRAMS = [
+    { id: 'fiveday', icon: '🗓️', days: [
+      { ex: 'plank', work: 20, rest: 15, rounds: 3 },
+      { ex: 'deadhang', work: 15, rest: 15, rounds: 3 },
+      { ex: 'wallsit', work: 25, rest: 15, rounds: 3 },
+      { ex: 'hollowhold', work: 20, rest: 20, rounds: 3 },
+      { ex: 'plank', work: 30, rest: 15, rounds: 4 }
+    ] },
+    { id: 'plankProg', icon: '🧘', days: [
+      { ex: 'plank', work: 15, rest: 15, rounds: 3 },
+      { ex: 'plank', work: 20, rest: 15, rounds: 3 },
+      { ex: 'plank', work: 20, rest: 15, rounds: 4 },
+      { ex: 'plank', work: 30, rest: 15, rounds: 4 }
+    ] },
+    { id: 'gripHang', icon: '🐒', days: [
+      { ex: 'deadhang', work: 10, rest: 20, rounds: 3 },
+      { ex: 'deadhang', work: 15, rest: 20, rounds: 3 },
+      { ex: 'deadhang', work: 15, rest: 15, rounds: 4 },
+      { ex: 'deadhang', work: 20, rest: 15, rounds: 4 }
+    ] },
+    { id: 'coreKick', icon: '⭐', days: [
+      { ex: 'hollowhold', work: 15, rest: 20, rounds: 3 },
+      { ex: 'plank', work: 20, rest: 15, rounds: 3 },
+      { ex: 'glutebridge', work: 20, rest: 15, rounds: 3 },
+      { ex: 'lsit', work: 10, rest: 20, rounds: 3 },
+      { ex: 'hollowhold', work: 20, rest: 15, rounds: 4 }
+    ] }
+  ];
+  let programProgress = {};
+  (() => {
+    try { programProgress = JSON.parse(localStorage.getItem('programProgress') || '{}'); } catch (e) {}
+  })();
+  function getProgramDay(id) { return programProgress[id] || 1; }
+  function setProgramDay(id, day) {
+    programProgress[id] = day;
+    try { localStorage.setItem('programProgress', JSON.stringify(programProgress)); } catch (e) {}
+  }
+  let activeProgramId = null;
+
+  // Builds a one-line "Day 1: Plank 3×20s → Day 2: Deadhang 3×15s → ..."
+  // style summary, so the exercises AND the day-by-day structure are both
+  // visible without needing a separate expandable breakdown.
+  function describeProgram(program) {
+    return program.days.map((d, i) =>
+      `${t.ui.challengeDayOf(i + 1, program.days.length)}: ${exName_(d.ex)} ${d.rounds}×${d.work}s`
+    ).join(' → ');
+  }
+
+  function startProgram(id) {
+    if (timerId) return;
+    const program = PROGRAMS.find((p) => p.id === id);
+    if (!program) return;
+    let day = getProgramDay(id);
+    if (day > program.days.length) { day = 1; setProgramDay(id, 1); }
+    const dayConfig = program.days[day - 1];
+    const exIdx = EX_KEYS.indexOf(dayConfig.ex);
+    if (exIdx !== -1) exerciseIndex = exIdx;
+    setMode('interval');
+    workSecSelect.value = String(dayConfig.work);
+    restSecSelect.value = String(dayConfig.rest);
+    roundsSelect.value = String(dayConfig.rounds);
+    renderExName();
+    updateRecordDisplay();
+    phaseLabel.textContent = t.ui.challengeDayOf(day, program.days.length);
+    activeProgramId = id;
+    startBtn.click();
+  }
+
+  const programsListEl = document.getElementById('programsList');
+  function renderPrograms() {
+    programsListEl.innerHTML = PROGRAMS.map((p) => {
+      const day = getProgramDay(p.id);
+      const total = p.days.length;
+      const progressText = day > total ? t.ui.challengeComplete : t.ui.challengeDayOf(day, total);
+      return `<div class="program-card">
+        <div class="program-card-head">
+          <span class="program-icon">${p.icon}</span>
+          <span class="program-name">${t.ui.programs[p.id]}</span>
+        </div>
+        <div class="program-desc">${describeProgram(p)}</div>
+        <div class="program-row">
+          <span class="program-progress">${progressText}</span>
+          <button class="small-btn program-start-btn" data-id="${p.id}">${t.ui.start}</button>
+        </div>
+      </div>`;
+    }).join('');
+  }
+  programsListEl.addEventListener('click', (e) => {
+    const btn = e.target.closest('.program-start-btn');
+    if (!btn) return;
+    settingsPanel.style.display = 'none';
+    startProgram(btn.dataset.id);
+  });
+  const programsToggle = document.getElementById('programsToggle');
+  const programsSection = document.getElementById('programsSection');
+  programsToggle.addEventListener('click', () => {
+    const showing = programsSection.style.display !== 'none';
+    programsSection.style.display = showing ? 'none' : 'block';
+    programsToggle.classList.toggle('expanded', !showing);
+  });
+
   function startInterval() {
-    workSec = parseInt(workSecSelect.value, 10);
-    restSec = parseInt(restSecSelect.value, 10);
-    totalRounds = parseInt(roundsSelect.value, 10);
+    workSec = parseInt(workSecSelect.value, 10) || 20;
+    restSec = parseInt(restSecSelect.value, 10) || 15;
+    totalRounds = parseInt(roundsSelect.value, 10) || 3;
     phase = 'work';
     currentRound = 1;
     phaseStartTime = Date.now();
@@ -2604,6 +3009,7 @@
     if (!proceeded) return;
     status.textContent = intervalMode ? '' : t.ui.running;
     startVoiceListening();
+    startAmbient();
     if (intervalMode) startInterval(); else startFree();
   });
 
@@ -2615,6 +3021,7 @@
     resetSpeechQueue();
     releaseWakeLock();
     stopVoiceListening();
+    stopAmbient();
     startBtn.disabled = false;
     stopBtn.disabled = true;
     setControlsLockedForRun(false);
@@ -2629,6 +3036,7 @@
     resetSpeechQueue();
     releaseWakeLock();
     stopVoiceListening();
+    stopAmbient();
     startBtn.disabled = false;
     stopBtn.disabled = true;
     setControlsLockedForRun(false);
@@ -2698,8 +3106,10 @@
   }
 
   async function initApp() {
+    syncCustomBadge();
     applyStaticText();
     renderExName();
+    renderPrograms();
     updateRecordDisplay();
     chartDetail.textContent = t.ui.tapBar;
     const list = await loadSessions();
@@ -2709,6 +3119,8 @@
     updateTodayOverview(list);
     renderExerciseCharts(list);
     updateGoalProgress(list);
+    updateSmartTip(list);
+    renderRecordProgressChart(list);
     renderBadges(list);
 
     let isFirstOpenToday = false;
@@ -2723,12 +3135,6 @@
     splashAutoHideTimer = setTimeout(hideSplash, 2200);
   }
   initApp();
-
-  if ('serviceWorker' in navigator) {
-    window.addEventListener('load', () => {
-      navigator.serviceWorker.register('service-worker.js').catch(() => {});
-    });
-  }
 </script>
 </body>
 </html>
