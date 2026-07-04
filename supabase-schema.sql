@@ -128,3 +128,57 @@ create policy "users can delete their own avatar"
 -- constraints on non-null values, so this is safe.
 -- ============================================================
 alter table public.profiles alter column username drop not null;
+
+-- ============================================================
+-- Added later: reactions on leaderboard entries.
+-- One reaction per (reactor, target, metric) - toggled by delete/insert
+-- from the client rather than an "active" flag. metric is either
+-- 'bestday', 'streak', or 'exercise:<key>' (e.g. 'exercise:plank').
+-- ============================================================
+create table public.leaderboard_reactions (
+  from_user_id uuid not null references auth.users(id) on delete cascade,
+  to_user_id uuid not null references auth.users(id) on delete cascade,
+  metric text not null,
+  emoji text not null default '👍',
+  created_at timestamptz default now(),
+  primary key (from_user_id, to_user_id, metric)
+);
+alter table public.leaderboard_reactions enable row level security;
+create policy "read reactions you sent, received, or on a friend's entry"
+  on public.leaderboard_reactions for select
+  using (
+    from_user_id = auth.uid() or to_user_id = auth.uid()
+    or exists (select 1 from friendships f where f.user_id = auth.uid() and f.friend_id = to_user_id)
+  );
+create policy "react as yourself"
+  on public.leaderboard_reactions for insert with check (from_user_id = auth.uid());
+create policy "remove own reaction"
+  on public.leaderboard_reactions for delete using (from_user_id = auth.uid());
+
+-- ============================================================
+-- Added later: leaderboard trend history.
+-- leaderboard_stats only ever holds the latest snapshot (upserted), so
+-- a trend-over-time graph needs its own append-only-per-day table.
+-- One row per user per day; the client upserts today's row on every
+-- pushToCloud() alongside leaderboard_stats.
+-- ============================================================
+create table public.leaderboard_history (
+  id uuid primary key default gen_random_uuid(),
+  user_id uuid not null references auth.users(id) on delete cascade,
+  records jsonb not null default '{}',
+  best_day_seconds integer not null default 0,
+  longest_streak integer not null default 0,
+  recorded_at date not null default current_date,
+  unique (user_id, recorded_at)
+);
+alter table public.leaderboard_history enable row level security;
+create policy "read own or friends leaderboard history"
+  on public.leaderboard_history for select
+  using (
+    auth.uid() = user_id
+    or exists (select 1 from friendships f where f.user_id = auth.uid() and f.friend_id = leaderboard_history.user_id)
+  );
+create policy "upsert own leaderboard history"
+  on public.leaderboard_history for insert with check (auth.uid() = user_id);
+create policy "update own leaderboard history"
+  on public.leaderboard_history for update using (auth.uid() = user_id);
