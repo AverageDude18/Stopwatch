@@ -3423,14 +3423,14 @@
   const ICON_FIXTURE = '#5b6169';
 
   const EX_ICONS = {
-    custom: `<ellipse cx="32.5" cy="7.2" rx="4.2" ry="3.4" fill="${ICON_HAIR}"/>
-      <circle cx="35" cy="10" r="5.4" fill="${ICON_SKIN}"/>
-      <path d="M35 15.5 L35 30" stroke="${ICON_SHIRT}" stroke-width="8"/>
-      <circle cx="35" cy="30" r="4.6" fill="${ICON_SHORTS}"/>
-      <path d="M31 30 L31 44" stroke="${ICON_SKIN}" stroke-width="6.5"/>
-      <path d="M39 30 L39 44" stroke="${ICON_SKIN}" stroke-width="6.5"/>
-      <path d="M35 17 L25 26" stroke="${ICON_SKIN}" stroke-width="5.5"/><circle cx="25" cy="26" r="2.4" fill="${ICON_SKIN}"/>
-      <path d="M35 17 L45 26" stroke="${ICON_SKIN}" stroke-width="5.5"/><circle cx="45" cy="26" r="2.4" fill="${ICON_SKIN}"/>`,
+    // A custom exercise can be any pose at all, so there's no single figure
+    // that would represent it honestly - a dumbbell reads as "exercise, your
+    // choice" instead of implying a specific (likely wrong) movement.
+    custom: `<rect x="10" y="8" width="10" height="36" rx="4" fill="${ICON_SHORTS}"/>
+      <rect x="62" y="8" width="10" height="36" rx="4" fill="${ICON_SHORTS}"/>
+      <rect x="20" y="14" width="9" height="24" rx="3" fill="${ICON_FIXTURE}"/>
+      <rect x="53" y="14" width="9" height="24" rx="3" fill="${ICON_FIXTURE}"/>
+      <rect x="27" y="23" width="28" height="6" rx="3" fill="${ICON_SHIRT}"/>`,
     plank: `<ellipse cx="10.5" cy="11.2" rx="4.2" ry="3.4" fill="${ICON_HAIR}"/>
       <circle cx="12.8" cy="14.1" r="5.4" fill="${ICON_SKIN}"/>
       <path d="M20.5 19.2 L58.9 29.4" stroke="${ICON_SHIRT}" stroke-width="8"/>
