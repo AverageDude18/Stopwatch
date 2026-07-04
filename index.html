@@ -121,9 +121,18 @@
   .program-card-head { display: flex; align-items: center; gap: 8px; margin-bottom: 6px; }
   .program-icon { font-size: 1.2rem; }
   .program-name { font-weight: 700; font-size: 0.95rem; color: var(--text); }
-  .program-desc { font-size: 0.72rem; color: var(--muted); line-height: 1.5; margin-bottom: 10px; }
   .program-row { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
   .program-progress { font-size: 0.75rem; color: var(--accent); font-weight: 600; }
+  .program-days { display: flex; gap: 6px; margin-bottom: 10px; flex-wrap: wrap; }
+  .program-day-dot {
+    width: 26px; height: 26px; border-radius: 50%; display: flex; align-items: center; justify-content: center;
+    font-size: 0.7rem; font-weight: 700; cursor: pointer; border: 1px solid var(--border);
+    background: var(--panel); color: var(--muted2); transition: transform 0.1s ease; flex-shrink: 0;
+  }
+  .program-day-dot:active { transform: scale(0.9); }
+  .program-day-dot.completed { background: var(--accent); border-color: var(--accent); color: white; }
+  .program-day-dot.current { border-color: var(--accent); color: var(--text); box-shadow: 0 0 0 2px rgba(var(--accent-rgb,127,219,168),0.25); }
+  .program-day-detail { font-size: 0.75rem; color: var(--muted); margin-bottom: 10px; min-height: 1.2em; }
   .program-start-btn { padding: 7px 16px; }
   .mode-row { display: flex; gap: 8px; justify-content: center; }
   .mode-btn {
@@ -2961,13 +2970,9 @@
   }
   let activeProgramId = null;
 
-  // Builds a one-line "Day 1: Plank 3×20s → Day 2: Deadhang 3×15s → ..."
-  // style summary, so the exercises AND the day-by-day structure are both
-  // visible without needing a separate expandable breakdown.
-  function describeProgram(program) {
-    return program.days.map((d, i) =>
-      `${t.ui.challengeDayOf(i + 1, program.days.length)}: ${exName_(d.ex)} ${d.rounds}×${d.work}s`
-    ).join(' → ');
+  function dayDetailText(program, dayNum) {
+    const d = program.days[dayNum - 1];
+    return `${t.ui.challengeDayOf(dayNum, program.days.length)}: ${exName_(d.ex)} ${d.rounds}×${d.work}s`;
   }
 
   function startProgram(id) {
@@ -2996,12 +3001,20 @@
       const day = getProgramDay(p.id);
       const total = p.days.length;
       const progressText = day > total ? t.ui.challengeComplete : t.ui.challengeDayOf(day, total);
+      const detailDay = Math.min(day, total);
+      const dots = p.days.map((d, i) => {
+        const dayNum = i + 1;
+        const state = dayNum < day || day > total ? 'completed' : dayNum === day ? 'current' : 'future';
+        const label = state === 'completed' ? '✓' : String(dayNum);
+        return `<div class="program-day-dot ${state}" data-program="${p.id}" data-day="${dayNum}">${label}</div>`;
+      }).join('');
       return `<div class="program-card">
         <div class="program-card-head">
           <span class="program-icon">${p.icon}</span>
           <span class="program-name">${t.ui.programs[p.id]}</span>
         </div>
-        <div class="program-desc">${describeProgram(p)}</div>
+        <div class="program-days">${dots}</div>
+        <div class="program-day-detail" id="programDetail-${p.id}">${dayDetailText(p, detailDay)}</div>
         <div class="program-row">
           <span class="program-progress">${progressText}</span>
           <button class="small-btn program-start-btn" data-id="${p.id}">${t.ui.start}</button>
@@ -3010,6 +3023,13 @@
     }).join('');
   }
   programsListEl.addEventListener('click', (e) => {
+    const dot = e.target.closest('.program-day-dot');
+    if (dot) {
+      const program = PROGRAMS.find((p) => p.id === dot.dataset.program);
+      const detailEl = document.getElementById('programDetail-' + dot.dataset.program);
+      if (program && detailEl) detailEl.textContent = dayDetailText(program, parseInt(dot.dataset.day, 10));
+      return;
+    }
     const btn = e.target.closest('.program-start-btn');
     if (!btn) return;
     settingsPanel.style.display = 'none';
