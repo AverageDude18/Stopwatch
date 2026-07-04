@@ -471,6 +471,20 @@
   .avatar-mini { width: 22px; height: 22px; border-radius: 50%; display: inline-flex; align-items: center;
     justify-content: center; flex-shrink: 0; font-size: 0.85rem; background: var(--panel-alt); overflow: hidden; }
   .avatar-mini img { width: 100%; height: 100%; object-fit: cover; }
+  .avatar-corner-btn {
+    width: 34px; height: 34px; border-radius: 50%; border: 1px solid var(--border);
+    background: var(--panel-alt); padding: 0; cursor: pointer; flex-shrink: 0;
+    display: flex; align-items: center; justify-content: center; font-size: 1.2rem; overflow: hidden;
+  }
+  .avatar-corner-btn img { width: 100%; height: 100%; object-fit: cover; }
+  .profile-overlay-avatar {
+    width: 110px; height: 110px; border-radius: 50%; background: var(--panel-alt);
+    display: flex; align-items: center; justify-content: center; font-size: 3.5rem;
+    margin: 8px auto 14px; overflow: hidden; border: 1px solid var(--border);
+  }
+  .profile-overlay-avatar img { width: 100%; height: 100%; object-fit: cover; }
+  .profile-overlay-username { font-size: 1.1rem; font-weight: 700; color: var(--text); margin-bottom: 4px; }
+  .profile-overlay-email { font-size: 0.85rem; color: var(--muted); }
 
   /* Custom language picker - a native <select><option> can't render an <img>/
      <svg>, so a real flag icon (rather than an emoji subject to the OS font's
@@ -593,10 +607,13 @@
   <div class="flash-overlay" id="flashOverlay"></div>
   <div class="card">
     <div class="top-row">
-      <div>
-        <div class="streak" id="streakDisplay"></div>
-        <div class="today-line" id="todayDisplay"></div>
-        <div class="today-line" id="smartTip" style="color:var(--accent);"></div>
+      <div style="display:flex; align-items:center; gap:8px;">
+        <button class="avatar-corner-btn" id="avatarCornerBtn" aria-label="Profile"><span id="avatarCornerImg">👤</span></button>
+        <div>
+          <div class="streak" id="streakDisplay"></div>
+          <div class="today-line" id="todayDisplay"></div>
+          <div class="today-line" id="smartTip" style="color:var(--accent);"></div>
+        </div>
       </div>
       <div class="top-row-actions">
         <button class="icon-btn" id="friendsBtn" aria-label="Friends">👥</button>
@@ -925,6 +942,18 @@
     </div>
   </div>
 
+  <div class="modal-overlay hidden" id="profileOverlay">
+    <div class="modal-card" style="text-align:center;">
+      <div class="modal-card-header">
+        <div class="modal-card-title" id="profileOverlayTitle">Profiel</div>
+        <button class="modal-close-btn" id="profileOverlayCloseBtn" aria-label="Close">✕</button>
+      </div>
+      <div class="profile-overlay-avatar" id="profileOverlayAvatar">👤</div>
+      <div class="profile-overlay-username" id="profileOverlayUsername"></div>
+      <div class="profile-overlay-email" id="profileOverlayEmail"></div>
+    </div>
+  </div>
+
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
 <script>
   // ====== CONFIG ======
@@ -1150,7 +1179,7 @@
         voiceSampleTemplate:(label)=>`Dit is ${label}.`,
         namePhonetic:'Uitspraak van je naam (optioneel, alleen voor de stem)', namePhoneticPlaceholder:'bijv. Iedss',
         shareWeek:'Deel week', weekShareTitle:'Mijn week', daysTrainedThisWeek:(n)=>`${n} dagen getraind`,
-        avatarLabel:'Profielfoto'
+        avatarLabel:'Profielfoto', profileTitle:'Profiel'
       },
       speech: { countdown:['drie','twee','één'],
         startWithName:(n)=>`Kom op, ${n}!`, startNoName:'Start!',
@@ -1263,7 +1292,7 @@
         voiceSampleTemplate:(label)=>`This is ${label}.`,
         namePhonetic:'Pronunciation of your name (optional, voice only)', namePhoneticPlaceholder:'e.g. Eeds',
         shareWeek:'Share week', weekShareTitle:'My week', daysTrainedThisWeek:(n)=>`${n} days trained`,
-        avatarLabel:'Profile picture'
+        avatarLabel:'Profile picture', profileTitle:'Profile'
       },
       speech: { countdown:['three','two','one'],
         startWithName:(n)=>`Come on, ${n}!`, startNoName:'Start!',
@@ -1375,7 +1404,7 @@
         voiceSampleTemplate:(label)=>`Das ist ${label}.`,
         namePhonetic:'Aussprache deines Namens (optional, nur für die Stimme)', namePhoneticPlaceholder:'z.B. Iedß',
         shareWeek:'Woche teilen', weekShareTitle:'Meine Woche', daysTrainedThisWeek:(n)=>`${n} Tage trainiert`,
-        avatarLabel:'Profilbild'
+        avatarLabel:'Profilbild', profileTitle:'Profil'
       },
       speech: { countdown:['drei','zwei','eins'],
         startWithName:(n)=>`Los geht's, ${n}!`, startNoName:'Start!',
@@ -1487,7 +1516,7 @@
         voiceSampleTemplate:(label)=>`Esto es ${label}.`,
         namePhonetic:'Pronunciación de tu nombre (opcional, solo para la voz)', namePhoneticPlaceholder:'p. ej. Iedss',
         shareWeek:'Compartir semana', weekShareTitle:'Mi semana', daysTrainedThisWeek:(n)=>`${n} días entrenados`,
-        avatarLabel:'Foto de perfil'
+        avatarLabel:'Foto de perfil', profileTitle:'Perfil'
       },
       speech: { countdown:['tres','dos','uno'],
         startWithName:(n)=>`¡Vamos, ${n}!`, startNoName:'¡Empieza!',
@@ -1599,7 +1628,7 @@
         voiceSampleTemplate:(label)=>`Ceci est ${label}.`,
         namePhonetic:'Prononciation de ton prénom (facultatif, uniquement pour la voix)', namePhoneticPlaceholder:'ex. Iedss',
         shareWeek:'Partager la semaine', weekShareTitle:'Ma semaine', daysTrainedThisWeek:(n)=>`${n} jours d'entraînement`,
-        avatarLabel:'Photo de profil'
+        avatarLabel:'Photo de profil', profileTitle:'Profil'
       },
       speech: { countdown:['trois','deux','un'],
         startWithName:(n)=>`Allez, ${n}\u00a0!`, startNoName:'C\u2019est parti\u00a0!',
@@ -1711,7 +1740,7 @@
         voiceSampleTemplate:(label)=>`Isto é ${label}.`,
         namePhonetic:'Pronúncia do teu nome (opcional, apenas para a voz)', namePhoneticPlaceholder:'ex. Iedss',
         shareWeek:'Partilhar semana', weekShareTitle:'A minha semana', daysTrainedThisWeek:(n)=>`${n} dias treinados`,
-        avatarLabel:'Foto de perfil'
+        avatarLabel:'Foto de perfil', profileTitle:'Perfil'
       },
       speech: { countdown:['três','dois','um'],
         startWithName:(n)=>`Vamos, ${n}!`, startNoName:'Começar!',
@@ -1823,7 +1852,7 @@
         voiceSampleTemplate:(label)=>`Это ${label}.`,
         namePhonetic:'Произношение твоего имени (необязательно, только для голоса)', namePhoneticPlaceholder:'напр. Идсс',
         shareWeek:'Поделиться неделей', weekShareTitle:'Моя неделя', daysTrainedThisWeek:(n)=>`${n} дней тренировок`,
-        avatarLabel:'Фото профиля'
+        avatarLabel:'Фото профиля', profileTitle:'Профиль'
       },
       speech: { countdown:['три','два','один'],
         startWithName:(n)=>`Давай, ${n}!`, startNoName:'Начали!',
@@ -1935,7 +1964,7 @@
         voiceSampleTemplate:(label)=>`这是${label}。`,
         namePhonetic:'你名字的发音（可选，仅用于语音）', namePhoneticPlaceholder:'例如 Iedss',
         shareWeek:'分享本周', weekShareTitle:'我的一周', daysTrainedThisWeek:(n)=>`训练了${n}天`,
-        avatarLabel:'头像'
+        avatarLabel:'头像', profileTitle:'个人资料'
       },
       speech: { countdown:['三','二','一'],
         startWithName:(n)=>`加油，${n}！`, startNoName:'开始！',
@@ -2047,7 +2076,7 @@
         voiceSampleTemplate:(label)=>`यह ${label} है।`,
         namePhonetic:'आपके नाम का उच्चारण (वैकल्पिक, केवल आवाज़ के लिए)', namePhoneticPlaceholder:'जैसे Iedss',
         shareWeek:'सप्ताह शेयर करें', weekShareTitle:'मेरा सप्ताह', daysTrainedThisWeek:(n)=>`${n} दिन ट्रेनिंग की`,
-        avatarLabel:'प्रोफ़ाइल फ़ोटो'
+        avatarLabel:'प्रोफ़ाइल फ़ोटो', profileTitle:'प्रोफ़ाइल'
       },
       speech: { countdown:['तीन','दो','एक'],
         startWithName:(n)=>`चलो, ${n}!`, startNoName:'शुरू!',
@@ -2159,7 +2188,7 @@
         voiceSampleTemplate:(label)=>`هذا ${label}.`,
         namePhonetic:'نطق اسمك (اختياري، للصوت فقط)', namePhoneticPlaceholder:'مثال Iedss',
         shareWeek:'مشاركة الأسبوع', weekShareTitle:'أسبوعي', daysTrainedThisWeek:(n)=>`${n} أيام تدريب`,
-        avatarLabel:'صورة الملف الشخصي'
+        avatarLabel:'صورة الملف الشخصي', profileTitle:'الملف الشخصي'
       },
       speech: { countdown:['ثلاثة','اثنان','واحد'],
         startWithName:(n)=>`هيا، ${n}!`, startNoName:'ابدأ!',
@@ -2282,6 +2311,13 @@
   const avatarFileInput = document.getElementById('avatarFileInput');
   const avatarRemoveBtn = document.getElementById('avatarRemoveBtn');
   const avatarStatus = document.getElementById('avatarStatus');
+  const avatarCornerBtn = document.getElementById('avatarCornerBtn');
+  const avatarCornerImg = document.getElementById('avatarCornerImg');
+  const profileOverlay = document.getElementById('profileOverlay');
+  const profileOverlayCloseBtn = document.getElementById('profileOverlayCloseBtn');
+  const profileOverlayAvatar = document.getElementById('profileOverlayAvatar');
+  const profileOverlayUsername = document.getElementById('profileOverlayUsername');
+  const profileOverlayEmail = document.getElementById('profileOverlayEmail');
   const friendsBtn = document.getElementById('friendsBtn');
   const friendsOverlay = document.getElementById('friendsOverlay');
   const friendsCloseBtn = document.getElementById('friendsCloseBtn');
@@ -2396,11 +2432,22 @@
 
   // ====== Avatar (emoji or uploaded photo - only one active at a time) ======
   function renderAvatarPreview() {
-    avatarPreview.innerHTML = avatarHtml({ avatar_emoji: currentAvatarEmoji, avatar_url: currentAvatarUrl });
+    const html = avatarHtml({ avatar_emoji: currentAvatarEmoji, avatar_url: currentAvatarUrl });
+    avatarPreview.innerHTML = html;
+    avatarCornerImg.innerHTML = html;
     avatarEmojiRow.querySelectorAll('.avatar-emoji-btn').forEach((btn) => {
       btn.classList.toggle('selected', !currentAvatarUrl && btn.dataset.emoji === currentAvatarEmoji);
     });
   }
+  avatarCornerBtn.addEventListener('click', () => {
+    if (!currentUser) return;
+    settingsPanel.style.display = 'none';
+    profileOverlayAvatar.innerHTML = avatarHtml({ avatar_emoji: currentAvatarEmoji, avatar_url: currentAvatarUrl });
+    profileOverlayUsername.textContent = currentUsername || '?';
+    profileOverlayEmail.textContent = currentUser.email;
+    profileOverlay.classList.remove('hidden');
+  });
+  profileOverlayCloseBtn.addEventListener('click', () => profileOverlay.classList.add('hidden'));
   avatarEmojiRow.innerHTML = AVATAR_EMOJIS.map((e) => `<button type="button" class="avatar-emoji-btn" data-emoji="${e}">${e}</button>`).join('');
   avatarEmojiRow.addEventListener('click', async (e) => {
     const btn = e.target.closest('.avatar-emoji-btn');
@@ -2730,6 +2777,7 @@
     document.getElementById('lblSentRequests').textContent = t.ui.sentRequests;
     document.getElementById('lblFriendsList').textContent = t.ui.friendsListLabel;
     document.getElementById('leaderboardTitle').textContent = t.ui.leaderboardTitle;
+    document.getElementById('profileOverlayTitle').textContent = t.ui.profileTitle;
     lbTabExerciseBtn.textContent = t.ui.lbTabExercise;
     lbTabBestDayBtn.textContent = t.ui.lbTabBestDay;
     lbTabStreakBtn.textContent = t.ui.lbTabStreak;
