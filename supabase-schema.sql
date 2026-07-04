@@ -213,3 +213,34 @@ create policy "manage own push subscriptions"
 alter table public.leaderboard_stats add column if not exists current_streak integer not null default 0;
 alter table public.leaderboard_stats add column if not exists last_trained_date date;
 alter table public.leaderboard_stats add column if not exists app_language text not null default 'nl';
+
+-- ============================================================
+-- Added later: duels. Asynchronous 1v1 challenges between two
+-- friends on a chosen exercise - no fixed start time, whoever logs
+-- the longer hold after both have gone wins. 'declined' covers both
+-- a real decline by the guest and the host cancelling their own
+-- pending invite. The cumulative head-to-head score is NOT stored
+-- separately - it's derived by counting completed rows' winner_id
+-- for a given pair of user ids.
+-- ============================================================
+create table public.duels (
+  id uuid primary key default gen_random_uuid(),
+  host_id uuid not null references auth.users(id) on delete cascade,
+  guest_id uuid not null references auth.users(id) on delete cascade,
+  exercise text not null,
+  status text not null default 'pending'
+    check (status in ('pending','active','declined','completed')),
+  host_duration integer,
+  guest_duration integer,
+  winner_id uuid references auth.users(id),
+  created_at timestamptz default now(),
+  updated_at timestamptz default now()
+);
+alter table public.duels enable row level security;
+create policy "see own duels" on public.duels for select
+  using (auth.uid() = host_id or auth.uid() = guest_id);
+create policy "host creates duel" on public.duels for insert
+  with check (auth.uid() = host_id);
+create policy "host or guest updates duel" on public.duels for update
+  using (auth.uid() = host_id or auth.uid() = guest_id);
+alter publication supabase_realtime add table public.duels;

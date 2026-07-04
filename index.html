@@ -815,6 +815,8 @@
       </div>
     </div>
 
+    <div class="modal-list-empty" id="duelActiveBanner" style="display:none; text-align:center; margin-bottom:8px;"></div>
+
     <div class="ring-wrap" id="ringWrap">
       <div class="ring-glow"></div>
       <svg class="progress-ring" viewBox="0 0 230 230">
@@ -996,6 +998,58 @@
       <div class="auth-gate-buttons">
         <button id="notifPromptYesBtn" style="background:#2e7d4f; color:white;">Ja, graag</button>
         <button id="notifPromptNoBtn" style="background:var(--border); color:var(--text);">Niet nu</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="modal-overlay hidden" id="duelInviteOverlay">
+    <div class="modal-card" style="text-align:center;">
+      <div class="modal-card-title" id="duelInviteTitle" style="margin-bottom:10px;">Duel voorstellen</div>
+      <div style="font-size:0.78rem; color:var(--muted); margin-bottom:6px; text-align:left;" id="duelInviteExLabelEl">Kies de oefening</div>
+      <select id="duelInviteExSelect" style="width:100%; margin-bottom:16px;"></select>
+      <div class="auth-gate-buttons">
+        <button id="duelInviteSendBtn" style="background:#2e7d4f; color:white;">Uitnodigen</button>
+        <button id="duelInviteCancelBtn" style="background:var(--border); color:var(--text);">Annuleren</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="modal-overlay hidden" id="duelWaitingOverlay">
+    <div class="modal-card" style="text-align:center;">
+      <div style="font-size:0.9rem; color:var(--text); margin-bottom:16px;" id="duelWaitingTextEl"></div>
+      <div class="auth-gate-buttons">
+        <button id="duelWaitingCancelBtn" style="background:var(--border); color:var(--text);">Annuleren</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="modal-overlay hidden" id="duelIncomingOverlay">
+    <div class="modal-card" style="text-align:center;">
+      <div class="modal-card-title" id="duelIncomingTitleEl" style="margin-bottom:10px;">Duel-uitdaging!</div>
+      <div style="font-size:0.85rem; color:var(--muted); margin-bottom:16px;" id="duelIncomingBodyEl"></div>
+      <div class="auth-gate-buttons">
+        <button id="duelAcceptBtn" style="background:#2e7d4f; color:white;">Ik durf het aan!</button>
+        <button id="duelDeclineBtn" style="background:var(--border); color:var(--text);">Nee, bedankt</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="modal-overlay hidden" id="duelWaitingResultOverlay">
+    <div class="modal-card" style="text-align:center;">
+      <div style="font-size:0.9rem; color:var(--text); margin-bottom:16px;" id="duelWaitingResultTextEl"></div>
+      <div class="auth-gate-buttons">
+        <button id="duelWaitingResultHideBtn" style="background:var(--border); color:var(--text);">Verberg</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="modal-overlay hidden" id="duelRevealOverlay">
+    <div class="modal-card" style="text-align:center;">
+      <div class="modal-card-title" id="duelRevealSuspense" style="margin-bottom:10px;">...</div>
+      <div class="modal-card-title" id="duelRevealResult" style="margin-bottom:6px; display:none;"></div>
+      <div style="font-size:0.85rem; color:var(--muted); margin-bottom:16px;" id="duelRevealScore"></div>
+      <div class="auth-gate-buttons">
+        <button id="duelRevealCloseBtn" style="background:var(--border); color:var(--text); display:none;">Sluiten</button>
       </div>
     </div>
   </div>
@@ -1247,7 +1301,19 @@
         reactionNotifBody:(from,emoji,label)=>`${from} reageerde met ${emoji} op jouw ${label} op het scorebord`,
         notifPromptTitle:'Meldingen inschakelen?',
         notifPromptBody:'Krijg een seintje als een vriend reageert op je scorebord, of als je streak in gevaar is.',
-        notifPromptYes:'Ja, graag', notifPromptNo:'Niet nu'
+        notifPromptYes:'Ja, graag', notifPromptNo:'Niet nu',
+        duelInviteBtnTitle:'Daag uit voor een duel', duelInviteModalTitle:'Duel voorstellen', duelInviteExLabel:'Kies de oefening',
+        duelInviteSendBtn:'Uitnodigen', duelInviteCancelBtn:'Annuleren',
+        duelWaitingText:(name)=>`Wachten op reactie van ${name}...`, duelDeclinedText:'Duel geweigerd.',
+        duelIncomingTitle:'Duel-uitdaging!',
+        duelIncomingBody:(name,exercise)=>`${name} heeft je uitgenodigd voor een duel op de oefening ${exercise}. Durf jij het aan?`,
+        duelAcceptBtn:'Ik durf het aan!', duelDeclineBtn:'Nee, bedankt',
+        duelActiveBanner:(name,exercise)=>`Duel tegen ${name}: ${exercise}. Doe je beste hold!`,
+        duelWaitingResultText:(name)=>`Wachten op de poging van ${name}...`, duelWaitingResultHideBtn:'Verberg',
+        duelWinText:(name)=>`Jij hebt gewonnen van ${name}!`, duelLoseText:(name)=>`${name} heeft gewonnen!`, duelTieText:'Gelijkspel!',
+        duelScoreLabel:(mine,theirs,name)=>`Stand tegen ${name}: ${mine} - ${theirs}`, duelCloseBtn:'Sluiten',
+        duelInviteNotifTitle:'Trainingspartner',
+        duelInviteNotifBody:(name,exercise)=>`${name} heeft je uitgenodigd voor een duel op de oefening ${exercise}, durf jij het aan?`
       },
       speech: { countdown:['drie','twee','één'],
         startWithName:(n)=>`Kom op, ${n}!`, startNoName:'Start!',
@@ -1367,7 +1433,19 @@
         reactionNotifBody:(from,emoji,label)=>`${from} reacted with ${emoji} to your ${label} on the leaderboard`,
         notifPromptTitle:'Enable notifications?',
         notifPromptBody:'Get notified when a friend reacts to your leaderboard entry, or when your streak is at risk.',
-        notifPromptYes:'Yes, please', notifPromptNo:'Not now'
+        notifPromptYes:'Yes, please', notifPromptNo:'Not now',
+        duelInviteBtnTitle:'Challenge to a duel', duelInviteModalTitle:'Propose a duel', duelInviteExLabel:'Choose the exercise',
+        duelInviteSendBtn:'Invite', duelInviteCancelBtn:'Cancel',
+        duelWaitingText:(name)=>`Waiting for ${name}'s response...`, duelDeclinedText:'Duel declined.',
+        duelIncomingTitle:'Duel challenge!',
+        duelIncomingBody:(name,exercise)=>`${name} has challenged you to a duel on ${exercise}. Do you dare?`,
+        duelAcceptBtn:'I dare!', duelDeclineBtn:'No thanks',
+        duelActiveBanner:(name,exercise)=>`Duel against ${name}: ${exercise}. Give it your best hold!`,
+        duelWaitingResultText:(name)=>`Waiting for ${name}'s attempt...`, duelWaitingResultHideBtn:'Hide',
+        duelWinText:(name)=>`You beat ${name}!`, duelLoseText:(name)=>`${name} won!`, duelTieText:'Tie!',
+        duelScoreLabel:(mine,theirs,name)=>`Score vs ${name}: ${mine} - ${theirs}`, duelCloseBtn:'Close',
+        duelInviteNotifTitle:'Trainingspartner',
+        duelInviteNotifBody:(name,exercise)=>`${name} has challenged you to a duel on ${exercise}, do you dare?`
       },
       speech: { countdown:['three','two','one'],
         startWithName:(n)=>`Come on, ${n}!`, startNoName:'Start!',
@@ -1486,7 +1564,19 @@
         reactionNotifBody:(from,emoji,label)=>`${from} hat mit ${emoji} auf deine ${label} auf der Bestenliste reagiert`,
         notifPromptTitle:'Benachrichtigungen aktivieren?',
         notifPromptBody:'Erhalte eine Benachrichtigung, wenn ein Freund auf deine Bestenliste reagiert oder deine Serie in Gefahr ist.',
-        notifPromptYes:'Ja, gerne', notifPromptNo:'Nicht jetzt'
+        notifPromptYes:'Ja, gerne', notifPromptNo:'Nicht jetzt',
+        duelInviteBtnTitle:'Zu einem Duell herausfordern', duelInviteModalTitle:'Duell vorschlagen', duelInviteExLabel:'Übung wählen',
+        duelInviteSendBtn:'Einladen', duelInviteCancelBtn:'Abbrechen',
+        duelWaitingText:(name)=>`Warte auf Antwort von ${name} ...`, duelDeclinedText:'Duell abgelehnt.',
+        duelIncomingTitle:'Duell-Herausforderung!',
+        duelIncomingBody:(name,exercise)=>`${name} hat dich zu einem Duell in ${exercise} herausgefordert. Traust du dich?`,
+        duelAcceptBtn:'Ich traue mich!', duelDeclineBtn:'Nein danke',
+        duelActiveBanner:(name,exercise)=>`Duell gegen ${name}: ${exercise}. Gib dein Bestes!`,
+        duelWaitingResultText:(name)=>`Warte auf den Versuch von ${name} ...`, duelWaitingResultHideBtn:'Verbergen',
+        duelWinText:(name)=>`Du hast gegen ${name} gewonnen!`, duelLoseText:(name)=>`${name} hat gewonnen!`, duelTieText:'Unentschieden!',
+        duelScoreLabel:(mine,theirs,name)=>`Stand gegen ${name}: ${mine} - ${theirs}`, duelCloseBtn:'Schließen',
+        duelInviteNotifTitle:'Trainingspartner',
+        duelInviteNotifBody:(name,exercise)=>`${name} hat dich zu einem Duell in ${exercise} herausgefordert, traust du dich?`
       },
       speech: { countdown:['drei','zwei','eins'],
         startWithName:(n)=>`Los geht's, ${n}!`, startNoName:'Start!',
@@ -1605,7 +1695,19 @@
         reactionNotifBody:(from,emoji,label)=>`${from} reaccionó con ${emoji} a tu ${label} en la clasificación`,
         notifPromptTitle:'¿Activar notificaciones?',
         notifPromptBody:'Recibe un aviso cuando un amigo reaccione a tu clasificación o cuando tu racha esté en peligro.',
-        notifPromptYes:'Sí, por favor', notifPromptNo:'Ahora no'
+        notifPromptYes:'Sí, por favor', notifPromptNo:'Ahora no',
+        duelInviteBtnTitle:'Retar a un duelo', duelInviteModalTitle:'Proponer un duelo', duelInviteExLabel:'Elige el ejercicio',
+        duelInviteSendBtn:'Invitar', duelInviteCancelBtn:'Cancelar',
+        duelWaitingText:(name)=>`Esperando la respuesta de ${name}...`, duelDeclinedText:'Duelo rechazado.',
+        duelIncomingTitle:'¡Reto de duelo!',
+        duelIncomingBody:(name,exercise)=>`${name} te ha retado a un duelo de ${exercise}. ¿Te atreves?`,
+        duelAcceptBtn:'¡Me atrevo!', duelDeclineBtn:'No, gracias',
+        duelActiveBanner:(name,exercise)=>`Duelo contra ${name}: ${exercise}. ¡Da lo mejor de ti!`,
+        duelWaitingResultText:(name)=>`Esperando el intento de ${name}...`, duelWaitingResultHideBtn:'Ocultar',
+        duelWinText:(name)=>`¡Le ganaste a ${name}!`, duelLoseText:(name)=>`¡${name} ganó!`, duelTieText:'¡Empate!',
+        duelScoreLabel:(mine,theirs,name)=>`Marcador vs ${name}: ${mine} - ${theirs}`, duelCloseBtn:'Cerrar',
+        duelInviteNotifTitle:'Trainingspartner',
+        duelInviteNotifBody:(name,exercise)=>`${name} te ha retado a un duelo de ${exercise}, ¿te atreves?`
       },
       speech: { countdown:['tres','dos','uno'],
         startWithName:(n)=>`¡Vamos, ${n}!`, startNoName:'¡Empieza!',
@@ -1724,7 +1826,19 @@
         reactionNotifBody:(from,emoji,label)=>`${from} a réagi avec ${emoji} à ton ${label} dans le classement`,
         notifPromptTitle:'Activer les notifications ?',
         notifPromptBody:'Reçois un avis quand un ami réagit à ton classement, ou quand ta série est en danger.',
-        notifPromptYes:'Oui, avec plaisir', notifPromptNo:'Pas maintenant'
+        notifPromptYes:'Oui, avec plaisir', notifPromptNo:'Pas maintenant',
+        duelInviteBtnTitle:'Défier en duel', duelInviteModalTitle:'Proposer un duel', duelInviteExLabel:'Choisis ton exercice',
+        duelInviteSendBtn:'Inviter', duelInviteCancelBtn:'Annuler',
+        duelWaitingText:(name)=>`En attente de la réponse de ${name}...`, duelDeclinedText:'Duel refusé.',
+        duelIncomingTitle:'Défi en duel !',
+        duelIncomingBody:(name,exercise)=>`Tu es défié en duel par ${name} sur ${exercise}. Oses-tu ?`,
+        duelAcceptBtn:'Je fonce !', duelDeclineBtn:'Non merci',
+        duelActiveBanner:(name,exercise)=>`Duel contre ${name} : ${exercise}. Donne le meilleur de toi-même !`,
+        duelWaitingResultText:(name)=>`En attente de la tentative de ${name}...`, duelWaitingResultHideBtn:'Masquer',
+        duelWinText:(name)=>`Tu as battu ${name} !`, duelLoseText:(name)=>`${name} a gagné !`, duelTieText:'Égalité !',
+        duelScoreLabel:(mine,theirs,name)=>`Score contre ${name} : ${mine} - ${theirs}`, duelCloseBtn:'Fermer',
+        duelInviteNotifTitle:'Trainingspartner',
+        duelInviteNotifBody:(name,exercise)=>`Tu es défié en duel par ${name} sur ${exercise}, oses-tu ?`
       },
       speech: { countdown:['trois','deux','un'],
         startWithName:(n)=>`Allez, ${n}\u00a0!`, startNoName:'C\u2019est parti\u00a0!',
@@ -1843,7 +1957,19 @@
         reactionNotifBody:(from,emoji,label)=>`${from} reagiu com ${emoji} à tua ${label} na classificação`,
         notifPromptTitle:'Ativar notificações?',
         notifPromptBody:'Recebe um aviso quando um amigo reage à tua classificação, ou quando a tua sequência está em risco.',
-        notifPromptYes:'Sim, por favor', notifPromptNo:'Agora não'
+        notifPromptYes:'Sim, por favor', notifPromptNo:'Agora não',
+        duelInviteBtnTitle:'Desafiar para um duelo', duelInviteModalTitle:'Propor um duelo', duelInviteExLabel:'Escolhe o exercício',
+        duelInviteSendBtn:'Convidar', duelInviteCancelBtn:'Cancelar',
+        duelWaitingText:(name)=>`A aguardar resposta de ${name}...`, duelDeclinedText:'Duelo recusado.',
+        duelIncomingTitle:'Desafio de duelo!',
+        duelIncomingBody:(name,exercise)=>`${name} desafiou-te para um duelo de ${exercise}. Aceitas o desafio?`,
+        duelAcceptBtn:'Aceito o desafio!', duelDeclineBtn:'Não, obrigado',
+        duelActiveBanner:(name,exercise)=>`Duelo contra ${name}: ${exercise}. Dá o teu melhor!`,
+        duelWaitingResultText:(name)=>`A aguardar a tentativa de ${name}...`, duelWaitingResultHideBtn:'Ocultar',
+        duelWinText:(name)=>`Ganhaste a ${name}!`, duelLoseText:(name)=>`${name} ganhou!`, duelTieText:'Empate!',
+        duelScoreLabel:(mine,theirs,name)=>`Resultado vs ${name}: ${mine} - ${theirs}`, duelCloseBtn:'Fechar',
+        duelInviteNotifTitle:'Trainingspartner',
+        duelInviteNotifBody:(name,exercise)=>`${name} desafiou-te para um duelo de ${exercise}, aceitas o desafio?`
       },
       speech: { countdown:['três','dois','um'],
         startWithName:(n)=>`Vamos, ${n}!`, startNoName:'Começar!',
@@ -1962,7 +2088,19 @@
         reactionNotifBody:(from,emoji,label)=>`${from} отреагировал(а) ${emoji} на твой результат «${label}» в рейтинге`,
         notifPromptTitle:'Включить уведомления?',
         notifPromptBody:'Получай уведомление, когда друг реагирует на твой результат в рейтинге, или когда твоя серия под угрозой.',
-        notifPromptYes:'Да, включить', notifPromptNo:'Не сейчас'
+        notifPromptYes:'Да, включить', notifPromptNo:'Не сейчас',
+        duelInviteBtnTitle:'Вызвать на дуэль', duelInviteModalTitle:'Предложить дуэль', duelInviteExLabel:'Выбери упражнение',
+        duelInviteSendBtn:'Пригласить', duelInviteCancelBtn:'Отмена',
+        duelWaitingText:(name)=>`Ждём ответа от ${name}...`, duelDeclinedText:'Дуэль отклонена.',
+        duelIncomingTitle:'Вызов на дуэль!',
+        duelIncomingBody:(name,exercise)=>`${name} вызвал(а) тебя на дуэль по упражнению «${exercise}». Осмелишься?`,
+        duelAcceptBtn:'Осмелюсь!', duelDeclineBtn:'Нет, спасибо',
+        duelActiveBanner:(name,exercise)=>`Дуэль против ${name}: ${exercise}. Покажи свой лучший результат!`,
+        duelWaitingResultText:(name)=>`Ждём попытку от ${name}...`, duelWaitingResultHideBtn:'Скрыть',
+        duelWinText:(name)=>`Ты победил(а) ${name}!`, duelLoseText:(name)=>`${name} победил(а)!`, duelTieText:'Ничья!',
+        duelScoreLabel:(mine,theirs,name)=>`Счёт против ${name}: ${mine} - ${theirs}`, duelCloseBtn:'Закрыть',
+        duelInviteNotifTitle:'Trainingspartner',
+        duelInviteNotifBody:(name,exercise)=>`${name} вызвал(а) тебя на дуэль по упражнению «${exercise}», осмелишься?`
       },
       speech: { countdown:['три','два','один'],
         startWithName:(n)=>`Давай, ${n}!`, startNoName:'Начали!',
@@ -2081,7 +2219,19 @@
         reactionNotifBody:(from,emoji,label)=>`${from} 对你在排行榜上的${label}做出了${emoji}反应`,
         notifPromptTitle:'启用通知？',
         notifPromptBody:'当好友对你的排行榜成绩做出反应，或你的连续记录面临中断时，及时提醒你。',
-        notifPromptYes:'好的', notifPromptNo:'暂不'
+        notifPromptYes:'好的', notifPromptNo:'暂不',
+        duelInviteBtnTitle:'发起对决', duelInviteModalTitle:'提议对决', duelInviteExLabel:'选择项目',
+        duelInviteSendBtn:'邀请', duelInviteCancelBtn:'取消',
+        duelWaitingText:(name)=>`正在等待${name}的回应...`, duelDeclinedText:'对决被拒绝了。',
+        duelIncomingTitle:'对决挑战！',
+        duelIncomingBody:(name,exercise)=>`${name}向你发起了${exercise}对决挑战，你敢应战吗？`,
+        duelAcceptBtn:'我敢应战！', duelDeclineBtn:'不了，谢谢',
+        duelActiveBanner:(name,exercise)=>`对决对象：${name}，项目：${exercise}。尽全力坚持！`,
+        duelWaitingResultText:(name)=>`正在等待${name}的尝试...`, duelWaitingResultHideBtn:'隐藏',
+        duelWinText:(name)=>`你战胜了${name}！`, duelLoseText:(name)=>`${name}获胜了！`, duelTieText:'平局！',
+        duelScoreLabel:(mine,theirs,name)=>`对${name}战绩：${mine} - ${theirs}`, duelCloseBtn:'关闭',
+        duelInviteNotifTitle:'Trainingspartner',
+        duelInviteNotifBody:(name,exercise)=>`${name}向你发起了${exercise}对决挑战，你敢应战吗？`
       },
       speech: { countdown:['三','二','一'],
         startWithName:(n)=>`加油，${n}！`, startNoName:'开始！',
@@ -2200,7 +2350,19 @@
         reactionNotifBody:(from,emoji,label)=>`${from} ने लीडरबोर्ड पर आपकी ${label} पर ${emoji} से प्रतिक्रिया दी`,
         notifPromptTitle:'सूचनाएं चालू करें?',
         notifPromptBody:'जब कोई मित्र आपके लीडरबोर्ड पर प्रतिक्रिया दे, या आपकी स्ट्रीक खतरे में हो, तो सूचना पाएं।',
-        notifPromptYes:'हां, चालू करें', notifPromptNo:'अभी नहीं'
+        notifPromptYes:'हां, चालू करें', notifPromptNo:'अभी नहीं',
+        duelInviteBtnTitle:'द्वंद्व के लिए चुनौती दें', duelInviteModalTitle:'द्वंद्व प्रस्तावित करें', duelInviteExLabel:'व्यायाम चुनें',
+        duelInviteSendBtn:'आमंत्रित करें', duelInviteCancelBtn:'रद्द करें',
+        duelWaitingText:(name)=>`${name} की प्रतिक्रिया का इंतज़ार...`, duelDeclinedText:'द्वंद्व अस्वीकार किया गया।',
+        duelIncomingTitle:'द्वंद्व चुनौती!',
+        duelIncomingBody:(name,exercise)=>`${name} ने आपको ${exercise} में द्वंद्व की चुनौती दी है। क्या आप हिम्मत करेंगे?`,
+        duelAcceptBtn:'मैं हिम्मत करूंगा!', duelDeclineBtn:'नहीं, धन्यवाद',
+        duelActiveBanner:(name,exercise)=>`${name} के खिलाफ द्वंद्व: ${exercise}। अपना सर्वश्रेष्ठ दो!`,
+        duelWaitingResultText:(name)=>`${name} के प्रयास का इंतज़ार...`, duelWaitingResultHideBtn:'छुपाएं',
+        duelWinText:(name)=>`आपने ${name} को हरा दिया!`, duelLoseText:(name)=>`${name} जीत गए!`, duelTieText:'बराबरी!',
+        duelScoreLabel:(mine,theirs,name)=>`${name} के खिलाफ स्कोर: ${mine} - ${theirs}`, duelCloseBtn:'बंद करें',
+        duelInviteNotifTitle:'Trainingspartner',
+        duelInviteNotifBody:(name,exercise)=>`${name} ने आपको ${exercise} में द्वंद्व की चुनौती दी है, क्या आप हिम्मत करेंगे?`
       },
       speech: { countdown:['तीन','दो','एक'],
         startWithName:(n)=>`चलो, ${n}!`, startNoName:'शुरू!',
@@ -2319,7 +2481,19 @@
         reactionNotifBody:(from,emoji,label)=>`${from} تفاعل مع ${label} الخاص بك في لوحة الصدارة بـ ${emoji}`,
         notifPromptTitle:'تفعيل الإشعارات؟',
         notifPromptBody:'احصل على تنبيه عندما يتفاعل صديق مع نتيجتك في لوحة الصدارة، أو عندما تكون سلسلتك في خطر.',
-        notifPromptYes:'نعم من فضلك', notifPromptNo:'ليس الآن'
+        notifPromptYes:'نعم من فضلك', notifPromptNo:'ليس الآن',
+        duelInviteBtnTitle:'تحدَّ إلى مبارزة', duelInviteModalTitle:'اقتراح مبارزة', duelInviteExLabel:'اختر التمرين',
+        duelInviteSendBtn:'دعوة', duelInviteCancelBtn:'إلغاء',
+        duelWaitingText:(name)=>`في انتظار رد ${name}...`, duelDeclinedText:'تم رفض المبارزة.',
+        duelIncomingTitle:'تحدي مبارزة!',
+        duelIncomingBody:(name,exercise)=>`تحداك ${name} في مبارزة على تمرين ${exercise}. هل تجرؤ؟`,
+        duelAcceptBtn:'أنا أتجرأ!', duelDeclineBtn:'لا شكرًا',
+        duelActiveBanner:(name,exercise)=>`مبارزة ضد ${name}: ${exercise}. قدّم أفضل ما لديك!`,
+        duelWaitingResultText:(name)=>`في انتظار محاولة ${name}...`, duelWaitingResultHideBtn:'إخفاء',
+        duelWinText:(name)=>`لقد فزت على ${name}!`, duelLoseText:(name)=>`فاز ${name}!`, duelTieText:'تعادل!',
+        duelScoreLabel:(mine,theirs,name)=>`النتيجة ضد ${name}: ${mine} - ${theirs}`, duelCloseBtn:'إغلاق',
+        duelInviteNotifTitle:'Trainingspartner',
+        duelInviteNotifBody:(name,exercise)=>`تحداك ${name} في مبارزة على تمرين ${exercise}، هل تجرؤ؟`
       },
       speech: { countdown:['ثلاثة','اثنان','واحد'],
         startWithName:(n)=>`هيا، ${n}!`, startNoName:'ابدأ!',
@@ -2454,6 +2628,29 @@
   const notifPromptOverlay = document.getElementById('notifPromptOverlay');
   const notifPromptYesBtn = document.getElementById('notifPromptYesBtn');
   const notifPromptNoBtn = document.getElementById('notifPromptNoBtn');
+  const duelInviteOverlay = document.getElementById('duelInviteOverlay');
+  const duelInviteTitle = document.getElementById('duelInviteTitle');
+  const duelInviteExLabelEl = document.getElementById('duelInviteExLabelEl');
+  const duelInviteExSelect = document.getElementById('duelInviteExSelect');
+  const duelInviteSendBtn = document.getElementById('duelInviteSendBtn');
+  const duelInviteCancelBtn = document.getElementById('duelInviteCancelBtn');
+  const duelWaitingOverlay = document.getElementById('duelWaitingOverlay');
+  const duelWaitingTextEl = document.getElementById('duelWaitingTextEl');
+  const duelWaitingCancelBtn = document.getElementById('duelWaitingCancelBtn');
+  const duelIncomingOverlay = document.getElementById('duelIncomingOverlay');
+  const duelIncomingTitleEl = document.getElementById('duelIncomingTitleEl');
+  const duelIncomingBodyEl = document.getElementById('duelIncomingBodyEl');
+  const duelAcceptBtn = document.getElementById('duelAcceptBtn');
+  const duelDeclineBtn = document.getElementById('duelDeclineBtn');
+  const duelWaitingResultOverlay = document.getElementById('duelWaitingResultOverlay');
+  const duelWaitingResultTextEl = document.getElementById('duelWaitingResultTextEl');
+  const duelWaitingResultHideBtn = document.getElementById('duelWaitingResultHideBtn');
+  const duelRevealOverlay = document.getElementById('duelRevealOverlay');
+  const duelRevealSuspense = document.getElementById('duelRevealSuspense');
+  const duelRevealResult = document.getElementById('duelRevealResult');
+  const duelRevealScore = document.getElementById('duelRevealScore');
+  const duelRevealCloseBtn = document.getElementById('duelRevealCloseBtn');
+  const duelActiveBanner = document.getElementById('duelActiveBanner');
   const friendsBtn = document.getElementById('friendsBtn');
   const friendsOverlay = document.getElementById('friendsOverlay');
   const friendsCloseBtn = document.getElementById('friendsCloseBtn');
@@ -2729,6 +2926,242 @@
     notifPromptOverlay.classList.add('hidden');
   });
 
+  // ====== Duels ======
+  // Asynchronous 1v1 challenge: no fixed start time, whoever logs the longer
+  // hold (via the normal, unmodified start/stop/reset flow) after both have
+  // gone wins. activeDuel tracks the single duel the logged-in user is
+  // currently part of (pending/active) - the app only supports one at a
+  // time, matching the "one live thing at once" scope of the feature.
+  let activeDuel = null;
+  let duelRowChannel = null;
+  let incomingDuelChannel = null;
+  let pendingDuelInviteTarget = null;
+  let pendingIncomingDuel = null;
+
+  function myDuelRole(row) { return row.host_id === currentUser.id ? 'host' : 'guest'; }
+  function opponentIdOf(row) { return row.host_id === currentUser.id ? row.guest_id : row.host_id; }
+
+  function subscribeToDuelRow(duelId) {
+    if (duelRowChannel) sb.removeChannel(duelRowChannel);
+    duelRowChannel = sb.channel('duel-row-' + duelId)
+      .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'duels', filter: `id=eq.${duelId}` },
+        (payload) => onDuelRowChange(payload.new))
+      .subscribe();
+  }
+  function unsubscribeDuelRow() {
+    if (duelRowChannel) { sb.removeChannel(duelRowChannel); duelRowChannel = null; }
+  }
+
+  function onDuelRowChange(row) {
+    if (!activeDuel || row.id !== activeDuel.id) return;
+    if (row.status === 'declined') {
+      duelWaitingOverlay.classList.add('hidden');
+      unsubscribeDuelRow();
+      activeDuel = null;
+      alert(t.ui.duelDeclinedText);
+    } else if (row.status === 'active') {
+      duelWaitingOverlay.classList.add('hidden');
+      enterActiveDuel(row, activeDuel.opponentName);
+    } else if (row.status === 'completed') {
+      revealDuelResult(row);
+    }
+  }
+
+  function enterActiveDuel(row, opponentName) {
+    const role = myDuelRole(row);
+    activeDuel = {
+      id: row.id, role, hostId: row.host_id, guestId: row.guest_id, exercise: row.exercise,
+      opponentId: opponentIdOf(row), opponentName: opponentName || (activeDuel && activeDuel.opponentName) || '?',
+      status: 'active',
+    };
+    setMode('free'); // duels are hold-based, always resolved via resetFree()
+    const idx = EX_KEYS.indexOf(row.exercise);
+    if (idx >= 0) exerciseIndex = idx;
+    renderExIcon();
+    populateExerciseSelect();
+    exSelect.disabled = true;
+    freeModeBtn.disabled = true;
+    intervalModeBtn.disabled = true;
+    duelActiveBanner.style.display = 'block';
+    duelActiveBanner.textContent = t.ui.duelActiveBanner(activeDuel.opponentName, exName_(row.exercise));
+    subscribeToDuelRow(row.id);
+  }
+
+  function openDuelInviteOverlay(friendId, friendName) {
+    pendingDuelInviteTarget = { friendId, friendName };
+    duelInviteExSelect.innerHTML = EX_KEYS.map((k) => `<option value="${k}">${exName_(k)}</option>`).join('');
+    duelInviteExSelect.value = currentEx();
+    duelInviteOverlay.classList.remove('hidden');
+  }
+  duelInviteCancelBtn.addEventListener('click', () => {
+    pendingDuelInviteTarget = null;
+    duelInviteOverlay.classList.add('hidden');
+  });
+  duelInviteSendBtn.addEventListener('click', async () => {
+    if (!pendingDuelInviteTarget || !currentUser) return;
+    const { friendId, friendName } = pendingDuelInviteTarget;
+    const exercise = duelInviteExSelect.value;
+    pendingDuelInviteTarget = null;
+    duelInviteOverlay.classList.add('hidden');
+    const { data, error } = await sb.from('duels')
+      .insert({ host_id: currentUser.id, guest_id: friendId, exercise, status: 'pending' })
+      .select().single();
+    if (error || !data) return;
+    activeDuel = {
+      id: data.id, role: 'host', hostId: currentUser.id, guestId: friendId, exercise,
+      opponentId: friendId, opponentName: friendName, status: 'pending',
+    };
+    notifyUser(friendId, t.ui.duelInviteNotifTitle, t.ui.duelInviteNotifBody(currentUsername || '?', exName_(exercise)));
+    duelWaitingTextEl.textContent = t.ui.duelWaitingText(friendName);
+    duelWaitingOverlay.classList.remove('hidden');
+    subscribeToDuelRow(data.id);
+  });
+  duelWaitingCancelBtn.addEventListener('click', async () => {
+    duelWaitingOverlay.classList.add('hidden');
+    if (activeDuel && activeDuel.status === 'pending') {
+      await sb.from('duels').update({ status: 'declined' }).eq('id', activeDuel.id).eq('status', 'pending');
+    }
+    unsubscribeDuelRow();
+    activeDuel = null;
+  });
+
+  async function showIncomingDuelOverlay(row) {
+    const profiles = await fetchProfilesByIds([row.host_id]);
+    const hostName = (profiles[row.host_id] && profiles[row.host_id].username) || '?';
+    pendingIncomingDuel = { row, opponentName: hostName };
+    duelIncomingBodyEl.textContent = t.ui.duelIncomingBody(hostName, exName_(row.exercise));
+    duelIncomingOverlay.classList.remove('hidden');
+  }
+  duelAcceptBtn.addEventListener('click', async () => {
+    if (!pendingIncomingDuel) return;
+    const { row, opponentName } = pendingIncomingDuel;
+    pendingIncomingDuel = null;
+    duelIncomingOverlay.classList.add('hidden');
+    const { data, error } = await sb.from('duels')
+      .update({ status: 'active' }).eq('id', row.id).eq('status', 'pending')
+      .select().single();
+    if (error || !data) return;
+    enterActiveDuel(data, opponentName);
+  });
+  duelDeclineBtn.addEventListener('click', async () => {
+    if (!pendingIncomingDuel) return;
+    const { row } = pendingIncomingDuel;
+    pendingIncomingDuel = null;
+    duelIncomingOverlay.classList.add('hidden');
+    await sb.from('duels').update({ status: 'declined' }).eq('id', row.id).eq('status', 'pending');
+  });
+
+  // Cold-start: realtime only catches INSERTs that happen while subscribed,
+  // so a login triggered by tapping a push notification (app was fully
+  // closed when the invite arrived) needs a one-shot query too.
+  async function checkPendingDuelInvites() {
+    if (!currentUser) return;
+    const { data } = await sb.from('duels').select('*')
+      .eq('guest_id', currentUser.id).eq('status', 'pending')
+      .order('created_at', { ascending: false }).limit(1);
+    if (data && data.length) await showIncomingDuelOverlay(data[0]);
+  }
+  function subscribeToIncomingDuels() {
+    if (incomingDuelChannel || !currentUser) return;
+    incomingDuelChannel = sb.channel('incoming-duels-' + currentUser.id)
+      .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'duels', filter: `guest_id=eq.${currentUser.id}` },
+        (payload) => {
+          if (payload.new.status === 'pending' && !activeDuel && duelIncomingOverlay.classList.contains('hidden')) {
+            showIncomingDuelOverlay(payload.new);
+          }
+        })
+      .subscribe();
+  }
+
+  // Hooked into resetFree() right after a hold is saved normally - the duel
+  // itself never touches the timer engine, it only reacts to its result.
+  async function handleDuelHoldLogged(ex, dur) {
+    if (!activeDuel || activeDuel.status !== 'active' || activeDuel.exercise !== ex) return;
+    const myField = activeDuel.role === 'host' ? 'host_duration' : 'guest_duration';
+    const { data, error } = await sb.from('duels')
+      .update({ [myField]: dur }).eq('id', activeDuel.id).eq('status', 'active')
+      .select().single();
+    if (error || !data) return;
+    if (data.host_duration != null && data.guest_duration != null) {
+      await finalizeDuelResult(data);
+    } else {
+      duelWaitingResultTextEl.textContent = t.ui.duelWaitingResultText(activeDuel.opponentName);
+      duelWaitingResultOverlay.classList.remove('hidden');
+    }
+  }
+  // Conditioned on status still being 'active': if both sides finish at
+  // nearly the same moment, only one of these UPDATEs actually matches a
+  // row (Postgres resolves the race atomically) - the other simply gets 0
+  // rows back and relies on its realtime subscription to receive the
+  // winning client's completed status instead of computing its own.
+  async function finalizeDuelResult(row) {
+    let winnerId = null;
+    if (row.host_duration > row.guest_duration) winnerId = row.host_id;
+    else if (row.guest_duration > row.host_duration) winnerId = row.guest_id;
+    const { data, error } = await sb.from('duels')
+      .update({ status: 'completed', winner_id: winnerId }).eq('id', row.id).eq('status', 'active')
+      .select().single();
+    if (error || !data) return;
+    await revealDuelResult(data);
+  }
+  async function computeDuelScore(opponentId) {
+    const { data } = await sb.from('duels').select('winner_id').eq('status', 'completed')
+      .or(`and(host_id.eq.${currentUser.id},guest_id.eq.${opponentId}),and(host_id.eq.${opponentId},guest_id.eq.${currentUser.id})`);
+    let mine = 0, theirs = 0;
+    (data || []).forEach((r) => {
+      if (r.winner_id === currentUser.id) mine++;
+      else if (r.winner_id === opponentId) theirs++;
+    });
+    return { mine, theirs };
+  }
+  function playSuspenseRoll() {
+    const ctx = getAudioCtx();
+    if (!ctx || ctx.state !== 'running') return;
+    for (let i = 0; i < 14; i++) {
+      const delay = i < 8 ? i * 0.14 : 1.12 + (i - 8) * 0.09;
+      playTone(110, 0.06, 'square', 0.1, delay);
+    }
+  }
+  async function revealDuelResult(row) {
+    if (!activeDuel || row.id !== activeDuel.id) return;
+    const opponentName = activeDuel.opponentName;
+    duelWaitingResultOverlay.classList.add('hidden');
+    unsubscribeDuelRow();
+    duelActiveBanner.style.display = 'none';
+    exSelect.disabled = false;
+    freeModeBtn.disabled = false;
+    intervalModeBtn.disabled = false;
+    activeDuel = null;
+
+    duelRevealSuspense.style.display = 'block';
+    duelRevealSuspense.textContent = '...';
+    duelRevealResult.style.display = 'none';
+    duelRevealCloseBtn.style.display = 'none';
+    duelRevealScore.textContent = '';
+    duelRevealOverlay.classList.remove('hidden');
+    playSuspenseRoll();
+    await new Promise((r) => setTimeout(r, 1800));
+    duelRevealSuspense.style.display = 'none';
+    duelRevealResult.style.display = 'block';
+
+    const tie = !row.winner_id;
+    const iWon = row.winner_id === currentUser.id;
+    if (tie) {
+      duelRevealResult.textContent = t.ui.duelTieText;
+    } else if (iWon) {
+      duelRevealResult.textContent = t.ui.duelWinText(opponentName);
+      spawnConfetti();
+      playRecordFanfare();
+    } else {
+      duelRevealResult.textContent = t.ui.duelLoseText(opponentName);
+    }
+    duelRevealCloseBtn.style.display = 'inline-block';
+    const score = await computeDuelScore(opponentIdOf(row));
+    duelRevealScore.textContent = t.ui.duelScoreLabel(score.mine, score.theirs, opponentName);
+  }
+  duelRevealCloseBtn.addEventListener('click', () => duelRevealOverlay.classList.add('hidden'));
+  duelWaitingResultHideBtn.addEventListener('click', () => duelWaitingResultOverlay.classList.add('hidden'));
+
   // ====== Friends ======
   async function fetchProfilesByIds(ids) {
     if (!ids.length) return {};
@@ -2773,6 +3206,7 @@
       <div class="modal-list-item">
         <span class="name"><span class="avatar-mini">${avatarHtml(profiles[f.friend_id])}</span>${(profiles[f.friend_id] && profiles[f.friend_id].username) || '?'}</span>
         <div class="modal-btn-row">
+          <button class="modal-icon-btn" title="${t.ui.duelInviteBtnTitle}" data-duel="${f.friend_id}" data-duel-name="${(profiles[f.friend_id] && profiles[f.friend_id].username) || '?'}">⚔️</button>
           <button class="modal-icon-btn remove" data-remove="${f.friend_id}">✕</button>
         </div>
       </div>`);
@@ -2822,9 +3256,11 @@
     const acceptBtn = e.target.closest('[data-accept]');
     const removeReqBtn = e.target.closest('[data-decline], [data-cancel]');
     const removeBtn = e.target.closest('[data-remove]');
+    const duelBtn = e.target.closest('[data-duel]');
     if (acceptBtn) await sb.rpc('accept_friend_request', { request_id: acceptBtn.dataset.accept });
     else if (removeReqBtn) await sb.from('friend_requests').delete().eq('id', removeReqBtn.dataset.decline || removeReqBtn.dataset.cancel);
     else if (removeBtn) await sb.rpc('remove_friend', { other_id: removeBtn.dataset.remove });
+    else if (duelBtn) { openDuelInviteOverlay(duelBtn.dataset.duel, duelBtn.dataset.duelName); return; }
     else return;
     loadFriendsData();
     loadLeaderboardData();
@@ -4454,6 +4890,7 @@
       const finalElapsed = elapsed;
       await saveSession(ex, finalElapsed);
       const { isNewRecord, improvement } = await checkRecord(ex, finalElapsed);
+      handleDuelHoldLogged(ex, finalElapsed);
       let summary = t.speech.heldFor(spokenName(), spokenDuration(finalElapsed));
       if (isNewRecord) {
         summary += improvement > 0 ? t.speech.newRecordSuffix(spokenDuration(improvement)) : t.speech.firstRecordSuffix;
@@ -4903,6 +5340,8 @@
     loadProfile();
     loadLeaderboardData();
     refreshNotifToggleState();
+    subscribeToIncomingDuels();
+    checkPendingDuelInvites();
 
     const { data: row } = await sb.from('user_data').select('data').eq('user_id', user.id).maybeSingle();
     const localBlob = gatherAppDataBlob();
