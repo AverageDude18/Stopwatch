@@ -380,6 +380,54 @@
   #gateSignInBtn { background: #2e7d4f; color: white; }
   #gateSignUpBtn { background: var(--border); color: var(--text); }
   .auth-gate-status { font-size: 0.8rem; color: var(--muted); margin-top: 14px; min-height: 1.2em; line-height: 1.4; }
+
+  /* Shared overlay/card pattern for the friends and leaderboard panels */
+  .modal-overlay {
+    position: fixed; inset: 0; z-index: 95; display: flex; align-items: center; justify-content: center;
+    background: rgba(0,0,0,0.55); padding: 20px;
+  }
+  .modal-overlay.hidden { display: none; }
+  .modal-card {
+    background: var(--panel); border: 1px solid var(--border); border-radius: 22px;
+    padding: 22px 20px; width: min(90vw, 380px); max-height: 80vh; overflow-y: auto; text-align: left;
+  }
+  body[dir="rtl"] .modal-card { text-align: right; }
+  .modal-card-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 14px; }
+  .modal-card-title { font-size: 1.1rem; font-weight: 700; color: var(--text); }
+  .modal-close-btn { background: none; border: none; color: var(--muted); font-size: 1.1rem; cursor: pointer; padding: 4px; }
+  .modal-tabs { display: flex; gap: 6px; margin-bottom: 14px; }
+  .modal-tab {
+    flex: 1; background: var(--panel-alt); color: var(--muted); border: 1px solid var(--border);
+    border-radius: 8px; padding: 8px 6px; font-size: 0.78rem; cursor: pointer; font-family: inherit;
+  }
+  .modal-tab.active { background: var(--accent); color: #0b0f0c; border-color: var(--accent); font-weight: 600; }
+  .modal-list-label {
+    font-size: 0.75rem; font-weight: 600; color: var(--muted); text-transform: uppercase;
+    letter-spacing: 0.04em; margin: 14px 0 6px;
+  }
+  .modal-list-empty { color: var(--muted2); font-size: 0.85rem; padding: 4px 0; }
+  .modal-list-item {
+    display: flex; justify-content: space-between; align-items: center;
+    padding: 7px 0; border-bottom: 1px solid var(--panel-alt); gap: 8px;
+  }
+  .modal-list-item:last-child { border-bottom: none; }
+  .modal-list-item .name { color: var(--text); font-size: 0.9rem; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .modal-list-item .rank { color: var(--muted); font-size: 0.8rem; margin-inline-end: 8px; }
+  .modal-list-item .value { color: var(--accent); font-weight: 600; font-size: 0.9rem; white-space: nowrap; }
+  .modal-list-item.me { background: var(--panel-alt); border-radius: 8px; padding-left: 8px; padding-right: 8px; }
+  .modal-btn-row { display: flex; gap: 6px; flex-shrink: 0; }
+  .modal-icon-btn {
+    background: none; border: 1px solid var(--border); border-radius: 6px; color: var(--muted);
+    font-size: 0.85rem; padding: 4px 8px; cursor: pointer; font-family: inherit;
+  }
+  .modal-icon-btn.accept { color: var(--accent); border-color: var(--accent); }
+  .modal-icon-btn.decline:active, .modal-icon-btn.remove:active { color: #b3413a; border-color: #b3413a; }
+  .add-friend-row { display: flex; gap: 6px; margin-bottom: 6px; }
+  .add-friend-row input {
+    flex: 1; background: var(--panel-alt); color: var(--text); border: 1px solid var(--border);
+    border-radius: 8px; padding: 8px 10px; font-size: 0.9rem; font-family: inherit;
+  }
+
   .splash-icon-wrap {
     position: relative; width: 130px; height: 130px;
     display: flex; align-items: center; justify-content: center;
@@ -579,6 +627,8 @@
       </div>
       <div id="usernameStatus" style="font-size:0.78rem; color:var(--muted); min-height:1.2em; margin-bottom:10px;"></div>
 
+      <button class="small-btn" id="friendsBtn" style="width:100%; margin-bottom:8px;">👥 Vrienden</button>
+
       <button class="small-btn" id="authSignOutBtn" style="width:100%; margin-bottom:14px;">Uitloggen</button>
 
       <button class="small-btn" id="gymModeBtn" style="width:100%;">Gym-modus (groot scherm)</button>
@@ -695,6 +745,29 @@
       </div>
       <div class="achievement-eyebrow" id="achievementEyebrow">Prestatie ontgrendeld</div>
       <div class="achievement-title" id="achievementTitle">Badge</div>
+    </div>
+  </div>
+
+  <div class="modal-overlay hidden" id="friendsOverlay">
+    <div class="modal-card">
+      <div class="modal-card-header">
+        <div class="modal-card-title" id="friendsTitle">Vrienden</div>
+        <button class="modal-close-btn" id="friendsCloseBtn" aria-label="Close">✕</button>
+      </div>
+      <div class="add-friend-row">
+        <input type="text" id="friendSearchInput" placeholder="Gebruikersnaam">
+        <button class="small-btn" id="friendAddBtn">➕</button>
+      </div>
+      <div id="friendAddStatus" style="font-size:0.78rem; color:var(--muted); min-height:1.2em;"></div>
+
+      <div class="modal-list-label" id="lblIncomingRequests">Inkomende verzoeken</div>
+      <div id="incomingRequestsList"></div>
+
+      <div class="modal-list-label" id="lblSentRequests">Verzonden verzoeken</div>
+      <div id="sentRequestsList"></div>
+
+      <div class="modal-list-label" id="lblFriendsList">Vrienden</div>
+      <div id="friendsList"></div>
     </div>
   </div>
 
@@ -821,6 +894,109 @@
     usernameStatus.textContent = t.ui.usernameSaved;
   });
 
+  // ====== Friends ======
+  async function fetchProfilesByIds(ids) {
+    if (!ids.length) return {};
+    const { data } = await sb.from('profiles').select('user_id, username').in('user_id', ids);
+    const map = {};
+    (data || []).forEach((p) => { map[p.user_id] = p.username; });
+    return map;
+  }
+  function renderModalList(container, items, emptyText, rowFn) {
+    if (!items.length) { container.innerHTML = `<div class="modal-list-empty">${emptyText}</div>`; return; }
+    container.innerHTML = items.map(rowFn).join('');
+  }
+  async function loadFriendsData() {
+    if (!currentUser) return;
+    const [{ data: incoming }, { data: sent }, { data: friends }] = await Promise.all([
+      sb.from('friend_requests').select('id, sender_id').eq('receiver_id', currentUser.id),
+      sb.from('friend_requests').select('id, receiver_id').eq('sender_id', currentUser.id),
+      sb.from('friendships').select('friend_id').eq('user_id', currentUser.id),
+    ]);
+    const ids = new Set();
+    (incoming || []).forEach((r) => ids.add(r.sender_id));
+    (sent || []).forEach((r) => ids.add(r.receiver_id));
+    (friends || []).forEach((f) => ids.add(f.friend_id));
+    const names = await fetchProfilesByIds(Array.from(ids));
+
+    renderModalList(incomingRequestsList, incoming || [], t.ui.noRequests, (r) => `
+      <div class="modal-list-item">
+        <span class="name">${names[r.sender_id] || '?'}</span>
+        <div class="modal-btn-row">
+          <button class="modal-icon-btn accept" data-accept="${r.id}">✓</button>
+          <button class="modal-icon-btn decline" data-decline="${r.id}">✕</button>
+        </div>
+      </div>`);
+    renderModalList(sentRequestsList, sent || [], t.ui.noSentRequests, (r) => `
+      <div class="modal-list-item">
+        <span class="name">${names[r.receiver_id] || '?'}</span>
+        <div class="modal-btn-row">
+          <button class="modal-icon-btn decline" data-cancel="${r.id}">✕</button>
+        </div>
+      </div>`);
+    renderModalList(friendsList, friends || [], t.ui.noFriends, (f) => `
+      <div class="modal-list-item">
+        <span class="name">${names[f.friend_id] || '?'}</span>
+        <div class="modal-btn-row">
+          <button class="modal-icon-btn remove" data-remove="${f.friend_id}">✕</button>
+        </div>
+      </div>`);
+  }
+  friendsBtn.addEventListener('click', () => {
+    settingsPanel.style.display = 'none';
+    friendsOverlay.classList.remove('hidden');
+    friendAddStatus.textContent = '';
+    friendSearchInput.value = '';
+    loadFriendsData();
+  });
+  friendsCloseBtn.addEventListener('click', () => friendsOverlay.classList.add('hidden'));
+  friendAddBtn.addEventListener('click', async () => {
+    const raw = friendSearchInput.value.trim().toLowerCase();
+    if (!raw || !currentUser) return;
+    friendAddStatus.textContent = '...';
+    const { data: profile } = await sb.from('profiles').select('user_id').eq('username', raw).maybeSingle();
+    if (!profile) { friendAddStatus.textContent = t.ui.friendNotFound; return; }
+    const otherId = profile.user_id;
+    if (otherId === currentUser.id) { friendAddStatus.textContent = t.ui.friendCannotAddSelf; return; }
+
+    const { data: existingFriend } = await sb.from('friendships').select('friend_id')
+      .eq('user_id', currentUser.id).eq('friend_id', otherId).maybeSingle();
+    if (existingFriend) { friendAddStatus.textContent = t.ui.friendAlreadyAdded; return; }
+
+    // Check both directions: if they already invited us, accept it outright
+    // instead of leaving two crossed pending requests sitting around.
+    const { data: existingReqs } = await sb.from('friend_requests').select('id, sender_id')
+      .or(`and(sender_id.eq.${currentUser.id},receiver_id.eq.${otherId}),and(sender_id.eq.${otherId},receiver_id.eq.${currentUser.id})`);
+    const reverseReq = (existingReqs || []).find((r) => r.sender_id === otherId);
+    if (reverseReq) {
+      await sb.rpc('accept_friend_request', { request_id: reverseReq.id });
+      friendAddStatus.textContent = t.ui.friendRequestSent;
+      friendSearchInput.value = '';
+      loadFriendsData();
+      return;
+    }
+    if ((existingReqs || []).length) { friendAddStatus.textContent = t.ui.friendRequestPending; return; }
+
+    const { error } = await sb.from('friend_requests').insert({ sender_id: currentUser.id, receiver_id: otherId });
+    if (error) { friendAddStatus.textContent = error.message; return; }
+    friendAddStatus.textContent = t.ui.friendRequestSent;
+    friendSearchInput.value = '';
+    loadFriendsData();
+  });
+  async function handleFriendListClick(e) {
+    const acceptBtn = e.target.closest('[data-accept]');
+    const removeReqBtn = e.target.closest('[data-decline], [data-cancel]');
+    const removeBtn = e.target.closest('[data-remove]');
+    if (acceptBtn) await sb.rpc('accept_friend_request', { request_id: acceptBtn.dataset.accept });
+    else if (removeReqBtn) await sb.from('friend_requests').delete().eq('id', removeReqBtn.dataset.decline || removeReqBtn.dataset.cancel);
+    else if (removeBtn) await sb.rpc('remove_friend', { other_id: removeBtn.dataset.remove });
+    else return;
+    loadFriendsData();
+  }
+  incomingRequestsList.addEventListener('click', handleFriendListClick);
+  sentRequestsList.addEventListener('click', handleFriendListClick);
+  friendsList.addEventListener('click', handleFriendListClick);
+
   // ====================================================================
   // ====== LANGUAGE / TRANSLATIONS =======================================
   // ====================================================================
@@ -895,7 +1071,12 @@
         programs:{fiveday:'5-daagse variatie',plankProg:'Plank progressie',gripHang:'Grip & hang',coreKick:'Core kickstart'},
         username:'Gebruikersnaam', usernamePlaceholder:'bijv. ids_92',
         usernameInvalid:'Ongeldige gebruikersnaam (3-20 tekens: kleine letters, cijfers, underscore)',
-        usernameTaken:'Gebruikersnaam is al in gebruik', usernameSaved:'Gebruikersnaam opgeslagen'
+        usernameTaken:'Gebruikersnaam is al in gebruik', usernameSaved:'Gebruikersnaam opgeslagen',
+        friendsBtn:'Vrienden', friendsTitle:'Vrienden', friendSearchPlaceholder:'Gebruikersnaam',
+        incomingRequests:'Inkomende verzoeken', sentRequests:'Verzonden verzoeken', friendsListLabel:'Vrienden',
+        noRequests:'Geen openstaande verzoeken', noSentRequests:'Geen verzonden verzoeken', noFriends:'Nog geen vrienden',
+        friendNotFound:'Gebruikersnaam niet gevonden', friendCannotAddSelf:'Je kunt jezelf niet toevoegen',
+        friendAlreadyAdded:'Jullie zijn al vrienden', friendRequestPending:'Verzoek staat al open', friendRequestSent:'Verzoek verstuurd'
       },
       speech: { countdown:['drie','twee','één'],
         startWithName:(n)=>`Kom op, ${n}!`, startNoName:'Start!',
@@ -993,7 +1174,12 @@
         programs:{fiveday:'5-day variety',plankProg:'Plank progression',gripHang:'Grip & hang',coreKick:'Core kickstart'},
         username:'Username', usernamePlaceholder:'e.g. ids_92',
         usernameInvalid:'Invalid username (3-20 characters: lowercase letters, digits, underscore)',
-        usernameTaken:'Username already taken', usernameSaved:'Username saved'
+        usernameTaken:'Username already taken', usernameSaved:'Username saved',
+        friendsBtn:'Friends', friendsTitle:'Friends', friendSearchPlaceholder:'Username',
+        incomingRequests:'Incoming requests', sentRequests:'Sent requests', friendsListLabel:'Friends',
+        noRequests:'No pending requests', noSentRequests:'No sent requests', noFriends:'No friends yet',
+        friendNotFound:'Username not found', friendCannotAddSelf:"You can't add yourself",
+        friendAlreadyAdded:'You are already friends', friendRequestPending:'Request already pending', friendRequestSent:'Request sent'
       },
       speech: { countdown:['three','two','one'],
         startWithName:(n)=>`Come on, ${n}!`, startNoName:'Start!',
@@ -1065,7 +1251,12 @@
         programs:{fiveday:'5-Tage-Mix',plankProg:'Plank-Progression',gripHang:'Griff & Hang',coreKick:'Core-Kickstart'},
         username:'Benutzername', usernamePlaceholder:'z.B. ids_92',
         usernameInvalid:'Ungültiger Benutzername (3-20 Zeichen: Kleinbuchstaben, Ziffern, Unterstrich)',
-        usernameTaken:'Benutzername bereits vergeben', usernameSaved:'Benutzername gespeichert'
+        usernameTaken:'Benutzername bereits vergeben', usernameSaved:'Benutzername gespeichert',
+        friendsBtn:'Freunde', friendsTitle:'Freunde', friendSearchPlaceholder:'Benutzername',
+        incomingRequests:'Eingehende Anfragen', sentRequests:'Gesendete Anfragen', friendsListLabel:'Freunde',
+        noRequests:'Keine offenen Anfragen', noSentRequests:'Keine gesendeten Anfragen', noFriends:'Noch keine Freunde',
+        friendNotFound:'Benutzername nicht gefunden', friendCannotAddSelf:'Du kannst dich nicht selbst hinzufügen',
+        friendAlreadyAdded:'Ihr seid bereits befreundet', friendRequestPending:'Anfrage bereits offen', friendRequestSent:'Anfrage gesendet'
       },
       speech: { countdown:['drei','zwei','eins'],
         startWithName:(n)=>`Los geht's, ${n}!`, startNoName:'Start!',
@@ -1137,7 +1328,12 @@
         programs:{fiveday:'Variedad de 5 días',plankProg:'Progresión de plancha',gripHang:'Agarre y suspensión',coreKick:'Inicio de core'},
         username:'Nombre de usuario', usernamePlaceholder:'p. ej. ids_92',
         usernameInvalid:'Nombre de usuario no válido (3-20 caracteres: minúsculas, números, guion bajo)',
-        usernameTaken:'Nombre de usuario ya en uso', usernameSaved:'Nombre de usuario guardado'
+        usernameTaken:'Nombre de usuario ya en uso', usernameSaved:'Nombre de usuario guardado',
+        friendsBtn:'Amigos', friendsTitle:'Amigos', friendSearchPlaceholder:'Nombre de usuario',
+        incomingRequests:'Solicitudes recibidas', sentRequests:'Solicitudes enviadas', friendsListLabel:'Amigos',
+        noRequests:'No hay solicitudes pendientes', noSentRequests:'No hay solicitudes enviadas', noFriends:'Aún no tienes amigos',
+        friendNotFound:'Nombre de usuario no encontrado', friendCannotAddSelf:'No puedes añadirte a ti mismo',
+        friendAlreadyAdded:'Ya sois amigos', friendRequestPending:'La solicitud ya está pendiente', friendRequestSent:'Solicitud enviada'
       },
       speech: { countdown:['tres','dos','uno'],
         startWithName:(n)=>`¡Vamos, ${n}!`, startNoName:'¡Empieza!',
@@ -1209,7 +1405,12 @@
         programs:{fiveday:'Variété 5 jours',plankProg:'Progression planche',gripHang:'Prise et suspension',coreKick:'Démarrage core'},
         username:"Nom d'utilisateur", usernamePlaceholder:'ex. ids_92',
         usernameInvalid:"Nom d'utilisateur invalide (3-20 caractères : minuscules, chiffres, tiret bas)",
-        usernameTaken:"Nom d'utilisateur déjà pris", usernameSaved:"Nom d'utilisateur enregistré"
+        usernameTaken:"Nom d'utilisateur déjà pris", usernameSaved:"Nom d'utilisateur enregistré",
+        friendsBtn:'Amis', friendsTitle:'Amis', friendSearchPlaceholder:"Nom d'utilisateur",
+        incomingRequests:'Demandes reçues', sentRequests:'Demandes envoyées', friendsListLabel:'Amis',
+        noRequests:'Aucune demande en attente', noSentRequests:'Aucune demande envoyée', noFriends:"Pas encore d'amis",
+        friendNotFound:"Nom d'utilisateur introuvable", friendCannotAddSelf:"Tu ne peux pas t'ajouter toi-même",
+        friendAlreadyAdded:'Vous êtes déjà amis', friendRequestPending:'Demande déjà en attente', friendRequestSent:'Demande envoyée'
       },
       speech: { countdown:['trois','deux','un'],
         startWithName:(n)=>`Allez, ${n}\u00a0!`, startNoName:'C\u2019est parti\u00a0!',
@@ -1281,7 +1482,12 @@
         programs:{fiveday:'Variedade de 5 dias',plankProg:'Progressão de prancha',gripHang:'Pega e suspensão',coreKick:'Início de core'},
         username:'Nome de utilizador', usernamePlaceholder:'ex. ids_92',
         usernameInvalid:'Nome de utilizador inválido (3-20 carateres: minúsculas, números, sublinhado)',
-        usernameTaken:'Nome de utilizador já em uso', usernameSaved:'Nome de utilizador guardado'
+        usernameTaken:'Nome de utilizador já em uso', usernameSaved:'Nome de utilizador guardado',
+        friendsBtn:'Amigos', friendsTitle:'Amigos', friendSearchPlaceholder:'Nome de utilizador',
+        incomingRequests:'Pedidos recebidos', sentRequests:'Pedidos enviados', friendsListLabel:'Amigos',
+        noRequests:'Sem pedidos pendentes', noSentRequests:'Sem pedidos enviados', noFriends:'Ainda sem amigos',
+        friendNotFound:'Nome de utilizador não encontrado', friendCannotAddSelf:'Não te podes adicionar a ti próprio',
+        friendAlreadyAdded:'Já são amigos', friendRequestPending:'Pedido já pendente', friendRequestSent:'Pedido enviado'
       },
       speech: { countdown:['três','dois','um'],
         startWithName:(n)=>`Vamos, ${n}!`, startNoName:'Começar!',
@@ -1353,7 +1559,12 @@
         programs:{fiveday:'5-дневное разнообразие',plankProg:'Прогрессия планки',gripHang:'Хват и вис',coreKick:'Старт кора'},
         username:'Имя пользователя', usernamePlaceholder:'напр. ids_92',
         usernameInvalid:'Неверное имя пользователя (3-20 символов: строчные буквы, цифры, подчёркивание)',
-        usernameTaken:'Имя пользователя уже занято', usernameSaved:'Имя пользователя сохранено'
+        usernameTaken:'Имя пользователя уже занято', usernameSaved:'Имя пользователя сохранено',
+        friendsBtn:'Друзья', friendsTitle:'Друзья', friendSearchPlaceholder:'Имя пользователя',
+        incomingRequests:'Входящие запросы', sentRequests:'Отправленные запросы', friendsListLabel:'Друзья',
+        noRequests:'Нет ожидающих запросов', noSentRequests:'Нет отправленных запросов', noFriends:'Пока нет друзей',
+        friendNotFound:'Имя пользователя не найдено', friendCannotAddSelf:'Нельзя добавить самого себя',
+        friendAlreadyAdded:'Вы уже друзья', friendRequestPending:'Запрос уже ожидает', friendRequestSent:'Запрос отправлен'
       },
       speech: { countdown:['три','два','один'],
         startWithName:(n)=>`Давай, ${n}!`, startNoName:'Начали!',
@@ -1425,7 +1636,12 @@
         programs:{fiveday:'5天多样计划',plankProg:'平板支撑进阶',gripHang:'抓握与悬垂',coreKick:'核心启动'},
         username:'用户名', usernamePlaceholder:'例如 ids_92',
         usernameInvalid:'用户名无效（3-20个字符：小写字母、数字、下划线）',
-        usernameTaken:'用户名已被使用', usernameSaved:'用户名已保存'
+        usernameTaken:'用户名已被使用', usernameSaved:'用户名已保存',
+        friendsBtn:'好友', friendsTitle:'好友', friendSearchPlaceholder:'用户名',
+        incomingRequests:'收到的请求', sentRequests:'已发送的请求', friendsListLabel:'好友',
+        noRequests:'暂无待处理请求', noSentRequests:'暂无已发送请求', noFriends:'暂无好友',
+        friendNotFound:'未找到该用户名', friendCannotAddSelf:'不能添加自己',
+        friendAlreadyAdded:'你们已经是好友', friendRequestPending:'请求已在等待中', friendRequestSent:'请求已发送'
       },
       speech: { countdown:['三','二','一'],
         startWithName:(n)=>`加油，${n}！`, startNoName:'开始！',
@@ -1497,7 +1713,12 @@
         programs:{fiveday:'5-दिन विविधता',plankProg:'प्लैंक प्रगति',gripHang:'ग्रिप और हैंग',coreKick:'कोर किकस्टार्ट'},
         username:'उपयोगकर्ता नाम', usernamePlaceholder:'जैसे ids_92',
         usernameInvalid:'अमान्य उपयोगकर्ता नाम (3-20 अक्षर: छोटे अक्षर, अंक, अंडरस्कोर)',
-        usernameTaken:'उपयोगकर्ता नाम पहले से उपयोग में है', usernameSaved:'उपयोगकर्ता नाम सहेजा गया'
+        usernameTaken:'उपयोगकर्ता नाम पहले से उपयोग में है', usernameSaved:'उपयोगकर्ता नाम सहेजा गया',
+        friendsBtn:'मित्र', friendsTitle:'मित्र', friendSearchPlaceholder:'उपयोगकर्ता नाम',
+        incomingRequests:'आने वाले अनुरोध', sentRequests:'भेजे गए अनुरोध', friendsListLabel:'मित्र',
+        noRequests:'कोई लंबित अनुरोध नहीं', noSentRequests:'कोई भेजा गया अनुरोध नहीं', noFriends:'अभी तक कोई मित्र नहीं',
+        friendNotFound:'उपयोगकर्ता नाम नहीं मिला', friendCannotAddSelf:'आप खुद को नहीं जोड़ सकते',
+        friendAlreadyAdded:'आप पहले से ही मित्र हैं', friendRequestPending:'अनुरोध पहले से लंबित है', friendRequestSent:'अनुरोध भेजा गया'
       },
       speech: { countdown:['तीन','दो','एक'],
         startWithName:(n)=>`चलो, ${n}!`, startNoName:'शुरू!',
@@ -1569,7 +1790,12 @@
         programs:{fiveday:'تنوع 5 أيام',plankProg:'تقدم البلانك',gripHang:'القبضة والتعليق',coreKick:'بداية القلب'},
         username:'اسم المستخدم', usernamePlaceholder:'مثال ids_92',
         usernameInvalid:'اسم مستخدم غير صالح (3-20 حرفًا: أحرف صغيرة، أرقام، شرطة سفلية)',
-        usernameTaken:'اسم المستخدم مستخدم بالفعل', usernameSaved:'تم حفظ اسم المستخدم'
+        usernameTaken:'اسم المستخدم مستخدم بالفعل', usernameSaved:'تم حفظ اسم المستخدم',
+        friendsBtn:'الأصدقاء', friendsTitle:'الأصدقاء', friendSearchPlaceholder:'اسم المستخدم',
+        incomingRequests:'الطلبات الواردة', sentRequests:'الطلبات المرسلة', friendsListLabel:'الأصدقاء',
+        noRequests:'لا توجد طلبات معلقة', noSentRequests:'لا توجد طلبات مرسلة', noFriends:'لا يوجد أصدقاء بعد',
+        friendNotFound:'اسم المستخدم غير موجود', friendCannotAddSelf:'لا يمكنك إضافة نفسك',
+        friendAlreadyAdded:'أنتما صديقان بالفعل', friendRequestPending:'الطلب معلق بالفعل', friendRequestSent:'تم إرسال الطلب'
       },
       speech: { countdown:['ثلاثة','اثنان','واحد'],
         startWithName:(n)=>`هيا، ${n}!`, startNoName:'ابدأ!',
@@ -1657,6 +1883,15 @@
   const usernameInput = document.getElementById('usernameInput');
   const usernameSaveBtn = document.getElementById('usernameSaveBtn');
   const usernameStatus = document.getElementById('usernameStatus');
+  const friendsBtn = document.getElementById('friendsBtn');
+  const friendsOverlay = document.getElementById('friendsOverlay');
+  const friendsCloseBtn = document.getElementById('friendsCloseBtn');
+  const friendSearchInput = document.getElementById('friendSearchInput');
+  const friendAddBtn = document.getElementById('friendAddBtn');
+  const friendAddStatus = document.getElementById('friendAddStatus');
+  const incomingRequestsList = document.getElementById('incomingRequestsList');
+  const sentRequestsList = document.getElementById('sentRequestsList');
+  const friendsList = document.getElementById('friendsList');
   const display = document.getElementById('display');
   const phaseLabel = document.getElementById('phaseLabel');
   const startBtn = document.getElementById('startBtn');
@@ -1754,6 +1989,12 @@
     document.getElementById('lblLanguage').textContent = t.ui.language;
     document.getElementById('lblUsername').textContent = t.ui.username;
     usernameInput.placeholder = t.ui.usernamePlaceholder;
+    friendsBtn.textContent = '👥 ' + t.ui.friendsBtn;
+    document.getElementById('friendsTitle').textContent = t.ui.friendsTitle;
+    friendSearchInput.placeholder = t.ui.friendSearchPlaceholder;
+    document.getElementById('lblIncomingRequests').textContent = t.ui.incomingRequests;
+    document.getElementById('lblSentRequests').textContent = t.ui.sentRequests;
+    document.getElementById('lblFriendsList').textContent = t.ui.friendsListLabel;
     document.getElementById('lblTone').textContent = t.ui.tone;
     document.getElementById('optToneMotiv').textContent = t.ui.toneMotiv;
     document.getElementById('optToneStrict').textContent = t.ui.toneStrict;
