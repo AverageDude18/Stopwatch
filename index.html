@@ -715,10 +715,14 @@
   // auth session token also lives in localStorage, and blindly syncing or
   // clearing it would log the user out (or leak one device's stale token to
   // another) every time app data is merged.
+  // lastOpenDate deliberately excluded - it's a per-device "did I open
+  // today" flag that changes every day regardless of sync, so including it
+  // would make local and cloud data look permanently different and
+  // retrigger a reload every time handleLoggedIn runs.
   const APP_STATIC_KEYS = [
     'accentColor', 'appLanguage', 'coachTone', 'voiceSpeed', 'voiceVolume', 'userName',
     'theme', 'bigFont', 'ambientSound', 'customExerciseName', 'sessions', 'weeklyGoal',
-    'unlockedBadges', 'programProgress', 'voiceControlEnabled', 'lastOpenDate',
+    'unlockedBadges', 'programProgress', 'voiceControlEnabled',
   ];
   function appLocalStorageKeys() {
     const keys = APP_STATIC_KEYS.slice();
@@ -3286,8 +3290,15 @@
     const cloudData = row && row.data ? row.data : null;
     const cloudHasData = cloudData && Object.keys(cloudData).length > 0;
 
+    if (cloudHasData) {
+      // Compare before touching anything - without this, a cloud blob that
+      // (say) never had a 'sessions' key would look "different" from local
+      // forever, re-triggering applyAppDataBlob's reload on every single
+      // boot: an infinite refresh loop.
+      if (JSON.stringify(localBlob) === JSON.stringify(cloudData)) return;
+    }
+
     if (cloudHasData && localHasData) {
-      if (JSON.stringify(localBlob) === JSON.stringify(cloudData)) return; // already in sync
       const useCloud = confirm(
         'Er is zowel data op dit toestel als in je account gevonden.\n\n' +
         'OK = gebruik de account-data (dit toestel wordt overschreven)\n' +
