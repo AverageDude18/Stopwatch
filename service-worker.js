@@ -1,4 +1,4 @@
-const CACHE_NAME = 'trainingspartner-shell-v1';
+const CACHE_NAME = 'trainingspartner-shell-v2';
 const APP_SHELL = [
   './',
   './index.html',
@@ -31,6 +31,22 @@ self.addEventListener('fetch', (event) => {
   const url = new URL(event.request.url);
   if (url.origin !== self.location.origin) return; // let cross-origin (ElevenLabs, etc) pass through untouched
   if (event.request.method !== 'GET') return;
+
+  // Navigations (i.e. index.html itself) must always prefer the network so
+  // deployed updates - like a new login requirement - show up on a normal
+  // reload instead of being stuck behind whatever was cached at install
+  // time. Only fall back to the cached shell when actually offline.
+  const isNavigation = event.request.mode === 'navigate' || url.pathname.endsWith('index.html');
+  if (isNavigation) {
+    event.respondWith(
+      fetch(event.request).then((response) => {
+        const copy = response.clone();
+        caches.open(CACHE_NAME).then((cache) => cache.put(event.request, copy));
+        return response;
+      }).catch(() => caches.match(event.request))
+    );
+    return;
+  }
 
   event.respondWith(
     caches.match(event.request).then((cached) => {
