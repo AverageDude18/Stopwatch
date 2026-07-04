@@ -119,3 +119,12 @@ create policy "users can update their own avatar"
 create policy "users can delete their own avatar"
   on storage.objects for delete
   using (bucket_id = 'avatars' and (storage.foldername(name))[1] = auth.uid()::text);
+
+-- ============================================================
+-- Added later: fix "null value in column username violates
+-- not-null constraint" when setting an avatar before ever saving
+-- a username. The existing format check (username ~ '...') still
+-- applies once a username IS set - Postgres only enforces CHECK
+-- constraints on non-null values, so this is safe.
+-- ============================================================
+alter table public.profiles alter column username drop not null;
