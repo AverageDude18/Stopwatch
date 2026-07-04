@@ -606,6 +606,9 @@
           <label for="nameInput" id="lblName">Jouw naam (voor persoonlijke aanmoedigingen)</label>
           <input type="text" id="nameInput" placeholder="bijv. Ids">
 
+          <label for="namePhoneticInput" id="lblNamePhonetic">Uitspraak van je naam (optioneel, alleen voor de stem)</label>
+          <input type="text" id="namePhoneticInput" placeholder="bijv. Iedss" style="margin-bottom:14px;">
+
           <label id="lblColor">Accentkleur</label>
           <div class="swatch-row">
             <button class="swatch selected" data-color="127,219,168" style="background:#7fdba8"></button>
@@ -823,6 +826,7 @@
 
     <div class="controls" style="margin-top: 10px;">
       <button class="small-btn" id="historyToggle">Statistieken</button>
+      <button class="small-btn" id="shareWeekBtn">📅 Deel week</button>
     </div>
     <div class="history" id="historySection" style="display:none;">
       <div class="stats-heading" id="lblAchievements">Prestaties</div>
@@ -935,8 +939,8 @@
   // retrigger a reload every time handleLoggedIn runs.
   const APP_STATIC_KEYS = [
     'accentColor', 'appLanguage', 'coachTone', 'voiceSpeed', 'voiceVolume', 'userName',
-    'theme', 'bigFont', 'ambientSound', 'customExerciseName', 'sessions', 'weeklyGoal',
-    'unlockedBadges', 'programProgress', 'voiceControlEnabled', 'voiceId',
+    'userNamePhonetic', 'theme', 'bigFont', 'ambientSound', 'customExerciseName', 'sessions',
+    'weeklyGoal', 'unlockedBadges', 'programProgress', 'voiceControlEnabled', 'voiceId',
   ];
   function appLocalStorageKeys() {
     const keys = APP_STATIC_KEYS.slice();
@@ -1106,7 +1110,9 @@
         groupPersonalize:'Personalisatie', groupTraining:'Training', groupDisplay:'Weergave & geluid', groupAccount:'Account',
         voiceLabel:'Stem', voiceMaleLow:'mannelijk, laag', voiceMaleEnergetic:'mannelijk, energiek',
         voiceMaleDeep:'mannelijk, diep', voiceFemaleWarm:'vrouwelijk, warm', voiceFemalePlayful:'vrouwelijk, speels',
-        voiceSampleTemplate:(label)=>`Dit is ${label}.`
+        voiceSampleTemplate:(label)=>`Dit is ${label}.`,
+        namePhonetic:'Uitspraak van je naam (optioneel, alleen voor de stem)', namePhoneticPlaceholder:'bijv. Iedss',
+        shareWeek:'Deel week', weekShareTitle:'Mijn week', daysTrainedThisWeek:(n)=>`${n} dagen getraind`
       },
       speech: { countdown:['drie','twee','één'],
         startWithName:(n)=>`Kom op, ${n}!`, startNoName:'Start!',
@@ -1216,7 +1222,9 @@
         groupPersonalize:'Personalize', groupTraining:'Training', groupDisplay:'Display & sound', groupAccount:'Account',
         voiceLabel:'Voice', voiceMaleLow:'male, low', voiceMaleEnergetic:'male, energetic',
         voiceMaleDeep:'male, deep', voiceFemaleWarm:'female, warm', voiceFemalePlayful:'female, playful',
-        voiceSampleTemplate:(label)=>`This is ${label}.`
+        voiceSampleTemplate:(label)=>`This is ${label}.`,
+        namePhonetic:'Pronunciation of your name (optional, voice only)', namePhoneticPlaceholder:'e.g. Eeds',
+        shareWeek:'Share week', weekShareTitle:'My week', daysTrainedThisWeek:(n)=>`${n} days trained`
       },
       speech: { countdown:['three','two','one'],
         startWithName:(n)=>`Come on, ${n}!`, startNoName:'Start!',
@@ -1325,7 +1333,9 @@
         groupPersonalize:'Personalisierung', groupTraining:'Training', groupDisplay:'Anzeige & Ton', groupAccount:'Konto',
         voiceLabel:'Stimme', voiceMaleLow:'männlich, tief', voiceMaleEnergetic:'männlich, energiegeladen',
         voiceMaleDeep:'männlich, sehr tief', voiceFemaleWarm:'weiblich, warm', voiceFemalePlayful:'weiblich, verspielt',
-        voiceSampleTemplate:(label)=>`Das ist ${label}.`
+        voiceSampleTemplate:(label)=>`Das ist ${label}.`,
+        namePhonetic:'Aussprache deines Namens (optional, nur für die Stimme)', namePhoneticPlaceholder:'z.B. Iedß',
+        shareWeek:'Woche teilen', weekShareTitle:'Meine Woche', daysTrainedThisWeek:(n)=>`${n} Tage trainiert`
       },
       speech: { countdown:['drei','zwei','eins'],
         startWithName:(n)=>`Los geht's, ${n}!`, startNoName:'Start!',
@@ -1434,7 +1444,9 @@
         groupPersonalize:'Personalización', groupTraining:'Entrenamiento', groupDisplay:'Pantalla y sonido', groupAccount:'Cuenta',
         voiceLabel:'Voz', voiceMaleLow:'masculino, grave', voiceMaleEnergetic:'masculino, enérgico',
         voiceMaleDeep:'masculino, muy grave', voiceFemaleWarm:'femenino, cálido', voiceFemalePlayful:'femenino, juguetón',
-        voiceSampleTemplate:(label)=>`Esto es ${label}.`
+        voiceSampleTemplate:(label)=>`Esto es ${label}.`,
+        namePhonetic:'Pronunciación de tu nombre (opcional, solo para la voz)', namePhoneticPlaceholder:'p. ej. Iedss',
+        shareWeek:'Compartir semana', weekShareTitle:'Mi semana', daysTrainedThisWeek:(n)=>`${n} días entrenados`
       },
       speech: { countdown:['tres','dos','uno'],
         startWithName:(n)=>`¡Vamos, ${n}!`, startNoName:'¡Empieza!',
@@ -1543,7 +1555,9 @@
         groupPersonalize:'Personnalisation', groupTraining:'Entraînement', groupDisplay:'Affichage & son', groupAccount:'Compte',
         voiceLabel:'Voix', voiceMaleLow:'masculin, grave', voiceMaleEnergetic:'masculin, énergique',
         voiceMaleDeep:'masculin, très grave', voiceFemaleWarm:'féminin, chaleureux', voiceFemalePlayful:'féminin, enjoué',
-        voiceSampleTemplate:(label)=>`Ceci est ${label}.`
+        voiceSampleTemplate:(label)=>`Ceci est ${label}.`,
+        namePhonetic:'Prononciation de ton prénom (facultatif, uniquement pour la voix)', namePhoneticPlaceholder:'ex. Iedss',
+        shareWeek:'Partager la semaine', weekShareTitle:'Ma semaine', daysTrainedThisWeek:(n)=>`${n} jours d'entraînement`
       },
       speech: { countdown:['trois','deux','un'],
         startWithName:(n)=>`Allez, ${n}\u00a0!`, startNoName:'C\u2019est parti\u00a0!',
@@ -1652,7 +1666,9 @@
         groupPersonalize:'Personalização', groupTraining:'Treino', groupDisplay:'Visualização & som', groupAccount:'Conta',
         voiceLabel:'Voz', voiceMaleLow:'masculino, grave', voiceMaleEnergetic:'masculino, enérgico',
         voiceMaleDeep:'masculino, muito grave', voiceFemaleWarm:'feminino, caloroso', voiceFemalePlayful:'feminino, brincalhão',
-        voiceSampleTemplate:(label)=>`Isto é ${label}.`
+        voiceSampleTemplate:(label)=>`Isto é ${label}.`,
+        namePhonetic:'Pronúncia do teu nome (opcional, apenas para a voz)', namePhoneticPlaceholder:'ex. Iedss',
+        shareWeek:'Partilhar semana', weekShareTitle:'A minha semana', daysTrainedThisWeek:(n)=>`${n} dias treinados`
       },
       speech: { countdown:['três','dois','um'],
         startWithName:(n)=>`Vamos, ${n}!`, startNoName:'Começar!',
@@ -1761,7 +1777,9 @@
         groupPersonalize:'Персонализация', groupTraining:'Тренировка', groupDisplay:'Экран и звук', groupAccount:'Аккаунт',
         voiceLabel:'Голос', voiceMaleLow:'мужской, низкий', voiceMaleEnergetic:'мужской, энергичный',
         voiceMaleDeep:'мужской, глубокий', voiceFemaleWarm:'женский, тёплый', voiceFemalePlayful:'женский, игривый',
-        voiceSampleTemplate:(label)=>`Это ${label}.`
+        voiceSampleTemplate:(label)=>`Это ${label}.`,
+        namePhonetic:'Произношение твоего имени (необязательно, только для голоса)', namePhoneticPlaceholder:'напр. Идсс',
+        shareWeek:'Поделиться неделей', weekShareTitle:'Моя неделя', daysTrainedThisWeek:(n)=>`${n} дней тренировок`
       },
       speech: { countdown:['три','два','один'],
         startWithName:(n)=>`Давай, ${n}!`, startNoName:'Начали!',
@@ -1870,7 +1888,9 @@
         groupPersonalize:'个性化', groupTraining:'训练', groupDisplay:'显示与声音', groupAccount:'账户',
         voiceLabel:'语音', voiceMaleLow:'男性，低沉', voiceMaleEnergetic:'男性，充满活力',
         voiceMaleDeep:'男性，浑厚', voiceFemaleWarm:'女性，温暖', voiceFemalePlayful:'女性，活泼',
-        voiceSampleTemplate:(label)=>`这是${label}。`
+        voiceSampleTemplate:(label)=>`这是${label}。`,
+        namePhonetic:'你名字的发音（可选，仅用于语音）', namePhoneticPlaceholder:'例如 Iedss',
+        shareWeek:'分享本周', weekShareTitle:'我的一周', daysTrainedThisWeek:(n)=>`训练了${n}天`
       },
       speech: { countdown:['三','二','一'],
         startWithName:(n)=>`加油，${n}！`, startNoName:'开始！',
@@ -1979,7 +1999,9 @@
         groupPersonalize:'वैयक्तिकरण', groupTraining:'ट्रेनिंग', groupDisplay:'डिस्प्ले और साउंड', groupAccount:'खाता',
         voiceLabel:'आवाज़', voiceMaleLow:'पुरुष, धीमी आवाज़', voiceMaleEnergetic:'पुरुष, ऊर्जावान',
         voiceMaleDeep:'पुरुष, गहरी आवाज़', voiceFemaleWarm:'महिला, गर्मजोशी भरी', voiceFemalePlayful:'महिला, चंचल',
-        voiceSampleTemplate:(label)=>`यह ${label} है।`
+        voiceSampleTemplate:(label)=>`यह ${label} है।`,
+        namePhonetic:'आपके नाम का उच्चारण (वैकल्पिक, केवल आवाज़ के लिए)', namePhoneticPlaceholder:'जैसे Iedss',
+        shareWeek:'सप्ताह शेयर करें', weekShareTitle:'मेरा सप्ताह', daysTrainedThisWeek:(n)=>`${n} दिन ट्रेनिंग की`
       },
       speech: { countdown:['तीन','दो','एक'],
         startWithName:(n)=>`चलो, ${n}!`, startNoName:'शुरू!',
@@ -2088,7 +2110,9 @@
         groupPersonalize:'التخصيص', groupTraining:'التدريب', groupDisplay:'العرض والصوت', groupAccount:'الحساب',
         voiceLabel:'الصوت', voiceMaleLow:'ذكوري، منخفض', voiceMaleEnergetic:'ذكوري، حيوي',
         voiceMaleDeep:'ذكوري، عميق', voiceFemaleWarm:'أنثوي، دافئ', voiceFemalePlayful:'أنثوي، مرح',
-        voiceSampleTemplate:(label)=>`هذا ${label}.`
+        voiceSampleTemplate:(label)=>`هذا ${label}.`,
+        namePhonetic:'نطق اسمك (اختياري، للصوت فقط)', namePhoneticPlaceholder:'مثال Iedss',
+        shareWeek:'مشاركة الأسبوع', weekShareTitle:'أسبوعي', daysTrainedThisWeek:(n)=>`${n} أيام تدريب`
       },
       speech: { countdown:['ثلاثة','اثنان','واحد'],
         startWithName:(n)=>`هيا، ${n}!`, startNoName:'ابدأ!',
@@ -2180,6 +2204,10 @@
   let voiceSpeed = 1;
   let voiceVolume = 1;
   let userName = '';
+  let userNamePhonetic = '';
+  // The on-screen greeting always shows the real name; the coach voice uses
+  // this override instead, for names TTS tends to mispronounce.
+  function spokenName() { return userNamePhonetic.trim() || userName; }
   let lastSessionsList = [];
 
   function currentEx() { return EX_KEYS[exerciseIndex]; }
@@ -2239,6 +2267,7 @@
   const historyList = document.getElementById('historyList');
   const streakDisplay = document.getElementById('streakDisplay');
   const shareBtn = document.getElementById('shareBtn');
+  const shareWeekBtn = document.getElementById('shareWeekBtn');
   const flashOverlay = document.getElementById('flashOverlay');
   const freeModeBtn = document.getElementById('freeModeBtn');
   const intervalModeBtn = document.getElementById('intervalModeBtn');
@@ -2252,6 +2281,7 @@
   const settingsBtn = document.getElementById('settingsBtn');
   const settingsPanel = document.getElementById('settingsPanel');
   const nameInput = document.getElementById('nameInput');
+  const namePhoneticInput = document.getElementById('namePhoneticInput');
   const swatches = document.querySelectorAll('.swatch');
   const gymModeBtn = document.getElementById('gymModeBtn');
   const voiceToggleRow = document.getElementById('voiceToggleRow');
@@ -2573,6 +2603,8 @@
   function applyStaticText() {
     document.body.dir = t.dir;
     document.getElementById('lblName').textContent = t.ui.name;
+    document.getElementById('lblNamePhonetic').textContent = t.ui.namePhonetic;
+    namePhoneticInput.placeholder = t.ui.namePhoneticPlaceholder;
     document.getElementById('lblColor').textContent = t.ui.color;
     document.getElementById('lblLanguage').textContent = t.ui.language;
     document.getElementById('lblUsername').textContent = t.ui.username;
@@ -2619,6 +2651,7 @@
     document.getElementById('lblRest').textContent = t.ui.rest;
     document.getElementById('lblRounds').textContent = t.ui.rounds;
     shareBtn.textContent = t.ui.shareRecord;
+    shareWeekBtn.textContent = '📅 ' + t.ui.shareWeek;
     document.getElementById('lblAchievements').textContent = t.ui.achievements;
     document.getElementById('lblProgress').textContent = t.ui.progress;
     document.getElementById('lblRecent').textContent = t.ui.recent;
@@ -2743,12 +2776,20 @@
 
   // ====== Personalized name ======
   (() => {
-    try { userName = localStorage.getItem('userName') || ''; } catch (e) {}
+    try {
+      userName = localStorage.getItem('userName') || '';
+      userNamePhonetic = localStorage.getItem('userNamePhonetic') || '';
+    } catch (e) {}
     nameInput.value = userName;
+    namePhoneticInput.value = userNamePhonetic;
   })();
   nameInput.addEventListener('input', () => {
     userName = nameInput.value.trim();
     try { localStorage.setItem('userName', userName); } catch (e) {}
+  });
+  namePhoneticInput.addEventListener('input', () => {
+    userNamePhonetic = namePhoneticInput.value.trim();
+    try { localStorage.setItem('userNamePhonetic', userNamePhonetic); } catch (e) {}
   });
 
   settingsBtn.addEventListener('click', () => {
@@ -3493,6 +3534,52 @@
     });
   });
 
+  function computeWeekSummary(list) {
+    const weekStart = startOfWeek(new Date());
+    const weekSessions = list.filter((s) => new Date(s.ts) >= weekStart);
+    const totalMinutes = Math.round(weekSessions.reduce((sum, s) => sum + s.dur, 0) / 60);
+    const daysTrained = new Set(weekSessions.map((s) => new Date(s.ts).toDateString())).size;
+    return { totalMinutes, daysTrained, streak: computeStreakCount(list) };
+  }
+  function generateWeekShareCanvas() {
+    const { totalMinutes, daysTrained, streak } = computeWeekSummary(lastSessionsList);
+    const u = t.speech.units;
+    const canvas = document.createElement('canvas');
+    canvas.width = 800; canvas.height = 800;
+    const ctx = canvas.getContext('2d');
+    ctx.fillStyle = '#14171c'; ctx.fillRect(0, 0, 800, 800);
+    ctx.textAlign = 'center';
+    ctx.fillStyle = '#9aa0a8';
+    ctx.font = '36px -apple-system, sans-serif';
+    ctx.fillText(t.ui.weekShareTitle, 400, 260);
+    ctx.fillStyle = '#7fdba8';
+    ctx.font = 'bold 130px -apple-system, sans-serif';
+    ctx.fillText(String(totalMinutes), 400, 400);
+    ctx.font = '40px -apple-system, sans-serif';
+    ctx.fillText(totalMinutes === 1 ? u.min : u.mins, 400, 450);
+    ctx.fillStyle = '#f2f2f2';
+    ctx.font = '38px -apple-system, sans-serif';
+    ctx.fillText(t.ui.daysTrainedThisWeek(daysTrained), 400, 540);
+    if (streak > 0) {
+      ctx.fillText('🔥 ' + streak + ' ' + (streak === 1 ? t.ui.dayStreak : t.ui.daysStreak), 400, 600);
+    }
+    return canvas;
+  }
+  shareWeekBtn.addEventListener('click', () => {
+    const canvas = generateWeekShareCanvas();
+    canvas.toBlob(async (blob) => {
+      const file = new File([blob], 'week.png', { type: 'image/png' });
+      if (navigator.share && navigator.canShare && navigator.canShare({ files: [file] })) {
+        try { await navigator.share({ files: [file], title: t.ui.weekShareTitle }); }
+        catch (e) {}
+      } else {
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url; a.download = 'week.png'; a.click();
+      }
+    });
+  });
+
   historyToggle.addEventListener('click', () => {
     const showing = historySection.style.display !== 'none';
     historySection.style.display = showing ? 'none' : 'block';
@@ -3839,7 +3926,7 @@
       const finalElapsed = elapsed;
       await saveSession(ex, finalElapsed);
       const { isNewRecord, improvement } = await checkRecord(ex, finalElapsed);
-      let summary = t.speech.heldFor(userName, spokenDuration(finalElapsed));
+      let summary = t.speech.heldFor(spokenName(), spokenDuration(finalElapsed));
       if (isNewRecord) {
         summary += improvement > 0 ? t.speech.newRecordSuffix(spokenDuration(improvement)) : t.speech.firstRecordSuffix;
       }
@@ -3901,7 +3988,7 @@
     stopVoiceListening();
     stopAmbient();
     pulseFeedback([120, 60, 120, 60, 250]);
-    speak(t.speech.trainingDone(userName));
+    speak(t.speech.trainingDone(spokenName()));
     display.textContent = '0:00';
     resetRing();
     startBtn.disabled = false;
@@ -4113,7 +4200,7 @@
   // the number on screen.
   async function prefetchCountdownAudio() {
     if (!elevenReady) return;
-    const phrases = [...t.speech.countdown, userName ? t.speech.startWithName(userName) : t.speech.startNoName];
+    const phrases = [...t.speech.countdown, userName ? t.speech.startWithName(spokenName()) : t.speech.startNoName];
     await Promise.all(phrases.map((p) => fetchAndCacheAudioUrl(p).catch(() => {})));
   }
 
@@ -4132,7 +4219,7 @@
     if (countdownCancelled) return false;
     display.textContent = t.ui.start + '!';
     playTone(880, 0.18, 'sine', 0.2);
-    speak(userName ? t.speech.startWithName(userName) : t.speech.startNoName);
+    speak(userName ? t.speech.startWithName(spokenName()) : t.speech.startNoName);
     await new Promise((r) => setTimeout(r, 350));
     return !countdownCancelled;
   }
