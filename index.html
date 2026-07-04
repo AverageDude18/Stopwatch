@@ -343,6 +343,33 @@
     transition: opacity 0.5s ease, visibility 0.5s ease;
   }
   .splash.hidden { opacity: 0; visibility: hidden; pointer-events: none; }
+
+  .auth-gate {
+    position: fixed; inset: 0; z-index: 101; background: var(--bg);
+    display: flex; align-items: center; justify-content: center; padding: 24px;
+    transition: opacity 0.3s ease, visibility 0.3s ease;
+  }
+  .auth-gate.hidden { opacity: 0; visibility: hidden; pointer-events: none; }
+  .auth-gate-card {
+    width: min(90vw, 360px); text-align: center;
+    background: var(--panel); border-radius: 28px; padding: 32px 26px;
+    box-shadow: 0 24px 60px rgba(0,0,0,0.35), 0 1px 0 rgba(255,255,255,0.03) inset;
+  }
+  .auth-gate-icon { width: 72px; height: 72px; border-radius: 18px; margin-bottom: 14px; }
+  .auth-gate-title { font-size: 1.2rem; font-weight: 700; color: var(--text); }
+  .auth-gate-sub { font-size: 0.85rem; color: var(--muted); margin: 6px 0 20px; line-height: 1.4; }
+  .auth-gate-card input {
+    width: 100%; background: var(--panel-alt); color: var(--text); border: 1px solid var(--border);
+    border-radius: 10px; padding: 11px 12px; font-size: 0.95rem; margin-bottom: 10px; font-family: inherit;
+  }
+  .auth-gate-buttons { display: flex; gap: 8px; margin-top: 4px; }
+  .auth-gate-buttons button {
+    flex: 1; padding: 12px; border-radius: 10px; border: none; cursor: pointer;
+    font-weight: 600; font-size: 0.9rem; font-family: inherit;
+  }
+  #gateSignInBtn { background: #2e7d4f; color: white; }
+  #gateSignUpBtn { background: var(--border); color: var(--text); }
+  .auth-gate-status { font-size: 0.8rem; color: var(--muted); margin-top: 14px; min-height: 1.2em; line-height: 1.4; }
   .splash-icon-wrap {
     position: relative; width: 130px; height: 130px;
     display: flex; align-items: center; justify-content: center;
@@ -421,6 +448,20 @@
     </div>
     <div class="splash-title" id="splashTitle">Trainingspartner</div>
     <div class="splash-sub" id="splashSub"></div>
+  </div>
+  <div class="auth-gate hidden" id="authGate">
+    <div class="auth-gate-card">
+      <img src="icon-512.png" alt="" class="auth-gate-icon">
+      <div class="auth-gate-title">Trainingspartner</div>
+      <div class="auth-gate-sub">Log in om je voortgang op te slaan en op elk toestel te gebruiken</div>
+      <input type="email" id="gateEmail" placeholder="E-mailadres" autocomplete="email">
+      <input type="password" id="gatePassword" placeholder="Wachtwoord" autocomplete="current-password">
+      <div class="auth-gate-buttons">
+        <button id="gateSignInBtn">Inloggen</button>
+        <button id="gateSignUpBtn">Registreren</button>
+      </div>
+      <div class="auth-gate-status" id="gateStatus"></div>
+    </div>
   </div>
   <div class="flash-overlay" id="flashOverlay"></div>
   <div class="card">
@@ -516,6 +557,11 @@
         <input type="text" id="customExInput" placeholder="bijv. Squat hold" style="flex:1; background:var(--panel-alt); color:var(--text); border:1px solid var(--border); border-radius:8px; padding:8px 10px; font-size:0.9rem; font-family:inherit;">
         <button class="small-btn" id="customExSaveBtn">✓</button>
       </div>
+
+      <hr class="stats-divider">
+      <label style="color:var(--text); font-weight:600;">Account</label>
+      <div id="authLoggedInEmail" style="font-size:0.85rem; color:var(--muted); margin-bottom:8px;"></div>
+      <button class="small-btn" id="authSignOutBtn" style="width:100%; margin-bottom:14px;">Uitloggen</button>
 
       <button class="small-btn" id="gymModeBtn" style="width:100%;">Gym-modus (groot scherm)</button>
     </div>
@@ -634,6 +680,7 @@
     </div>
   </div>
 
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
 <script>
   // ====== CONFIG ======
   // The real ElevenLabs API key lives server-side in a Cloudflare Worker
@@ -644,6 +691,60 @@
   const FIXED_VOICE_ID = '';
   const BASE_EX_KEYS = ['plank', 'deadhang', 'lsit', 'sideplank', 'wallsit', 'hollowhold', 'superman', 'glutebridge', 'handstand', 'birddog'];
   let EX_KEYS = BASE_EX_KEYS.slice();
+
+  // ====== Account (Supabase auth + cloud sync) ======
+  // Login is required to use the app - all app state lives in localStorage
+  // as before, but is mirrored into a single JSONB row per user so it
+  // survives a cleared browser / follows the user to a new device.
+  const SUPABASE_URL = 'https://qnzrkcqbzmmxxzawwwat.supabase.co';
+  const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InFuenJrY3Fiem1teHh6YXd3d2F0Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODMxMTI0OTUsImV4cCI6MjA5ODY4ODQ5NX0.Tf3IFNL1pbh1TBRBx-PYBwXFGE0Le8_GjjC1Zt6BVxY';
+  const sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+  let currentUser = null;
+
+  // Explicit allowlist rather than "all of localStorage" - Supabase's own
+  // auth session token also lives in localStorage, and blindly syncing or
+  // clearing it would log the user out (or leak one device's stale token to
+  // another) every time app data is merged.
+  const APP_STATIC_KEYS = [
+    'accentColor', 'appLanguage', 'coachTone', 'voiceSpeed', 'voiceVolume', 'userName',
+    'theme', 'bigFont', 'ambientSound', 'customExerciseName', 'sessions', 'weeklyGoal',
+    'unlockedBadges', 'programProgress', 'voiceControlEnabled', 'lastOpenDate',
+  ];
+  function appLocalStorageKeys() {
+    const keys = APP_STATIC_KEYS.slice();
+    for (let i = 0; i < localStorage.length; i++) {
+      const key = localStorage.key(i);
+      if (key.startsWith('record:')) keys.push(key);
+    }
+    return keys;
+  }
+  function gatherAppDataBlob() {
+    const blob = {};
+    appLocalStorageKeys().forEach((key) => {
+      const val = localStorage.getItem(key);
+      if (val !== null) blob[key] = val;
+    });
+    return blob;
+  }
+  function applyAppDataBlob(blob) {
+    appLocalStorageKeys().forEach((key) => localStorage.removeItem(key));
+    Object.keys(blob || {}).forEach((key) => localStorage.setItem(key, blob[key]));
+    location.reload();
+  }
+  async function pushToCloud() {
+    if (!currentUser) return;
+    await sb.from('user_data').upsert({
+      user_id: currentUser.id,
+      data: gatherAppDataBlob(),
+      updated_at: new Date().toISOString(),
+    });
+  }
+  let cloudPushTimer = null;
+  function syncToCloudDebounced() {
+    if (!currentUser) return;
+    clearTimeout(cloudPushTimer);
+    cloudPushTimer = setTimeout(pushToCloud, 1500);
+  }
 
   // ====================================================================
   // ====== LANGUAGE / TRANSLATIONS =======================================
@@ -1440,6 +1541,14 @@
   }
 
   // ====== Elements ======
+  const authGate = document.getElementById('authGate');
+  const gateEmail = document.getElementById('gateEmail');
+  const gatePassword = document.getElementById('gatePassword');
+  const gateSignInBtn = document.getElementById('gateSignInBtn');
+  const gateSignUpBtn = document.getElementById('gateSignUpBtn');
+  const gateStatus = document.getElementById('gateStatus');
+  const authLoggedInEmail = document.getElementById('authLoggedInEmail');
+  const authSignOutBtn = document.getElementById('authSignOutBtn');
   const display = document.getElementById('display');
   const phaseLabel = document.getElementById('phaseLabel');
   const startBtn = document.getElementById('startBtn');
@@ -1653,7 +1762,9 @@
   });
 
   settingsBtn.addEventListener('click', () => {
-    settingsPanel.style.display = settingsPanel.style.display === 'block' ? 'none' : 'block';
+    const opening = settingsPanel.style.display !== 'block';
+    settingsPanel.style.display = opening ? 'block' : 'none';
+    if (!opening) syncToCloudDebounced();
   });
 
   // ====== Gym mode ======
@@ -2220,6 +2331,7 @@
   const GROUP_ORDER = ['count', 'duration', 'streak', 'special', 'cumulative', 'fun'];
 
   function renderBadges(list) {
+    syncToCloudDebounced();
     const streak = computeStreakCount(list);
     let unlockedIds = [];
     try { unlockedIds = JSON.parse(localStorage.getItem('unlockedBadges') || '[]'); } catch (e) {}
@@ -3138,7 +3250,89 @@
     splashSub.textContent = isFirstOpenToday ? randomTip() : (streakDisplay.textContent || t.ui.readyToTrain);
     splashAutoHideTimer = setTimeout(hideSplash, 2200);
   }
-  initApp();
+
+  // ====== Auth gate ======
+  // The app doesn't boot (initApp) until we know whether the visitor is
+  // logged in - logged out, they only ever see the gate.
+  async function handleLoggedIn(user) {
+    currentUser = user;
+    authGate.classList.add('hidden');
+    authLoggedInEmail.textContent = 'Ingelogd als ' + user.email;
+
+    const { data: row } = await sb.from('user_data').select('data').eq('user_id', user.id).maybeSingle();
+    const localBlob = gatherAppDataBlob();
+    const localHasData = JSON.parse(localStorage.getItem('sessions') || '[]').length > 0;
+    const cloudData = row && row.data ? row.data : null;
+    const cloudHasData = cloudData && Object.keys(cloudData).length > 0;
+
+    if (cloudHasData && localHasData) {
+      if (JSON.stringify(localBlob) === JSON.stringify(cloudData)) return; // already in sync
+      const useCloud = confirm(
+        'Er is zowel data op dit toestel als in je account gevonden.\n\n' +
+        'OK = gebruik de account-data (dit toestel wordt overschreven)\n' +
+        'Annuleren = gebruik de data van dit toestel (je account wordt overschreven)'
+      );
+      if (useCloud) { applyAppDataBlob(cloudData); return; }
+      await pushToCloud();
+    } else if (cloudHasData) {
+      applyAppDataBlob(cloudData);
+      return;
+    } else {
+      await pushToCloud();
+    }
+  }
+
+  function setGateBusy(busy) {
+    gateSignInBtn.disabled = busy;
+    gateSignUpBtn.disabled = busy;
+  }
+
+  gateSignInBtn.addEventListener('click', async () => {
+    const email = gateEmail.value.trim();
+    const password = gatePassword.value;
+    if (!email || !password) { gateStatus.textContent = 'Vul e-mail en wachtwoord in.'; return; }
+    setGateBusy(true);
+    gateStatus.textContent = 'Bezig met inloggen...';
+    const { data, error } = await sb.auth.signInWithPassword({ email, password });
+    setGateBusy(false);
+    if (error) { gateStatus.textContent = error.message; return; }
+    await initApp();
+    await handleLoggedIn(data.user);
+  });
+
+  gateSignUpBtn.addEventListener('click', async () => {
+    const email = gateEmail.value.trim();
+    const password = gatePassword.value;
+    if (!email || !password) { gateStatus.textContent = 'Vul e-mail en wachtwoord in.'; return; }
+    if (password.length < 6) { gateStatus.textContent = 'Wachtwoord moet minstens 6 tekens zijn.'; return; }
+    setGateBusy(true);
+    gateStatus.textContent = 'Bezig met registreren...';
+    const { data, error } = await sb.auth.signUp({ email, password });
+    setGateBusy(false);
+    if (error) { gateStatus.textContent = error.message; return; }
+    if (data.session) {
+      await initApp();
+      await handleLoggedIn(data.user);
+    } else {
+      gateStatus.textContent = 'Check je e-mail om je account te bevestigen, log daarna hieronder in.';
+    }
+  });
+
+  authSignOutBtn.addEventListener('click', async () => {
+    await sb.auth.signOut();
+    location.reload();
+  });
+
+  (async () => {
+    const { data: { session } } = await sb.auth.getSession();
+    if (session && session.user) {
+      await initApp();
+      await handleLoggedIn(session.user);
+    } else {
+      splashScreen.classList.add('hidden');
+      authGate.classList.remove('hidden');
+    }
+  })();
 
   if ('serviceWorker' in navigator) {
     window.addEventListener('load', () => {
