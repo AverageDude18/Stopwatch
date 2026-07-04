@@ -668,6 +668,12 @@
           <span class="settings-group-chevron">▾</span>
         </button>
         <div class="settings-group-content">
+          <label for="voiceSelect" id="lblVoiceSelect">Stem</label>
+          <div class="settings" style="justify-content:flex-start; gap:6px; margin-bottom:14px;">
+            <select id="voiceSelect" style="flex:1;"></select>
+            <button class="small-btn" id="voiceTestBtn" aria-label="Test voice">▶</button>
+          </div>
+
           <label for="speedSelect" id="lblSpeed">Spreeksnelheid van de stem</label>
           <select id="speedSelect" style="width:100%; margin-bottom:14px;">
             <option value="0.85" id="optSpeedSlow">Langzaam</option>
@@ -894,7 +900,18 @@
   // this file is public and view-source would expose it instantly.
   const TTS_PROXY_URL = 'https://stopwatch-tts.averagedude18.deno.net';
   const ELEVEN_MODEL = 'eleven_turbo_v2_5';
-  const FIXED_VOICE_ID = '';
+  // A curated subset of ElevenLabs' premade voice library (same multilingual
+  // model for all of them - only the voice itself differs) rather than
+  // picking whichever voice the account's /voices list happens to return
+  // first. Covers a spread of gender/pitch/energy so the sample sentence in
+  // the settings picker actually means something.
+  const VOICE_OPTIONS = [
+    { id: 'pNInz6obpgDQGcFmaJgB', key: 'voiceMaleLow' },       // Adam - dominant, firm
+    { id: 'TX3LPaxmHKxFdv7VOQHJ', key: 'voiceMaleEnergetic' }, // Liam - energetic
+    { id: 'pqHfZKP75CvOlQylNhV4', key: 'voiceMaleDeep' },      // Bill - old, deep, wise
+    { id: 'hpp4J3VqNfWAUOO0d1Us', key: 'voiceFemaleWarm' },    // Bella - professional, warm
+    { id: 'FGY2WhTYpPnrIDTdsKH5', key: 'voiceFemalePlayful' }, // Laura - enthusiast, quirky
+  ];
   const BASE_EX_KEYS = ['plank', 'deadhang', 'lsit', 'sideplank', 'wallsit', 'hollowhold', 'superman', 'glutebridge', 'handstand', 'birddog'];
   let EX_KEYS = BASE_EX_KEYS.slice();
 
@@ -919,7 +936,7 @@
   const APP_STATIC_KEYS = [
     'accentColor', 'appLanguage', 'coachTone', 'voiceSpeed', 'voiceVolume', 'userName',
     'theme', 'bigFont', 'ambientSound', 'customExerciseName', 'sessions', 'weeklyGoal',
-    'unlockedBadges', 'programProgress', 'voiceControlEnabled',
+    'unlockedBadges', 'programProgress', 'voiceControlEnabled', 'voiceId',
   ];
   function appLocalStorageKeys() {
     const keys = APP_STATIC_KEYS.slice();
@@ -1086,7 +1103,10 @@
         leaderboardBtn:'Scorebord', leaderboardTitle:'Scorebord', lbTabExercise:'Per oefening',
         lbTabBestDay:'Meeste tijd/dag', lbTabStreak:'Langste streak', youLabel:'Jij',
         lbEmpty:'Voeg vrienden toe om het scorebord te zien',
-        groupPersonalize:'Personalisatie', groupTraining:'Training', groupDisplay:'Weergave & geluid', groupAccount:'Account'
+        groupPersonalize:'Personalisatie', groupTraining:'Training', groupDisplay:'Weergave & geluid', groupAccount:'Account',
+        voiceLabel:'Stem', voiceMaleLow:'mannelijk, laag', voiceMaleEnergetic:'mannelijk, energiek',
+        voiceMaleDeep:'mannelijk, diep', voiceFemaleWarm:'vrouwelijk, warm', voiceFemalePlayful:'vrouwelijk, speels',
+        voiceSampleTemplate:(label)=>`Dit is ${label}.`
       },
       speech: { countdown:['drie','twee','één'],
         startWithName:(n)=>`Kom op, ${n}!`, startNoName:'Start!',
@@ -1193,7 +1213,10 @@
         leaderboardBtn:'Leaderboard', leaderboardTitle:'Leaderboard', lbTabExercise:'Per exercise',
         lbTabBestDay:'Most time/day', lbTabStreak:'Longest streak', youLabel:'You',
         lbEmpty:'Add friends to see the leaderboard',
-        groupPersonalize:'Personalize', groupTraining:'Training', groupDisplay:'Display & sound', groupAccount:'Account'
+        groupPersonalize:'Personalize', groupTraining:'Training', groupDisplay:'Display & sound', groupAccount:'Account',
+        voiceLabel:'Voice', voiceMaleLow:'male, low', voiceMaleEnergetic:'male, energetic',
+        voiceMaleDeep:'male, deep', voiceFemaleWarm:'female, warm', voiceFemalePlayful:'female, playful',
+        voiceSampleTemplate:(label)=>`This is ${label}.`
       },
       speech: { countdown:['three','two','one'],
         startWithName:(n)=>`Come on, ${n}!`, startNoName:'Start!',
@@ -1299,7 +1322,10 @@
         leaderboardBtn:'Bestenliste', leaderboardTitle:'Bestenliste', lbTabExercise:'Pro Übung',
         lbTabBestDay:'Meiste Zeit/Tag', lbTabStreak:'Längste Serie', youLabel:'Du',
         lbEmpty:'Füge Freunde hinzu, um die Bestenliste zu sehen',
-        groupPersonalize:'Personalisierung', groupTraining:'Training', groupDisplay:'Anzeige & Ton', groupAccount:'Konto'
+        groupPersonalize:'Personalisierung', groupTraining:'Training', groupDisplay:'Anzeige & Ton', groupAccount:'Konto',
+        voiceLabel:'Stimme', voiceMaleLow:'männlich, tief', voiceMaleEnergetic:'männlich, energiegeladen',
+        voiceMaleDeep:'männlich, sehr tief', voiceFemaleWarm:'weiblich, warm', voiceFemalePlayful:'weiblich, verspielt',
+        voiceSampleTemplate:(label)=>`Das ist ${label}.`
       },
       speech: { countdown:['drei','zwei','eins'],
         startWithName:(n)=>`Los geht's, ${n}!`, startNoName:'Start!',
@@ -1405,7 +1431,10 @@
         leaderboardBtn:'Clasificación', leaderboardTitle:'Clasificación', lbTabExercise:'Por ejercicio',
         lbTabBestDay:'Más tiempo/día', lbTabStreak:'Racha más larga', youLabel:'Tú',
         lbEmpty:'Añade amigos para ver la clasificación',
-        groupPersonalize:'Personalización', groupTraining:'Entrenamiento', groupDisplay:'Pantalla y sonido', groupAccount:'Cuenta'
+        groupPersonalize:'Personalización', groupTraining:'Entrenamiento', groupDisplay:'Pantalla y sonido', groupAccount:'Cuenta',
+        voiceLabel:'Voz', voiceMaleLow:'masculino, grave', voiceMaleEnergetic:'masculino, enérgico',
+        voiceMaleDeep:'masculino, muy grave', voiceFemaleWarm:'femenino, cálido', voiceFemalePlayful:'femenino, juguetón',
+        voiceSampleTemplate:(label)=>`Esto es ${label}.`
       },
       speech: { countdown:['tres','dos','uno'],
         startWithName:(n)=>`¡Vamos, ${n}!`, startNoName:'¡Empieza!',
@@ -1511,7 +1540,10 @@
         leaderboardBtn:'Classement', leaderboardTitle:'Classement', lbTabExercise:'Par exercice',
         lbTabBestDay:'Plus de temps/jour', lbTabStreak:'Plus longue série', youLabel:'Toi',
         lbEmpty:'Ajoute des amis pour voir le classement',
-        groupPersonalize:'Personnalisation', groupTraining:'Entraînement', groupDisplay:'Affichage & son', groupAccount:'Compte'
+        groupPersonalize:'Personnalisation', groupTraining:'Entraînement', groupDisplay:'Affichage & son', groupAccount:'Compte',
+        voiceLabel:'Voix', voiceMaleLow:'masculin, grave', voiceMaleEnergetic:'masculin, énergique',
+        voiceMaleDeep:'masculin, très grave', voiceFemaleWarm:'féminin, chaleureux', voiceFemalePlayful:'féminin, enjoué',
+        voiceSampleTemplate:(label)=>`Ceci est ${label}.`
       },
       speech: { countdown:['trois','deux','un'],
         startWithName:(n)=>`Allez, ${n}\u00a0!`, startNoName:'C\u2019est parti\u00a0!',
@@ -1617,7 +1649,10 @@
         leaderboardBtn:'Classificação', leaderboardTitle:'Classificação', lbTabExercise:'Por exercício',
         lbTabBestDay:'Mais tempo/dia', lbTabStreak:'Sequência mais longa', youLabel:'Tu',
         lbEmpty:'Adiciona amigos para ver a classificação',
-        groupPersonalize:'Personalização', groupTraining:'Treino', groupDisplay:'Visualização & som', groupAccount:'Conta'
+        groupPersonalize:'Personalização', groupTraining:'Treino', groupDisplay:'Visualização & som', groupAccount:'Conta',
+        voiceLabel:'Voz', voiceMaleLow:'masculino, grave', voiceMaleEnergetic:'masculino, enérgico',
+        voiceMaleDeep:'masculino, muito grave', voiceFemaleWarm:'feminino, caloroso', voiceFemalePlayful:'feminino, brincalhão',
+        voiceSampleTemplate:(label)=>`Isto é ${label}.`
       },
       speech: { countdown:['três','dois','um'],
         startWithName:(n)=>`Vamos, ${n}!`, startNoName:'Começar!',
@@ -1723,7 +1758,10 @@
         leaderboardBtn:'Таблица лидеров', leaderboardTitle:'Таблица лидеров', lbTabExercise:'По упражнению',
         lbTabBestDay:'Больше всего времени/день', lbTabStreak:'Самая длинная серия', youLabel:'Ты',
         lbEmpty:'Добавь друзей, чтобы увидеть таблицу лидеров',
-        groupPersonalize:'Персонализация', groupTraining:'Тренировка', groupDisplay:'Экран и звук', groupAccount:'Аккаунт'
+        groupPersonalize:'Персонализация', groupTraining:'Тренировка', groupDisplay:'Экран и звук', groupAccount:'Аккаунт',
+        voiceLabel:'Голос', voiceMaleLow:'мужской, низкий', voiceMaleEnergetic:'мужской, энергичный',
+        voiceMaleDeep:'мужской, глубокий', voiceFemaleWarm:'женский, тёплый', voiceFemalePlayful:'женский, игривый',
+        voiceSampleTemplate:(label)=>`Это ${label}.`
       },
       speech: { countdown:['три','два','один'],
         startWithName:(n)=>`Давай, ${n}!`, startNoName:'Начали!',
@@ -1829,7 +1867,10 @@
         leaderboardBtn:'排行榜', leaderboardTitle:'排行榜', lbTabExercise:'按训练项目',
         lbTabBestDay:'单日最长时间', lbTabStreak:'最长连续天数', youLabel:'你',
         lbEmpty:'添加好友以查看排行榜',
-        groupPersonalize:'个性化', groupTraining:'训练', groupDisplay:'显示与声音', groupAccount:'账户'
+        groupPersonalize:'个性化', groupTraining:'训练', groupDisplay:'显示与声音', groupAccount:'账户',
+        voiceLabel:'语音', voiceMaleLow:'男性，低沉', voiceMaleEnergetic:'男性，充满活力',
+        voiceMaleDeep:'男性，浑厚', voiceFemaleWarm:'女性，温暖', voiceFemalePlayful:'女性，活泼',
+        voiceSampleTemplate:(label)=>`这是${label}。`
       },
       speech: { countdown:['三','二','一'],
         startWithName:(n)=>`加油，${n}！`, startNoName:'开始！',
@@ -1935,7 +1976,10 @@
         leaderboardBtn:'लीडरबोर्ड', leaderboardTitle:'लीडरबोर्ड', lbTabExercise:'प्रति व्यायाम',
         lbTabBestDay:'सबसे ज्यादा समय/दिन', lbTabStreak:'सबसे लंबी स्ट्रीक', youLabel:'आप',
         lbEmpty:'लीडरबोर्ड देखने के लिए मित्र जोड़ें',
-        groupPersonalize:'वैयक्तिकरण', groupTraining:'ट्रेनिंग', groupDisplay:'डिस्प्ले और साउंड', groupAccount:'खाता'
+        groupPersonalize:'वैयक्तिकरण', groupTraining:'ट्रेनिंग', groupDisplay:'डिस्प्ले और साउंड', groupAccount:'खाता',
+        voiceLabel:'आवाज़', voiceMaleLow:'पुरुष, धीमी आवाज़', voiceMaleEnergetic:'पुरुष, ऊर्जावान',
+        voiceMaleDeep:'पुरुष, गहरी आवाज़', voiceFemaleWarm:'महिला, गर्मजोशी भरी', voiceFemalePlayful:'महिला, चंचल',
+        voiceSampleTemplate:(label)=>`यह ${label} है।`
       },
       speech: { countdown:['तीन','दो','एक'],
         startWithName:(n)=>`चलो, ${n}!`, startNoName:'शुरू!',
@@ -2041,7 +2085,10 @@
         leaderboardBtn:'لوحة الصدارة', leaderboardTitle:'لوحة الصدارة', lbTabExercise:'حسب التمرين',
         lbTabBestDay:'أكثر وقت/يوم', lbTabStreak:'أطول سلسلة متتالية', youLabel:'أنت',
         lbEmpty:'أضف أصدقاء لرؤية لوحة الصدارة',
-        groupPersonalize:'التخصيص', groupTraining:'التدريب', groupDisplay:'العرض والصوت', groupAccount:'الحساب'
+        groupPersonalize:'التخصيص', groupTraining:'التدريب', groupDisplay:'العرض والصوت', groupAccount:'الحساب',
+        voiceLabel:'الصوت', voiceMaleLow:'ذكوري، منخفض', voiceMaleEnergetic:'ذكوري، حيوي',
+        voiceMaleDeep:'ذكوري، عميق', voiceFemaleWarm:'أنثوي، دافئ', voiceFemalePlayful:'أنثوي، مرح',
+        voiceSampleTemplate:(label)=>`هذا ${label}.`
       },
       speech: { countdown:['ثلاثة','اثنان','واحد'],
         startWithName:(n)=>`هيا، ${n}!`, startNoName:'ابدأ!',
@@ -2220,6 +2267,8 @@
   const goalBarFill = document.getElementById('goalBarFill');
   const goalBarLabel = document.getElementById('goalBarLabel');
   const speedSelect = document.getElementById('speedSelect');
+  const voiceSelect = document.getElementById('voiceSelect');
+  const voiceTestBtn = document.getElementById('voiceTestBtn');
   const volumeSlider = document.getElementById('volumeSlider');
   const badgeRow = document.getElementById('badgeRow');
   const ringWrap = document.getElementById('ringWrap');
@@ -2549,6 +2598,8 @@
     document.getElementById('lblGoal').textContent = t.ui.goal;
     document.getElementById('optGoal0').textContent = t.ui.goalNone;
     document.getElementById('optGoal7').textContent = t.ui.everyDay;
+    document.getElementById('lblVoiceSelect').textContent = t.ui.voiceLabel;
+    populateVoiceSelect();
     document.getElementById('lblSpeed').textContent = t.ui.speed;
     document.getElementById('optSpeedSlow').textContent = t.ui.speedSlow;
     document.getElementById('optSpeedNormal').textContent = t.ui.speedNormal;
@@ -2627,6 +2678,47 @@
   toneSelect.addEventListener('change', () => {
     currentTone = toneSelect.value;
     try { localStorage.setItem('coachTone', currentTone); } catch (e) {}
+  });
+
+  // ====== Voice selection (ElevenLabs) ======
+  function currentVoiceId() {
+    try {
+      const saved = localStorage.getItem('voiceId');
+      if (saved && VOICE_OPTIONS.some((v) => v.id === saved)) return saved;
+    } catch (e) {}
+    return VOICE_OPTIONS[0].id;
+  }
+  function populateVoiceSelect() {
+    const selected = currentVoiceId();
+    voiceSelect.innerHTML = VOICE_OPTIONS.map((v) => `<option value="${v.id}">${t.ui[v.key]}</option>`).join('');
+    voiceSelect.value = selected;
+  }
+  populateVoiceSelect();
+  voiceSelect.addEventListener('change', () => {
+    try { localStorage.setItem('voiceId', voiceSelect.value); } catch (e) {}
+    elevenVoiceId = voiceSelect.value;
+  });
+  voiceTestBtn.addEventListener('click', async () => {
+    const opt = VOICE_OPTIONS.find((v) => v.id === voiceSelect.value) || VOICE_OPTIONS[0];
+    const sample = t.ui.voiceSampleTemplate(t.ui[opt.key]);
+    try {
+      audioPlayer.volume = voiceVolume;
+      audioPlayer.playbackRate = voiceSpeed;
+      const res = await fetch(TTS_PROXY_URL + '/tts/' + opt.id, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          text: sample, model_id: ELEVEN_MODEL, language_code: t.elevenLang,
+          voice_settings: { stability: 0.88, similarity_boost: 0.75, style: 0.2, use_speaker_boost: true },
+        }),
+      });
+      if (!res.ok) throw new Error('HTTP ' + res.status);
+      const blob = await res.blob();
+      audioPlayer.src = URL.createObjectURL(blob);
+      await audioPlayer.play();
+    } catch (e) {
+      speakBrowser(sample);
+    }
   });
 
   // ====== Voice speed & volume ======
@@ -3549,26 +3641,9 @@
   let elevenLoading = false;
   async function initEleven() {
     elevenLoading = true;
-    if (FIXED_VOICE_ID) {
-      elevenVoiceId = FIXED_VOICE_ID;
-      elevenReady = true;
-      elevenLoading = false;
-      status.textContent = '';
-      return;
-    }
-    try {
-      const res = await fetch(TTS_PROXY_URL + '/voices');
-      if (!res.ok) throw new Error('HTTP ' + res.status);
-      const data = await res.json();
-      if (data.voices && data.voices.length) {
-        elevenVoiceId = data.voices[0].voice_id;
-        elevenReady = true;
-        status.textContent = '';
-      } else throw new Error('No voices found');
-    } catch (e) {
-      elevenReady = false;
-      status.textContent = t.ui.elevenError + (e && e.message ? e.message : e);
-    }
+    elevenVoiceId = currentVoiceId();
+    elevenReady = true;
+    status.textContent = '';
     elevenLoading = false;
   }
   initEleven();
