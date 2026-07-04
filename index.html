@@ -571,6 +571,14 @@
       <hr class="stats-divider">
       <label style="color:var(--text); font-weight:600;">Account</label>
       <div id="authLoggedInEmail" style="font-size:0.85rem; color:var(--muted); margin-bottom:8px;"></div>
+
+      <label for="usernameInput" id="lblUsername">Gebruikersnaam</label>
+      <div class="settings" style="justify-content:flex-start; gap:6px; margin-bottom:4px;">
+        <input type="text" id="usernameInput" placeholder="bijv. ids_92" style="flex:1; background:var(--panel-alt); color:var(--text); border:1px solid var(--border); border-radius:8px; padding:8px 10px; font-size:0.9rem; font-family:inherit;">
+        <button class="small-btn" id="usernameSaveBtn">✓</button>
+      </div>
+      <div id="usernameStatus" style="font-size:0.78rem; color:var(--muted); min-height:1.2em; margin-bottom:10px;"></div>
+
       <button class="small-btn" id="authSignOutBtn" style="width:100%; margin-bottom:14px;">Uitloggen</button>
 
       <button class="small-btn" id="gymModeBtn" style="width:100%;">Gym-modus (groot scherm)</button>
@@ -710,6 +718,7 @@
   const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InFuenJrY3Fiem1teHh6YXd3d2F0Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODMxMTI0OTUsImV4cCI6MjA5ODY4ODQ5NX0.Tf3IFNL1pbh1TBRBx-PYBwXFGE0Le8_GjjC1Zt6BVxY';
   const sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
   let currentUser = null;
+  let currentUsername = '';
 
   // Explicit allowlist rather than "all of localStorage" - Supabase's own
   // auth session token also lives in localStorage, and blindly syncing or
@@ -779,6 +788,38 @@
     clearTimeout(cloudPushTimer);
     cloudPushTimer = setTimeout(pushToCloud, 1500);
   }
+
+  // Username lives in its own `profiles` table rather than the synced
+  // app-data blob: it's account metadata, not app state, and folding it into
+  // the blob-equality check that gatherAppDataBlob/applyAppDataBlob rely on
+  // would risk reintroducing the reload-loop bug that was just fixed there.
+  async function loadProfile() {
+    if (!currentUser) return;
+    try {
+      const { data } = await sb.from('profiles').select('username').eq('user_id', currentUser.id).maybeSingle();
+      currentUsername = data && data.username ? data.username : '';
+      usernameInput.value = currentUsername;
+    } catch (e) {}
+  }
+  usernameSaveBtn.addEventListener('click', async () => {
+    if (!currentUser) return;
+    const raw = usernameInput.value.trim().toLowerCase();
+    if (!/^[a-z0-9_]{3,20}$/.test(raw)) {
+      usernameStatus.textContent = t.ui.usernameInvalid;
+      return;
+    }
+    usernameStatus.textContent = '...';
+    const { error } = await sb.from('profiles').upsert({
+      user_id: currentUser.id, username: raw, updated_at: new Date().toISOString(),
+    });
+    if (error) {
+      usernameStatus.textContent = error.code === '23505' ? t.ui.usernameTaken : error.message;
+      return;
+    }
+    currentUsername = raw;
+    usernameInput.value = raw;
+    usernameStatus.textContent = t.ui.usernameSaved;
+  });
 
   // ====================================================================
   // ====== LANGUAGE / TRANSLATIONS =======================================
@@ -851,7 +892,10 @@
         challengeDayOf:(d,tot)=>`Dag ${d} van ${tot}`, challengeComplete:'Challenge voltooid! 🎉',
         recordProgress:'Recordverloop', noRecordProgress:'Nog geen verloop om te tonen',
         notTrainedToday:'Nog niet getraind vandaag',
-        programs:{fiveday:'5-daagse variatie',plankProg:'Plank progressie',gripHang:'Grip & hang',coreKick:'Core kickstart'}
+        programs:{fiveday:'5-daagse variatie',plankProg:'Plank progressie',gripHang:'Grip & hang',coreKick:'Core kickstart'},
+        username:'Gebruikersnaam', usernamePlaceholder:'bijv. ids_92',
+        usernameInvalid:'Ongeldige gebruikersnaam (3-20 tekens: kleine letters, cijfers, underscore)',
+        usernameTaken:'Gebruikersnaam is al in gebruik', usernameSaved:'Gebruikersnaam opgeslagen'
       },
       speech: { countdown:['drie','twee','één'],
         startWithName:(n)=>`Kom op, ${n}!`, startNoName:'Start!',
@@ -946,7 +990,10 @@
         challengeDayOf:(d,tot)=>`Day ${d} of ${tot}`, challengeComplete:'Challenge complete! 🎉',
         recordProgress:'Record progress', noRecordProgress:'No progress to show yet',
         notTrainedToday:'Not trained yet today',
-        programs:{fiveday:'5-day variety',plankProg:'Plank progression',gripHang:'Grip & hang',coreKick:'Core kickstart'}
+        programs:{fiveday:'5-day variety',plankProg:'Plank progression',gripHang:'Grip & hang',coreKick:'Core kickstart'},
+        username:'Username', usernamePlaceholder:'e.g. ids_92',
+        usernameInvalid:'Invalid username (3-20 characters: lowercase letters, digits, underscore)',
+        usernameTaken:'Username already taken', usernameSaved:'Username saved'
       },
       speech: { countdown:['three','two','one'],
         startWithName:(n)=>`Come on, ${n}!`, startNoName:'Start!',
@@ -1015,7 +1062,10 @@
         challengeDayOf:(d,tot)=>`Tag ${d} von ${tot}`, challengeComplete:'Challenge abgeschlossen! 🎉',
         recordProgress:'Rekordverlauf', noRecordProgress:'Noch kein Verlauf zum Anzeigen',
         notTrainedToday:'Heute noch nicht trainiert',
-        programs:{fiveday:'5-Tage-Mix',plankProg:'Plank-Progression',gripHang:'Griff & Hang',coreKick:'Core-Kickstart'}
+        programs:{fiveday:'5-Tage-Mix',plankProg:'Plank-Progression',gripHang:'Griff & Hang',coreKick:'Core-Kickstart'},
+        username:'Benutzername', usernamePlaceholder:'z.B. ids_92',
+        usernameInvalid:'Ungültiger Benutzername (3-20 Zeichen: Kleinbuchstaben, Ziffern, Unterstrich)',
+        usernameTaken:'Benutzername bereits vergeben', usernameSaved:'Benutzername gespeichert'
       },
       speech: { countdown:['drei','zwei','eins'],
         startWithName:(n)=>`Los geht's, ${n}!`, startNoName:'Start!',
@@ -1084,7 +1134,10 @@
         challengeDayOf:(d,tot)=>`Día ${d} de ${tot}`, challengeComplete:'¡Reto completado! 🎉',
         recordProgress:'Progreso del récord', noRecordProgress:'Aún no hay progreso que mostrar',
         notTrainedToday:'Aún no has entrenado hoy',
-        programs:{fiveday:'Variedad de 5 días',plankProg:'Progresión de plancha',gripHang:'Agarre y suspensión',coreKick:'Inicio de core'}
+        programs:{fiveday:'Variedad de 5 días',plankProg:'Progresión de plancha',gripHang:'Agarre y suspensión',coreKick:'Inicio de core'},
+        username:'Nombre de usuario', usernamePlaceholder:'p. ej. ids_92',
+        usernameInvalid:'Nombre de usuario no válido (3-20 caracteres: minúsculas, números, guion bajo)',
+        usernameTaken:'Nombre de usuario ya en uso', usernameSaved:'Nombre de usuario guardado'
       },
       speech: { countdown:['tres','dos','uno'],
         startWithName:(n)=>`¡Vamos, ${n}!`, startNoName:'¡Empieza!',
@@ -1153,7 +1206,10 @@
         challengeDayOf:(d,tot)=>`Jour ${d} sur ${tot}`, challengeComplete:'Défi terminé\u00a0! 🎉',
         recordProgress:'Évolution du record', noRecordProgress:'Pas encore d\'évolution à afficher',
         notTrainedToday:'Pas encore entraîné aujourd\'hui',
-        programs:{fiveday:'Variété 5 jours',plankProg:'Progression planche',gripHang:'Prise et suspension',coreKick:'Démarrage core'}
+        programs:{fiveday:'Variété 5 jours',plankProg:'Progression planche',gripHang:'Prise et suspension',coreKick:'Démarrage core'},
+        username:"Nom d'utilisateur", usernamePlaceholder:'ex. ids_92',
+        usernameInvalid:"Nom d'utilisateur invalide (3-20 caractères : minuscules, chiffres, tiret bas)",
+        usernameTaken:"Nom d'utilisateur déjà pris", usernameSaved:"Nom d'utilisateur enregistré"
       },
       speech: { countdown:['trois','deux','un'],
         startWithName:(n)=>`Allez, ${n}\u00a0!`, startNoName:'C\u2019est parti\u00a0!',
@@ -1222,7 +1278,10 @@
         challengeDayOf:(d,tot)=>`Dia ${d} de ${tot}`, challengeComplete:'Desafio concluído! 🎉',
         recordProgress:'Progresso do recorde', noRecordProgress:'Ainda sem progresso para mostrar',
         notTrainedToday:'Ainda não treinaste hoje',
-        programs:{fiveday:'Variedade de 5 dias',plankProg:'Progressão de prancha',gripHang:'Pega e suspensão',coreKick:'Início de core'}
+        programs:{fiveday:'Variedade de 5 dias',plankProg:'Progressão de prancha',gripHang:'Pega e suspensão',coreKick:'Início de core'},
+        username:'Nome de utilizador', usernamePlaceholder:'ex. ids_92',
+        usernameInvalid:'Nome de utilizador inválido (3-20 carateres: minúsculas, números, sublinhado)',
+        usernameTaken:'Nome de utilizador já em uso', usernameSaved:'Nome de utilizador guardado'
       },
       speech: { countdown:['três','dois','um'],
         startWithName:(n)=>`Vamos, ${n}!`, startNoName:'Começar!',
@@ -1291,7 +1350,10 @@
         challengeDayOf:(d,tot)=>`День ${d} из ${tot}`, challengeComplete:'Челлендж завершён! 🎉',
         recordProgress:'Прогресс рекорда', noRecordProgress:'Пока нет прогресса для показа',
         notTrainedToday:'Сегодня ещё не тренировался(лась)',
-        programs:{fiveday:'5-дневное разнообразие',plankProg:'Прогрессия планки',gripHang:'Хват и вис',coreKick:'Старт кора'}
+        programs:{fiveday:'5-дневное разнообразие',plankProg:'Прогрессия планки',gripHang:'Хват и вис',coreKick:'Старт кора'},
+        username:'Имя пользователя', usernamePlaceholder:'напр. ids_92',
+        usernameInvalid:'Неверное имя пользователя (3-20 символов: строчные буквы, цифры, подчёркивание)',
+        usernameTaken:'Имя пользователя уже занято', usernameSaved:'Имя пользователя сохранено'
       },
       speech: { countdown:['три','два','один'],
         startWithName:(n)=>`Давай, ${n}!`, startNoName:'Начали!',
@@ -1360,7 +1422,10 @@
         challengeDayOf:(d,tot)=>`第${d}天，共${tot}天`, challengeComplete:'挑战完成！🎉',
         recordProgress:'纪录变化', noRecordProgress:'暂无变化可显示',
         notTrainedToday:'今天还没有训练',
-        programs:{fiveday:'5天多样计划',plankProg:'平板支撑进阶',gripHang:'抓握与悬垂',coreKick:'核心启动'}
+        programs:{fiveday:'5天多样计划',plankProg:'平板支撑进阶',gripHang:'抓握与悬垂',coreKick:'核心启动'},
+        username:'用户名', usernamePlaceholder:'例如 ids_92',
+        usernameInvalid:'用户名无效（3-20个字符：小写字母、数字、下划线）',
+        usernameTaken:'用户名已被使用', usernameSaved:'用户名已保存'
       },
       speech: { countdown:['三','二','一'],
         startWithName:(n)=>`加油，${n}！`, startNoName:'开始！',
@@ -1429,7 +1494,10 @@
         challengeDayOf:(d,tot)=>`दिन ${d} में से ${tot}`, challengeComplete:'चैलेंज पूरा हुआ! 🎉',
         recordProgress:'रिकॉर्ड प्रगति', noRecordProgress:'अभी दिखाने के लिए कोई प्रगति नहीं',
         notTrainedToday:'आज अभी तक ट्रेन नहीं किया',
-        programs:{fiveday:'5-दिन विविधता',plankProg:'प्लैंक प्रगति',gripHang:'ग्रिप और हैंग',coreKick:'कोर किकस्टार्ट'}
+        programs:{fiveday:'5-दिन विविधता',plankProg:'प्लैंक प्रगति',gripHang:'ग्रिप और हैंग',coreKick:'कोर किकस्टार्ट'},
+        username:'उपयोगकर्ता नाम', usernamePlaceholder:'जैसे ids_92',
+        usernameInvalid:'अमान्य उपयोगकर्ता नाम (3-20 अक्षर: छोटे अक्षर, अंक, अंडरस्कोर)',
+        usernameTaken:'उपयोगकर्ता नाम पहले से उपयोग में है', usernameSaved:'उपयोगकर्ता नाम सहेजा गया'
       },
       speech: { countdown:['तीन','दो','एक'],
         startWithName:(n)=>`चलो, ${n}!`, startNoName:'शुरू!',
@@ -1498,7 +1566,10 @@
         challengeDayOf:(d,tot)=>`اليوم ${d} من ${tot}`, challengeComplete:'اكتمل التحدي! 🎉',
         recordProgress:'تقدم الرقم القياسي', noRecordProgress:'لا يوجد تقدم لعرضه بعد',
         notTrainedToday:'لم تتدرب بعد اليوم',
-        programs:{fiveday:'تنوع 5 أيام',plankProg:'تقدم البلانك',gripHang:'القبضة والتعليق',coreKick:'بداية القلب'}
+        programs:{fiveday:'تنوع 5 أيام',plankProg:'تقدم البلانك',gripHang:'القبضة والتعليق',coreKick:'بداية القلب'},
+        username:'اسم المستخدم', usernamePlaceholder:'مثال ids_92',
+        usernameInvalid:'اسم مستخدم غير صالح (3-20 حرفًا: أحرف صغيرة، أرقام، شرطة سفلية)',
+        usernameTaken:'اسم المستخدم مستخدم بالفعل', usernameSaved:'تم حفظ اسم المستخدم'
       },
       speech: { countdown:['ثلاثة','اثنان','واحد'],
         startWithName:(n)=>`هيا، ${n}!`, startNoName:'ابدأ!',
@@ -1583,6 +1654,9 @@
   const gateStatus = document.getElementById('gateStatus');
   const authLoggedInEmail = document.getElementById('authLoggedInEmail');
   const authSignOutBtn = document.getElementById('authSignOutBtn');
+  const usernameInput = document.getElementById('usernameInput');
+  const usernameSaveBtn = document.getElementById('usernameSaveBtn');
+  const usernameStatus = document.getElementById('usernameStatus');
   const display = document.getElementById('display');
   const phaseLabel = document.getElementById('phaseLabel');
   const startBtn = document.getElementById('startBtn');
@@ -1678,6 +1752,8 @@
     document.getElementById('lblName').textContent = t.ui.name;
     document.getElementById('lblColor').textContent = t.ui.color;
     document.getElementById('lblLanguage').textContent = t.ui.language;
+    document.getElementById('lblUsername').textContent = t.ui.username;
+    usernameInput.placeholder = t.ui.usernamePlaceholder;
     document.getElementById('lblTone').textContent = t.ui.tone;
     document.getElementById('optToneMotiv').textContent = t.ui.toneMotiv;
     document.getElementById('optToneStrict').textContent = t.ui.toneStrict;
@@ -3303,6 +3379,7 @@
     currentUser = user;
     authGate.classList.add('hidden');
     authLoggedInEmail.textContent = 'Ingelogd als ' + user.email;
+    loadProfile();
 
     const { data: row } = await sb.from('user_data').select('data').eq('user_id', user.id).maybeSingle();
     const localBlob = gatherAppDataBlob();
