@@ -59,6 +59,8 @@
   }
   .top-row-actions { display: flex; align-items: center; gap: 2px; flex-shrink: 0; }
   .streak { font-size: 0.85rem; color: var(--muted); }
+  .streak-fire { filter: grayscale(1); opacity: 0.55; }
+  .streak-fire.active { filter: none; opacity: 1; }
 
   .ring-wrap {
     position: relative; width: 230px; height: 230px; margin: 6px auto 18px;
@@ -3332,13 +3334,15 @@
          </div>`;
     });
 
+  let currentStreakCount = 0;
   function updateStreak(list) {
     const days = new Set(list.map(s => new Date(s.ts).toDateString()));
     let streak = 0;
     const cursor = new Date();
     if (!days.has(cursor.toDateString())) cursor.setDate(cursor.getDate() - 1);
     while (days.has(cursor.toDateString())) { streak++; cursor.setDate(cursor.getDate() - 1); }
-    streakDisplay.textContent = streak > 0 ? '🔥 ' + streak + ' ' + (streak === 1 ? t.ui.dayStreak : t.ui.daysStreak) : '';
+    currentStreakCount = streak;
+    streakDisplay.innerHTML = `<span class="streak-fire${streak > 0 ? ' active' : ''}">🔥</span> ${streak}`;
   }
 
   // ====== Leaderboard stats ======
@@ -4524,7 +4528,7 @@
     } catch (e) {}
 
     splashTitle.textContent = userName ? `${t.ui.welcomeBack}, ${userName}!` : t.ui.appName;
-    splashSub.textContent = isFirstOpenToday ? randomTip() : (streakDisplay.textContent || t.ui.readyToTrain);
+    splashSub.textContent = isFirstOpenToday ? randomTip() : (currentStreakCount > 0 ? streakDisplay.textContent : t.ui.readyToTrain);
     splashAutoHideTimer = setTimeout(hideSplash, 2200);
   }
 
