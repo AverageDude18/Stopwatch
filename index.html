@@ -989,6 +989,17 @@
     </div>
   </div>
 
+  <div class="modal-overlay hidden" id="notifPromptOverlay">
+    <div class="modal-card" style="text-align:center;">
+      <div class="modal-card-title" id="notifPromptTitle" style="margin-bottom:10px;">Meldingen inschakelen?</div>
+      <div style="font-size:0.85rem; color:var(--muted); margin-bottom:16px;" id="notifPromptBody">Krijg een seintje als een vriend reageert op je scorebord, of als je streak in gevaar is.</div>
+      <div class="auth-gate-buttons">
+        <button id="notifPromptYesBtn" style="background:#2e7d4f; color:white;">Ja, graag</button>
+        <button id="notifPromptNoBtn" style="background:var(--border); color:var(--text);">Niet nu</button>
+      </div>
+    </div>
+  </div>
+
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
 <script>
   // ====== CONFIG ======
@@ -1233,7 +1244,10 @@
         lbViewRanking:'Ranglijst', lbViewTrend:'Trend', lbTrendEmpty:'Nog niet genoeg gegevens voor een trend',
         groupNotifications:'Meldingen', notifEnabled:'Pushmeldingen', notifDenied:'Toestemming geweigerd', notifEnabledMsg:'Meldingen ingeschakeld',
         reactionNotifTitle:'Trainingspartner',
-        reactionNotifBody:(from,emoji,label)=>`${from} reageerde met ${emoji} op jouw ${label} op het scorebord`
+        reactionNotifBody:(from,emoji,label)=>`${from} reageerde met ${emoji} op jouw ${label} op het scorebord`,
+        notifPromptTitle:'Meldingen inschakelen?',
+        notifPromptBody:'Krijg een seintje als een vriend reageert op je scorebord, of als je streak in gevaar is.',
+        notifPromptYes:'Ja, graag', notifPromptNo:'Niet nu'
       },
       speech: { countdown:['drie','twee','één'],
         startWithName:(n)=>`Kom op, ${n}!`, startNoName:'Start!',
@@ -1350,7 +1364,10 @@
         lbViewRanking:'Ranking', lbViewTrend:'Trend', lbTrendEmpty:'Not enough data yet for a trend',
         groupNotifications:'Notifications', notifEnabled:'Push notifications', notifDenied:'Permission denied', notifEnabledMsg:'Notifications enabled',
         reactionNotifTitle:'Trainingspartner',
-        reactionNotifBody:(from,emoji,label)=>`${from} reacted with ${emoji} to your ${label} on the leaderboard`
+        reactionNotifBody:(from,emoji,label)=>`${from} reacted with ${emoji} to your ${label} on the leaderboard`,
+        notifPromptTitle:'Enable notifications?',
+        notifPromptBody:'Get notified when a friend reacts to your leaderboard entry, or when your streak is at risk.',
+        notifPromptYes:'Yes, please', notifPromptNo:'Not now'
       },
       speech: { countdown:['three','two','one'],
         startWithName:(n)=>`Come on, ${n}!`, startNoName:'Start!',
@@ -1466,7 +1483,10 @@
         lbViewRanking:'Rangliste', lbViewTrend:'Trend', lbTrendEmpty:'Noch nicht genug Daten für einen Trend',
         groupNotifications:'Benachrichtigungen', notifEnabled:'Push-Benachrichtigungen', notifDenied:'Berechtigung verweigert', notifEnabledMsg:'Benachrichtigungen aktiviert',
         reactionNotifTitle:'Trainingspartner',
-        reactionNotifBody:(from,emoji,label)=>`${from} hat mit ${emoji} auf deine ${label} auf der Bestenliste reagiert`
+        reactionNotifBody:(from,emoji,label)=>`${from} hat mit ${emoji} auf deine ${label} auf der Bestenliste reagiert`,
+        notifPromptTitle:'Benachrichtigungen aktivieren?',
+        notifPromptBody:'Erhalte eine Benachrichtigung, wenn ein Freund auf deine Bestenliste reagiert oder deine Serie in Gefahr ist.',
+        notifPromptYes:'Ja, gerne', notifPromptNo:'Nicht jetzt'
       },
       speech: { countdown:['drei','zwei','eins'],
         startWithName:(n)=>`Los geht's, ${n}!`, startNoName:'Start!',
@@ -1582,7 +1602,10 @@
         lbViewRanking:'Clasificación', lbViewTrend:'Tendencia', lbTrendEmpty:'Aún no hay suficientes datos para una tendencia',
         groupNotifications:'Notificaciones', notifEnabled:'Notificaciones push', notifDenied:'Permiso denegado', notifEnabledMsg:'Notificaciones activadas',
         reactionNotifTitle:'Trainingspartner',
-        reactionNotifBody:(from,emoji,label)=>`${from} reaccionó con ${emoji} a tu ${label} en la clasificación`
+        reactionNotifBody:(from,emoji,label)=>`${from} reaccionó con ${emoji} a tu ${label} en la clasificación`,
+        notifPromptTitle:'¿Activar notificaciones?',
+        notifPromptBody:'Recibe un aviso cuando un amigo reaccione a tu clasificación o cuando tu racha esté en peligro.',
+        notifPromptYes:'Sí, por favor', notifPromptNo:'Ahora no'
       },
       speech: { countdown:['tres','dos','uno'],
         startWithName:(n)=>`¡Vamos, ${n}!`, startNoName:'¡Empieza!',
@@ -1698,7 +1721,10 @@
         lbViewRanking:'Classement', lbViewTrend:'Tendance', lbTrendEmpty:'Pas encore assez de données pour une tendance',
         groupNotifications:'Notifications', notifEnabled:'Notifications push', notifDenied:'Permission refusée', notifEnabledMsg:'Notifications activées',
         reactionNotifTitle:'Trainingspartner',
-        reactionNotifBody:(from,emoji,label)=>`${from} a réagi avec ${emoji} à ton ${label} dans le classement`
+        reactionNotifBody:(from,emoji,label)=>`${from} a réagi avec ${emoji} à ton ${label} dans le classement`,
+        notifPromptTitle:'Activer les notifications ?',
+        notifPromptBody:'Reçois un avis quand un ami réagit à ton classement, ou quand ta série est en danger.',
+        notifPromptYes:'Oui, avec plaisir', notifPromptNo:'Pas maintenant'
       },
       speech: { countdown:['trois','deux','un'],
         startWithName:(n)=>`Allez, ${n}\u00a0!`, startNoName:'C\u2019est parti\u00a0!',
@@ -1814,7 +1840,10 @@
         lbViewRanking:'Classificação', lbViewTrend:'Tendência', lbTrendEmpty:'Ainda não há dados suficientes para uma tendência',
         groupNotifications:'Notificações', notifEnabled:'Notificações push', notifDenied:'Permissão negada', notifEnabledMsg:'Notificações ativadas',
         reactionNotifTitle:'Trainingspartner',
-        reactionNotifBody:(from,emoji,label)=>`${from} reagiu com ${emoji} à tua ${label} na classificação`
+        reactionNotifBody:(from,emoji,label)=>`${from} reagiu com ${emoji} à tua ${label} na classificação`,
+        notifPromptTitle:'Ativar notificações?',
+        notifPromptBody:'Recebe um aviso quando um amigo reage à tua classificação, ou quando a tua sequência está em risco.',
+        notifPromptYes:'Sim, por favor', notifPromptNo:'Agora não'
       },
       speech: { countdown:['três','dois','um'],
         startWithName:(n)=>`Vamos, ${n}!`, startNoName:'Começar!',
@@ -1930,7 +1959,10 @@
         lbViewRanking:'Рейтинг', lbViewTrend:'Тренд', lbTrendEmpty:'Пока недостаточно данных для тренда',
         groupNotifications:'Уведомления', notifEnabled:'Push-уведомления', notifDenied:'В разрешении отказано', notifEnabledMsg:'Уведомления включены',
         reactionNotifTitle:'Trainingspartner',
-        reactionNotifBody:(from,emoji,label)=>`${from} отреагировал(а) ${emoji} на твой результат «${label}» в рейтинге`
+        reactionNotifBody:(from,emoji,label)=>`${from} отреагировал(а) ${emoji} на твой результат «${label}» в рейтинге`,
+        notifPromptTitle:'Включить уведомления?',
+        notifPromptBody:'Получай уведомление, когда друг реагирует на твой результат в рейтинге, или когда твоя серия под угрозой.',
+        notifPromptYes:'Да, включить', notifPromptNo:'Не сейчас'
       },
       speech: { countdown:['три','два','один'],
         startWithName:(n)=>`Давай, ${n}!`, startNoName:'Начали!',
@@ -2046,7 +2078,10 @@
         lbViewRanking:'排名', lbViewTrend:'趋势', lbTrendEmpty:'数据还不足以显示趋势',
         groupNotifications:'通知', notifEnabled:'推送通知', notifDenied:'权限被拒绝', notifEnabledMsg:'通知已启用',
         reactionNotifTitle:'Trainingspartner',
-        reactionNotifBody:(from,emoji,label)=>`${from} 对你在排行榜上的${label}做出了${emoji}反应`
+        reactionNotifBody:(from,emoji,label)=>`${from} 对你在排行榜上的${label}做出了${emoji}反应`,
+        notifPromptTitle:'启用通知？',
+        notifPromptBody:'当好友对你的排行榜成绩做出反应，或你的连续记录面临中断时，及时提醒你。',
+        notifPromptYes:'好的', notifPromptNo:'暂不'
       },
       speech: { countdown:['三','二','一'],
         startWithName:(n)=>`加油，${n}！`, startNoName:'开始！',
@@ -2162,7 +2197,10 @@
         lbViewRanking:'रैंकिंग', lbViewTrend:'ट्रेंड', lbTrendEmpty:'ट्रेंड के लिए अभी पर्याप्त डेटा नहीं है',
         groupNotifications:'सूचनाएं', notifEnabled:'पुश सूचनाएं', notifDenied:'अनुमति अस्वीकृत', notifEnabledMsg:'सूचनाएं सक्षम की गईं',
         reactionNotifTitle:'Trainingspartner',
-        reactionNotifBody:(from,emoji,label)=>`${from} ने लीडरबोर्ड पर आपकी ${label} पर ${emoji} से प्रतिक्रिया दी`
+        reactionNotifBody:(from,emoji,label)=>`${from} ने लीडरबोर्ड पर आपकी ${label} पर ${emoji} से प्रतिक्रिया दी`,
+        notifPromptTitle:'सूचनाएं चालू करें?',
+        notifPromptBody:'जब कोई मित्र आपके लीडरबोर्ड पर प्रतिक्रिया दे, या आपकी स्ट्रीक खतरे में हो, तो सूचना पाएं।',
+        notifPromptYes:'हां, चालू करें', notifPromptNo:'अभी नहीं'
       },
       speech: { countdown:['तीन','दो','एक'],
         startWithName:(n)=>`चलो, ${n}!`, startNoName:'शुरू!',
@@ -2278,7 +2316,10 @@
         lbViewRanking:'الترتيب', lbViewTrend:'الاتجاه', lbTrendEmpty:'لا توجد بيانات كافية بعد لعرض اتجاه',
         groupNotifications:'الإشعارات', notifEnabled:'إشعارات الدفع', notifDenied:'تم رفض الإذن', notifEnabledMsg:'تم تفعيل الإشعارات',
         reactionNotifTitle:'Trainingspartner',
-        reactionNotifBody:(from,emoji,label)=>`${from} تفاعل مع ${label} الخاص بك في لوحة الصدارة بـ ${emoji}`
+        reactionNotifBody:(from,emoji,label)=>`${from} تفاعل مع ${label} الخاص بك في لوحة الصدارة بـ ${emoji}`,
+        notifPromptTitle:'تفعيل الإشعارات؟',
+        notifPromptBody:'احصل على تنبيه عندما يتفاعل صديق مع نتيجتك في لوحة الصدارة، أو عندما تكون سلسلتك في خطر.',
+        notifPromptYes:'نعم من فضلك', notifPromptNo:'ليس الآن'
       },
       speech: { countdown:['ثلاثة','اثنان','واحد'],
         startWithName:(n)=>`هيا، ${n}!`, startNoName:'ابدأ!',
@@ -2410,6 +2451,9 @@
   const profileOverlayAvatar = document.getElementById('profileOverlayAvatar');
   const profileOverlayUsername = document.getElementById('profileOverlayUsername');
   const profileOverlayEmail = document.getElementById('profileOverlayEmail');
+  const notifPromptOverlay = document.getElementById('notifPromptOverlay');
+  const notifPromptYesBtn = document.getElementById('notifPromptYesBtn');
+  const notifPromptNoBtn = document.getElementById('notifPromptNoBtn');
   const friendsBtn = document.getElementById('friendsBtn');
   const friendsOverlay = document.getElementById('friendsOverlay');
   const friendsCloseBtn = document.getElementById('friendsCloseBtn');
@@ -2655,6 +2699,34 @@
         notifStatus.textContent = e && e.message ? e.message : String(e);
       }
     }
+  });
+
+  // Post-login one-time prompt: shown at most once ever per browser (a flag
+  // in localStorage, not tied to being logged in/out), regardless of whether
+  // the answer was yes or no. Reuses the settings toggle's own subscribe
+  // logic instead of duplicating it, by flipping the toggle and firing the
+  // same 'change' handler it already has.
+  const NOTIF_PROMPT_KEY = 'notifPromptShown';
+  async function maybeShowNotifPrompt() {
+    if (!('serviceWorker' in navigator) || !('PushManager' in window)) return;
+    try {
+      if (localStorage.getItem(NOTIF_PROMPT_KEY)) return;
+      if (Notification.permission !== 'default') { localStorage.setItem(NOTIF_PROMPT_KEY, '1'); return; }
+      const reg = await navigator.serviceWorker.ready;
+      const existing = await reg.pushManager.getSubscription();
+      if (existing) { localStorage.setItem(NOTIF_PROMPT_KEY, '1'); return; }
+      notifPromptOverlay.classList.remove('hidden');
+    } catch (e) {}
+  }
+  notifPromptYesBtn.addEventListener('click', () => {
+    localStorage.setItem(NOTIF_PROMPT_KEY, '1');
+    notifPromptOverlay.classList.add('hidden');
+    notifToggleInput.checked = true;
+    notifToggleInput.dispatchEvent(new Event('change'));
+  });
+  notifPromptNoBtn.addEventListener('click', () => {
+    localStorage.setItem(NOTIF_PROMPT_KEY, '1');
+    notifPromptOverlay.classList.add('hidden');
   });
 
   // ====== Friends ======
@@ -3067,6 +3139,10 @@
     document.getElementById('lblGroupDisplay').textContent = t.ui.groupDisplay;
     document.getElementById('lblGroupAccount').textContent = t.ui.groupAccount;
     document.getElementById('lblGroupNotifications').textContent = t.ui.groupNotifications;
+    document.getElementById('notifPromptTitle').textContent = t.ui.notifPromptTitle;
+    document.getElementById('notifPromptBody').textContent = t.ui.notifPromptBody;
+    notifPromptYesBtn.textContent = t.ui.notifPromptYes;
+    notifPromptNoBtn.textContent = t.ui.notifPromptNo;
     document.getElementById('lblNotifEnabled').textContent = t.ui.notifEnabled;
     document.getElementById('lblTone').textContent = t.ui.tone;
     document.getElementById('optToneMotiv').textContent = t.ui.toneMotiv;
@@ -4844,6 +4920,7 @@
       // content can stringify to a different string than the original.
       if (blobsEqual(localBlob, cloudData)) {
         sessionStorage.removeItem('syncReloadGuard');
+        maybeShowNotifPrompt();
         return;
       }
     }
@@ -4862,6 +4939,7 @@
     } else {
       await pushToCloud();
     }
+    maybeShowNotifPrompt();
   }
 
   function setGateBusy(busy) {
