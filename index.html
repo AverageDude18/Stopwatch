@@ -650,7 +650,7 @@
     <div class="today-line" id="smartTip" style="display:none;"></div>
 
     <div class="lb-preview settings-group open hidden" id="lbPreview">
-      <button type="button" class="settings-group-header">
+      <button type="button" class="settings-group-header" id="lbPreviewHeader">
         <span>🏆 <span id="lbPreviewTitle">Meeste tijd op 1 dag</span></span>
         <span class="settings-group-chevron">▾</span>
       </button>
@@ -2731,6 +2731,7 @@
   const lbTrendChart = document.getElementById('lbTrendChart');
   const lbTrendLegend = document.getElementById('lbTrendLegend');
   const lbPreview = document.getElementById('lbPreview');
+  const lbPreviewHeader = document.getElementById('lbPreviewHeader');
   const lbPreviewTitle = document.getElementById('lbPreviewTitle');
   const lbPreviewContent = document.getElementById('lbPreviewContent');
   const lbPreviewList = document.getElementById('lbPreviewList');
@@ -3608,9 +3609,15 @@
       <span class="value">${formatFn(u.value)}</span>
     </div>`;
   }
-  // Only the content area opens the full modal - the header (added/removed
-  // via the .settings-group-header wiring further down) just toggles the
-  // preview's own collapsed state without navigating anywhere.
+  // Only the content area opens the full modal - the header just toggles
+  // the preview's own collapsed state (persisted separately from the main
+  // settings-group headers below, since this one lives outside the
+  // settings panel and needs to remember its state across reloads too).
+  if (localStorage.getItem('lbPreviewCollapsed') === '1') lbPreview.classList.remove('open');
+  lbPreviewHeader.addEventListener('click', () => {
+    const nowOpen = lbPreview.classList.toggle('open');
+    try { localStorage.setItem('lbPreviewCollapsed', nowOpen ? '0' : '1'); } catch (e) {}
+  });
   lbPreviewContent.addEventListener('click', () => {
     settingsPanel.style.display = 'none';
     leaderboardOverlay.classList.remove('hidden');
