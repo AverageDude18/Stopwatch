@@ -57,6 +57,7 @@
     display: flex; justify-content: space-between; align-items: center;
     margin-bottom: 6px; min-height: 22px;
   }
+  .top-row-actions { display: flex; align-items: center; gap: 2px; flex-shrink: 0; }
   .streak { font-size: 0.85rem; color: var(--muted); }
 
   .ring-wrap {
@@ -181,6 +182,20 @@
   .history-item:last-child { border-bottom: none; }
   .history-empty { color: var(--muted2); padding: 4px 0; }
 
+  .lb-preview {
+    margin-bottom: 14px; text-align: left; background: var(--panel-alt); border-radius: 14px;
+    padding: 10px 14px; font-size: 0.85rem; border: 1px solid var(--border); cursor: pointer;
+  }
+  .lb-preview.hidden { display: none; }
+  body[dir="rtl"] .lb-preview { text-align: right; }
+  .lb-preview-header {
+    display: flex; justify-content: space-between; align-items: center;
+    font-weight: 600; color: var(--text); margin-bottom: 4px;
+  }
+  .lb-preview-chevron { color: var(--muted); font-size: 0.75rem; }
+  body[dir="rtl"] .lb-preview-chevron { transform: scaleX(-1); }
+  .lb-preview-sep { text-align: center; color: var(--muted2); font-size: 0.75rem; padding: 2px 0; }
+
   .flash-overlay {
     position: fixed; inset: 0; background: var(--accent); opacity: 0; pointer-events: none;
     z-index: 50; transition: opacity 0.15s ease;
@@ -196,6 +211,18 @@
   }
   body[dir="rtl"] .settings-panel { text-align: right; }
   .settings-panel label { display: block; color: var(--muted); margin-bottom: 6px; }
+  .settings-group { border-bottom: 1px solid var(--border); }
+  .settings-group:last-child { border-bottom: none; }
+  .settings-group-header {
+    width: 100%; display: flex; justify-content: space-between; align-items: center;
+    background: none; border: none; color: var(--text); font-weight: 600; font-size: 0.85rem;
+    padding: 10px 0; cursor: pointer; font-family: inherit;
+  }
+  body[dir="rtl"] .settings-group-header { flex-direction: row-reverse; }
+  .settings-group-chevron { color: var(--muted); font-size: 0.75rem; transition: transform 0.2s ease; }
+  .settings-group.open .settings-group-chevron { transform: rotate(180deg); }
+  .settings-group-content { display: none; padding-bottom: 8px; }
+  .settings-group.open .settings-group-content { display: block; }
   .settings-panel input[type="text"] {
     width: 100%; background: var(--panel-alt); color: var(--text); border: 1px solid var(--border);
     border-radius: 8px; padding: 8px 10px; font-size: 0.9rem; margin-bottom: 14px; font-family: inherit;
@@ -554,118 +581,156 @@
         <div class="today-line" id="todayDisplay"></div>
         <div class="today-line" id="smartTip" style="color:var(--accent);"></div>
       </div>
-      <button class="icon-btn" id="settingsBtn" aria-label="Settings">⚙️</button>
+      <div class="top-row-actions">
+        <button class="icon-btn" id="friendsBtn" aria-label="Friends">👥</button>
+        <button class="icon-btn" id="leaderboardBtn" aria-label="Leaderboard">🏆</button>
+        <button class="icon-btn" id="settingsBtn" aria-label="Settings">⚙️</button>
+      </div>
+    </div>
+
+    <div class="lb-preview hidden" id="lbPreview">
+      <div class="lb-preview-header">
+        <span>🏆 <span id="lbPreviewTitle">Meeste tijd op 1 dag</span></span>
+        <span class="lb-preview-chevron">▸</span>
+      </div>
+      <div id="lbPreviewList"></div>
     </div>
 
     <div class="settings-panel" id="settingsPanel">
-      <label for="nameInput" id="lblName">Jouw naam (voor persoonlijke aanmoedigingen)</label>
-      <input type="text" id="nameInput" placeholder="bijv. Ids">
-
-      <label id="lblColor">Accentkleur</label>
-      <div class="swatch-row">
-        <button class="swatch selected" data-color="127,219,168" style="background:#7fdba8"></button>
-        <button class="swatch" data-color="94,158,219" style="background:#5e9edb"></button>
-        <button class="swatch" data-color="176,141,255" style="background:#b08dff"></button>
-        <button class="swatch" data-color="255,111,97" style="background:#ff6f61"></button>
-        <button class="swatch" data-color="255,184,92" style="background:#ffb85c"></button>
-      </div>
-
-      <label for="langBtn" id="lblLanguage">Taal</label>
-      <div class="lang-picker" id="langPicker">
-        <button type="button" class="lang-picker-btn" id="langBtn" aria-haspopup="listbox" aria-expanded="false">
-          <span class="lang-flag" id="langBtnFlag"></span>
-          <span id="langBtnName"></span>
-          <span class="lang-picker-chevron">▾</span>
+      <div class="settings-group" data-group="personalize">
+        <button type="button" class="settings-group-header">
+          <span id="lblGroupPersonalize">Personalisatie</span>
+          <span class="settings-group-chevron">▾</span>
         </button>
-        <div class="lang-picker-menu hidden" id="langMenu" role="listbox"></div>
+        <div class="settings-group-content">
+          <label for="nameInput" id="lblName">Jouw naam (voor persoonlijke aanmoedigingen)</label>
+          <input type="text" id="nameInput" placeholder="bijv. Ids">
+
+          <label id="lblColor">Accentkleur</label>
+          <div class="swatch-row">
+            <button class="swatch selected" data-color="127,219,168" style="background:#7fdba8"></button>
+            <button class="swatch" data-color="94,158,219" style="background:#5e9edb"></button>
+            <button class="swatch" data-color="176,141,255" style="background:#b08dff"></button>
+            <button class="swatch" data-color="255,111,97" style="background:#ff6f61"></button>
+            <button class="swatch" data-color="255,184,92" style="background:#ffb85c"></button>
+          </div>
+
+          <label for="langBtn" id="lblLanguage">Taal</label>
+          <div class="lang-picker" id="langPicker">
+            <button type="button" class="lang-picker-btn" id="langBtn" aria-haspopup="listbox" aria-expanded="false">
+              <span class="lang-flag" id="langBtnFlag"></span>
+              <span id="langBtnName"></span>
+              <span class="lang-picker-chevron">▾</span>
+            </button>
+            <div class="lang-picker-menu hidden" id="langMenu" role="listbox"></div>
+          </div>
+
+          <label for="toneSelect" id="lblTone">Coach-toon</label>
+          <select id="toneSelect" style="width:100%; margin-bottom:14px;">
+            <option value="motiverend" id="optToneMotiv">Motiverend</option>
+            <option value="streng" id="optToneStrict">Streng</option>
+            <option value="chill" id="optToneChill">Chill</option>
+          </select>
+        </div>
       </div>
 
-      <label for="toneSelect" id="lblTone">Coach-toon</label>
-      <select id="toneSelect" style="width:100%; margin-bottom:14px;">
-        <option value="motiverend" id="optToneMotiv">Motiverend</option>
-        <option value="streng" id="optToneStrict">Streng</option>
-        <option value="chill" id="optToneChill">Chill</option>
-      </select>
+      <div class="settings-group" data-group="training">
+        <button type="button" class="settings-group-header">
+          <span id="lblGroupTraining">Training</span>
+          <span class="settings-group-chevron">▾</span>
+        </button>
+        <div class="settings-group-content">
+          <label for="goalSelect" id="lblGoal">Weekdoel (sessies per week)</label>
+          <select id="goalSelect" style="width:100%; margin-bottom:6px;">
+            <option value="0" id="optGoal0">Geen doel</option>
+            <option value="2">2</option>
+            <option value="3" selected>3</option>
+            <option value="4">4</option>
+            <option value="5">5</option>
+            <option value="7" id="optGoal7">Elke dag</option>
+          </select>
+          <div class="goal-bar-wrap" id="goalBarWrap" style="display:none;">
+            <div class="goal-bar"><div class="goal-bar-fill" id="goalBarFill"></div></div>
+            <div class="goal-bar-label" id="goalBarLabel"></div>
+          </div>
 
-      <label for="goalSelect" id="lblGoal">Weekdoel (sessies per week)</label>
-      <select id="goalSelect" style="width:100%; margin-bottom:6px;">
-        <option value="0" id="optGoal0">Geen doel</option>
-        <option value="2">2</option>
-        <option value="3" selected>3</option>
-        <option value="4">4</option>
-        <option value="5">5</option>
-        <option value="7" id="optGoal7">Elke dag</option>
-      </select>
-      <div class="goal-bar-wrap" id="goalBarWrap" style="display:none;">
-        <div class="goal-bar"><div class="goal-bar-fill" id="goalBarFill"></div></div>
-        <div class="goal-bar-label" id="goalBarLabel"></div>
+          <label for="customExInput" id="lblCustomEx">Eigen oefening</label>
+          <div class="settings" style="justify-content:flex-start; gap:6px; margin-bottom:14px;">
+            <input type="text" id="customExInput" placeholder="bijv. Squat hold" style="flex:1; background:var(--panel-alt); color:var(--text); border:1px solid var(--border); border-radius:8px; padding:8px 10px; font-size:0.9rem; font-family:inherit;">
+            <button class="small-btn" id="customExSaveBtn">✓</button>
+          </div>
+        </div>
       </div>
 
-      <label for="speedSelect" id="lblSpeed">Spreeksnelheid van de stem</label>
-      <select id="speedSelect" style="width:100%; margin-bottom:14px;">
-        <option value="0.85" id="optSpeedSlow">Langzaam</option>
-        <option value="1" selected id="optSpeedNormal">Normaal</option>
-        <option value="1.2" id="optSpeedFast">Snel</option>
-      </select>
+      <div class="settings-group" data-group="display">
+        <button type="button" class="settings-group-header">
+          <span id="lblGroupDisplay">Weergave &amp; geluid</span>
+          <span class="settings-group-chevron">▾</span>
+        </button>
+        <div class="settings-group-content">
+          <label for="speedSelect" id="lblSpeed">Spreeksnelheid van de stem</label>
+          <select id="speedSelect" style="width:100%; margin-bottom:14px;">
+            <option value="0.85" id="optSpeedSlow">Langzaam</option>
+            <option value="1" selected id="optSpeedNormal">Normaal</option>
+            <option value="1.2" id="optSpeedFast">Snel</option>
+          </select>
 
-      <label for="volumeSlider" id="lblVolume">Stemvolume</label>
-      <input type="range" id="volumeSlider" min="0" max="100" value="100" style="width:100%; margin-bottom:14px;">
+          <label for="volumeSlider" id="lblVolume">Stemvolume</label>
+          <input type="range" id="volumeSlider" min="0" max="100" value="100" style="width:100%; margin-bottom:14px;">
 
-      <div class="toggle-row">
-        <span id="lblLightTheme">Licht thema</span>
-        <label class="toggle-switch">
-          <input type="checkbox" id="themeToggleInput">
-          <span class="toggle-slider"></span>
-        </label>
+          <div class="toggle-row">
+            <span id="lblLightTheme">Licht thema</span>
+            <label class="toggle-switch">
+              <input type="checkbox" id="themeToggleInput">
+              <span class="toggle-slider"></span>
+            </label>
+          </div>
+
+          <div class="toggle-row" id="voiceToggleRow" style="display:none;">
+            <span id="lblVoiceControl">Stembediening ("stop" zeggen)</span>
+            <label class="toggle-switch">
+              <input type="checkbox" id="voiceToggleInput">
+              <span class="toggle-slider"></span>
+            </label>
+          </div>
+
+          <div class="toggle-row">
+            <span id="lblBigFont">Groot lettertype</span>
+            <label class="toggle-switch">
+              <input type="checkbox" id="bigFontToggleInput">
+              <span class="toggle-slider"></span>
+            </label>
+          </div>
+
+          <label for="ambientSelect" id="lblAmbient">Achtergrondgeluid</label>
+          <select id="ambientSelect" style="width:100%; margin-bottom:14px;">
+            <option value="off" id="optAmbientOff">Uit</option>
+            <option value="rain" id="optAmbientRain">Regen</option>
+            <option value="waves" id="optAmbientWaves">Golven</option>
+          </select>
+
+          <button class="small-btn" id="gymModeBtn" style="width:100%;">Gym-modus (groot scherm)</button>
+        </div>
       </div>
 
-      <div class="toggle-row" id="voiceToggleRow" style="display:none;">
-        <span id="lblVoiceControl">Stembediening ("stop" zeggen)</span>
-        <label class="toggle-switch">
-          <input type="checkbox" id="voiceToggleInput">
-          <span class="toggle-slider"></span>
-        </label>
+      <div class="settings-group" data-group="account">
+        <button type="button" class="settings-group-header">
+          <span id="lblGroupAccount">Account</span>
+          <span class="settings-group-chevron">▾</span>
+        </button>
+        <div class="settings-group-content">
+          <div id="authLoggedInEmail" style="font-size:0.85rem; color:var(--muted); margin-bottom:8px;"></div>
+
+          <label for="usernameInput" id="lblUsername">Gebruikersnaam</label>
+          <div class="settings" style="justify-content:flex-start; gap:6px; margin-bottom:4px;">
+            <input type="text" id="usernameInput" placeholder="bijv. ids_92" style="flex:1; background:var(--panel-alt); color:var(--text); border:1px solid var(--border); border-radius:8px; padding:8px 10px; font-size:0.9rem; font-family:inherit;">
+            <button class="small-btn" id="usernameSaveBtn">✓</button>
+          </div>
+          <div id="usernameStatus" style="font-size:0.78rem; color:var(--muted); min-height:1.2em; margin-bottom:10px;"></div>
+
+          <button class="small-btn" id="authSignOutBtn" style="width:100%;">Uitloggen</button>
+        </div>
       </div>
-
-      <div class="toggle-row">
-        <span id="lblBigFont">Groot lettertype</span>
-        <label class="toggle-switch">
-          <input type="checkbox" id="bigFontToggleInput">
-          <span class="toggle-slider"></span>
-        </label>
-      </div>
-
-      <label for="ambientSelect" id="lblAmbient">Achtergrondgeluid</label>
-      <select id="ambientSelect" style="width:100%; margin-bottom:14px;">
-        <option value="off" id="optAmbientOff">Uit</option>
-        <option value="rain" id="optAmbientRain">Regen</option>
-        <option value="waves" id="optAmbientWaves">Golven</option>
-      </select>
-
-      <label for="customExInput" id="lblCustomEx">Eigen oefening</label>
-      <div class="settings" style="justify-content:flex-start; gap:6px; margin-bottom:14px;">
-        <input type="text" id="customExInput" placeholder="bijv. Squat hold" style="flex:1; background:var(--panel-alt); color:var(--text); border:1px solid var(--border); border-radius:8px; padding:8px 10px; font-size:0.9rem; font-family:inherit;">
-        <button class="small-btn" id="customExSaveBtn">✓</button>
-      </div>
-
-      <hr class="stats-divider">
-      <label style="color:var(--text); font-weight:600;">Account</label>
-      <div id="authLoggedInEmail" style="font-size:0.85rem; color:var(--muted); margin-bottom:8px;"></div>
-
-      <label for="usernameInput" id="lblUsername">Gebruikersnaam</label>
-      <div class="settings" style="justify-content:flex-start; gap:6px; margin-bottom:4px;">
-        <input type="text" id="usernameInput" placeholder="bijv. ids_92" style="flex:1; background:var(--panel-alt); color:var(--text); border:1px solid var(--border); border-radius:8px; padding:8px 10px; font-size:0.9rem; font-family:inherit;">
-        <button class="small-btn" id="usernameSaveBtn">✓</button>
-      </div>
-      <div id="usernameStatus" style="font-size:0.78rem; color:var(--muted); min-height:1.2em; margin-bottom:10px;"></div>
-
-      <button class="small-btn" id="friendsBtn" style="width:100%; margin-bottom:8px;">👥 Vrienden</button>
-
-      <button class="small-btn" id="leaderboardBtn" style="width:100%; margin-bottom:8px;">🏆 Scorebord</button>
-
-      <button class="small-btn" id="authSignOutBtn" style="width:100%; margin-bottom:14px;">Uitloggen</button>
-
-      <button class="small-btn" id="gymModeBtn" style="width:100%;">Gym-modus (groot scherm)</button>
     </div>
 
     <div class="ring-wrap" id="ringWrap">
@@ -1020,7 +1085,8 @@
         friendAlreadyAdded:'Jullie zijn al vrienden', friendRequestPending:'Verzoek staat al open', friendRequestSent:'Verzoek verstuurd',
         leaderboardBtn:'Scorebord', leaderboardTitle:'Scorebord', lbTabExercise:'Per oefening',
         lbTabBestDay:'Meeste tijd/dag', lbTabStreak:'Langste streak', youLabel:'Jij',
-        lbEmpty:'Voeg vrienden toe om het scorebord te zien'
+        lbEmpty:'Voeg vrienden toe om het scorebord te zien',
+        groupPersonalize:'Personalisatie', groupTraining:'Training', groupDisplay:'Weergave & geluid', groupAccount:'Account'
       },
       speech: { countdown:['drie','twee','één'],
         startWithName:(n)=>`Kom op, ${n}!`, startNoName:'Start!',
@@ -1126,7 +1192,8 @@
         friendAlreadyAdded:'You are already friends', friendRequestPending:'Request already pending', friendRequestSent:'Request sent',
         leaderboardBtn:'Leaderboard', leaderboardTitle:'Leaderboard', lbTabExercise:'Per exercise',
         lbTabBestDay:'Most time/day', lbTabStreak:'Longest streak', youLabel:'You',
-        lbEmpty:'Add friends to see the leaderboard'
+        lbEmpty:'Add friends to see the leaderboard',
+        groupPersonalize:'Personalize', groupTraining:'Training', groupDisplay:'Display & sound', groupAccount:'Account'
       },
       speech: { countdown:['three','two','one'],
         startWithName:(n)=>`Come on, ${n}!`, startNoName:'Start!',
@@ -1206,7 +1273,8 @@
         friendAlreadyAdded:'Ihr seid bereits befreundet', friendRequestPending:'Anfrage bereits offen', friendRequestSent:'Anfrage gesendet',
         leaderboardBtn:'Bestenliste', leaderboardTitle:'Bestenliste', lbTabExercise:'Pro Übung',
         lbTabBestDay:'Meiste Zeit/Tag', lbTabStreak:'Längste Serie', youLabel:'Du',
-        lbEmpty:'Füge Freunde hinzu, um die Bestenliste zu sehen'
+        lbEmpty:'Füge Freunde hinzu, um die Bestenliste zu sehen',
+        groupPersonalize:'Personalisierung', groupTraining:'Training', groupDisplay:'Anzeige & Ton', groupAccount:'Konto'
       },
       speech: { countdown:['drei','zwei','eins'],
         startWithName:(n)=>`Los geht's, ${n}!`, startNoName:'Start!',
@@ -1286,7 +1354,8 @@
         friendAlreadyAdded:'Ya sois amigos', friendRequestPending:'La solicitud ya está pendiente', friendRequestSent:'Solicitud enviada',
         leaderboardBtn:'Clasificación', leaderboardTitle:'Clasificación', lbTabExercise:'Por ejercicio',
         lbTabBestDay:'Más tiempo/día', lbTabStreak:'Racha más larga', youLabel:'Tú',
-        lbEmpty:'Añade amigos para ver la clasificación'
+        lbEmpty:'Añade amigos para ver la clasificación',
+        groupPersonalize:'Personalización', groupTraining:'Entrenamiento', groupDisplay:'Pantalla y sonido', groupAccount:'Cuenta'
       },
       speech: { countdown:['tres','dos','uno'],
         startWithName:(n)=>`¡Vamos, ${n}!`, startNoName:'¡Empieza!',
@@ -1366,7 +1435,8 @@
         friendAlreadyAdded:'Vous êtes déjà amis', friendRequestPending:'Demande déjà en attente', friendRequestSent:'Demande envoyée',
         leaderboardBtn:'Classement', leaderboardTitle:'Classement', lbTabExercise:'Par exercice',
         lbTabBestDay:'Plus de temps/jour', lbTabStreak:'Plus longue série', youLabel:'Toi',
-        lbEmpty:'Ajoute des amis pour voir le classement'
+        lbEmpty:'Ajoute des amis pour voir le classement',
+        groupPersonalize:'Personnalisation', groupTraining:'Entraînement', groupDisplay:'Affichage & son', groupAccount:'Compte'
       },
       speech: { countdown:['trois','deux','un'],
         startWithName:(n)=>`Allez, ${n}\u00a0!`, startNoName:'C\u2019est parti\u00a0!',
@@ -1446,7 +1516,8 @@
         friendAlreadyAdded:'Já são amigos', friendRequestPending:'Pedido já pendente', friendRequestSent:'Pedido enviado',
         leaderboardBtn:'Classificação', leaderboardTitle:'Classificação', lbTabExercise:'Por exercício',
         lbTabBestDay:'Mais tempo/dia', lbTabStreak:'Sequência mais longa', youLabel:'Tu',
-        lbEmpty:'Adiciona amigos para ver a classificação'
+        lbEmpty:'Adiciona amigos para ver a classificação',
+        groupPersonalize:'Personalização', groupTraining:'Treino', groupDisplay:'Visualização & som', groupAccount:'Conta'
       },
       speech: { countdown:['três','dois','um'],
         startWithName:(n)=>`Vamos, ${n}!`, startNoName:'Começar!',
@@ -1526,7 +1597,8 @@
         friendAlreadyAdded:'Вы уже друзья', friendRequestPending:'Запрос уже ожидает', friendRequestSent:'Запрос отправлен',
         leaderboardBtn:'Таблица лидеров', leaderboardTitle:'Таблица лидеров', lbTabExercise:'По упражнению',
         lbTabBestDay:'Больше всего времени/день', lbTabStreak:'Самая длинная серия', youLabel:'Ты',
-        lbEmpty:'Добавь друзей, чтобы увидеть таблицу лидеров'
+        lbEmpty:'Добавь друзей, чтобы увидеть таблицу лидеров',
+        groupPersonalize:'Персонализация', groupTraining:'Тренировка', groupDisplay:'Экран и звук', groupAccount:'Аккаунт'
       },
       speech: { countdown:['три','два','один'],
         startWithName:(n)=>`Давай, ${n}!`, startNoName:'Начали!',
@@ -1606,7 +1678,8 @@
         friendAlreadyAdded:'你们已经是好友', friendRequestPending:'请求已在等待中', friendRequestSent:'请求已发送',
         leaderboardBtn:'排行榜', leaderboardTitle:'排行榜', lbTabExercise:'按训练项目',
         lbTabBestDay:'单日最长时间', lbTabStreak:'最长连续天数', youLabel:'你',
-        lbEmpty:'添加好友以查看排行榜'
+        lbEmpty:'添加好友以查看排行榜',
+        groupPersonalize:'个性化', groupTraining:'训练', groupDisplay:'显示与声音', groupAccount:'账户'
       },
       speech: { countdown:['三','二','一'],
         startWithName:(n)=>`加油，${n}！`, startNoName:'开始！',
@@ -1686,7 +1759,8 @@
         friendAlreadyAdded:'आप पहले से ही मित्र हैं', friendRequestPending:'अनुरोध पहले से लंबित है', friendRequestSent:'अनुरोध भेजा गया',
         leaderboardBtn:'लीडरबोर्ड', leaderboardTitle:'लीडरबोर्ड', lbTabExercise:'प्रति व्यायाम',
         lbTabBestDay:'सबसे ज्यादा समय/दिन', lbTabStreak:'सबसे लंबी स्ट्रीक', youLabel:'आप',
-        lbEmpty:'लीडरबोर्ड देखने के लिए मित्र जोड़ें'
+        lbEmpty:'लीडरबोर्ड देखने के लिए मित्र जोड़ें',
+        groupPersonalize:'वैयक्तिकरण', groupTraining:'ट्रेनिंग', groupDisplay:'डिस्प्ले और साउंड', groupAccount:'खाता'
       },
       speech: { countdown:['तीन','दो','एक'],
         startWithName:(n)=>`चलो, ${n}!`, startNoName:'शुरू!',
@@ -1766,7 +1840,8 @@
         friendAlreadyAdded:'أنتما صديقان بالفعل', friendRequestPending:'الطلب معلق بالفعل', friendRequestSent:'تم إرسال الطلب',
         leaderboardBtn:'لوحة الصدارة', leaderboardTitle:'لوحة الصدارة', lbTabExercise:'حسب التمرين',
         lbTabBestDay:'أكثر وقت/يوم', lbTabStreak:'أطول سلسلة متتالية', youLabel:'أنت',
-        lbEmpty:'أضف أصدقاء لرؤية لوحة الصدارة'
+        lbEmpty:'أضف أصدقاء لرؤية لوحة الصدارة',
+        groupPersonalize:'التخصيص', groupTraining:'التدريب', groupDisplay:'العرض والصوت', groupAccount:'الحساب'
       },
       speech: { countdown:['ثلاثة','اثنان','واحد'],
         startWithName:(n)=>`هيا، ${n}!`, startNoName:'ابدأ!',
@@ -1871,6 +1946,9 @@
   const lbTabStreakBtn = document.getElementById('lbTabStreakBtn');
   const lbExerciseSelect = document.getElementById('lbExerciseSelect');
   const leaderboardList = document.getElementById('leaderboardList');
+  const lbPreview = document.getElementById('lbPreview');
+  const lbPreviewTitle = document.getElementById('lbPreviewTitle');
+  const lbPreviewList = document.getElementById('lbPreviewList');
   const display = document.getElementById('display');
   const phaseLabel = document.getElementById('phaseLabel');
   const startBtn = document.getElementById('startBtn');
@@ -2054,6 +2132,7 @@
     else if (removeBtn) await sb.rpc('remove_friend', { other_id: removeBtn.dataset.remove });
     else return;
     loadFriendsData();
+    loadLeaderboardData();
   }
   incomingRequestsList.addEventListener('click', handleFriendListClick);
   sentRequestsList.addEventListener('click', handleFriendListClick);
@@ -2118,7 +2197,29 @@
       longest_streak: row.longest_streak || 0,
     }));
     renderLeaderboard();
+    renderLbPreview();
   }
+  function renderLbPreview() {
+    if (!lbStatsCache || lbStatsCache.length <= 1) { lbPreview.classList.add('hidden'); return; }
+    lbPreview.classList.remove('hidden');
+    const sorted = lbStatsCache.map((u) => ({ ...u, value: u.best_day_seconds })).sort((a, b) => b.value - a.value);
+    const meRank = sorted.findIndex((u) => u.isMe);
+    let rows = sorted.slice(0, 3).map((u, i) => lbPreviewRowHtml(u, i)).join('');
+    if (meRank >= 3) rows += '<div class="lb-preview-sep">···</div>' + lbPreviewRowHtml(sorted[meRank], meRank);
+    lbPreviewList.innerHTML = rows;
+  }
+  function lbPreviewRowHtml(u, i) {
+    return `<div class="modal-list-item${u.isMe ? ' me' : ''}">
+      <span><span class="rank">${i + 1}.</span><span class="name">${u.name}</span></span>
+      <span class="value">${format(u.value)}</span>
+    </div>`;
+  }
+  lbPreview.addEventListener('click', () => {
+    settingsPanel.style.display = 'none';
+    leaderboardOverlay.classList.remove('hidden');
+    setLbTab('bestday');
+    loadLeaderboardData();
+  });
   leaderboardBtn.addEventListener('click', () => {
     settingsPanel.style.display = 'none';
     leaderboardOverlay.classList.remove('hidden');
@@ -2202,17 +2303,20 @@
     document.getElementById('lblLanguage').textContent = t.ui.language;
     document.getElementById('lblUsername').textContent = t.ui.username;
     usernameInput.placeholder = t.ui.usernamePlaceholder;
-    friendsBtn.textContent = '👥 ' + t.ui.friendsBtn;
     document.getElementById('friendsTitle').textContent = t.ui.friendsTitle;
     friendSearchInput.placeholder = t.ui.friendSearchPlaceholder;
     document.getElementById('lblIncomingRequests').textContent = t.ui.incomingRequests;
     document.getElementById('lblSentRequests').textContent = t.ui.sentRequests;
     document.getElementById('lblFriendsList').textContent = t.ui.friendsListLabel;
-    leaderboardBtn.textContent = '🏆 ' + t.ui.leaderboardBtn;
     document.getElementById('leaderboardTitle').textContent = t.ui.leaderboardTitle;
     lbTabExerciseBtn.textContent = t.ui.lbTabExercise;
     lbTabBestDayBtn.textContent = t.ui.lbTabBestDay;
     lbTabStreakBtn.textContent = t.ui.lbTabStreak;
+    lbPreviewTitle.textContent = t.ui.lbTabBestDay;
+    document.getElementById('lblGroupPersonalize').textContent = t.ui.groupPersonalize;
+    document.getElementById('lblGroupTraining').textContent = t.ui.groupTraining;
+    document.getElementById('lblGroupDisplay').textContent = t.ui.groupDisplay;
+    document.getElementById('lblGroupAccount').textContent = t.ui.groupAccount;
     document.getElementById('lblTone').textContent = t.ui.tone;
     document.getElementById('optToneMotiv').textContent = t.ui.toneMotiv;
     document.getElementById('optToneStrict').textContent = t.ui.toneStrict;
@@ -2334,6 +2438,9 @@
     const opening = settingsPanel.style.display !== 'block';
     settingsPanel.style.display = opening ? 'block' : 'none';
     if (!opening) syncToCloudDebounced();
+  });
+  document.querySelectorAll('.settings-group-header').forEach((header) => {
+    header.addEventListener('click', () => header.parentElement.classList.toggle('open'));
   });
 
   // ====== Gym mode ======
@@ -3879,6 +3986,7 @@
     authGate.classList.add('hidden');
     authLoggedInEmail.textContent = 'Ingelogd als ' + user.email;
     loadProfile();
+    loadLeaderboardData();
 
     const { data: row } = await sb.from('user_data').select('data').eq('user_id', user.id).maybeSingle();
     const localBlob = gatherAppDataBlob();
