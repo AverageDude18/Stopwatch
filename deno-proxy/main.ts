@@ -29,10 +29,8 @@ import webpush from "npm:web-push@3";
 
 const ALLOWED_ORIGIN = "https://averagedude18.github.io";
 const SUPABASE_URL = "https://qnzrkcqbzmmxxzawwwat.supabase.co";
-const SUPABASE_ANON_KEY =
-  "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InFuenJrY3Fiem1teHh6YXd3d2F0Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODMxMTI0OTUsImV4cCI6MjA5ODY4ODQ5NX0.Tf3IFNL1pbh1TBRBx-PYBwXFGE0Le8_GjjC1Zt6BVxY";
-const VAPID_PUBLIC_KEY =
-  "BM6TgAgla-Vly6wB0AfQ6oXzU5IYd1bgW1ZGPaP9A9AIFbjiWlAilNlDCJivv7HCk3piscZl0VOmvu2LfgjUfX4";
+const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InFuenJrY3Fiem1teHh6YXd3d2F0Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODMxMTI0OTUsImV4cCI6MjA5ODY4ODQ5NX0.Tf3IFNL1pbh1TBRBx-PYBwXFGE0Le8_GjjC1Zt6BVxY";
+const VAPID_PUBLIC_KEY = "BM6TgAgla-Vly6wB0AfQ6oXzU5IYd1bgW1ZGPaP9A9AIFbjiWlAilNlDCJivv7HCk3piscZl0VOmvu2LfgjUfX4";
 
 // Escalating streak-reminder text, one triple (12:00 / 18:00 / 22:00 tone) per
 // app language. This runs on its own schedule (Deno.cron below) rather than
