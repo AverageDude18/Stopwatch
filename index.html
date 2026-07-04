@@ -187,16 +187,11 @@
 
   .lb-preview {
     margin-bottom: 14px; text-align: left; background: var(--panel-alt); border-radius: 14px;
-    padding: 10px 14px; font-size: 0.85rem; border: 1px solid var(--border); cursor: pointer;
+    padding: 10px 14px; font-size: 0.85rem; border: 1px solid var(--border); border-bottom: 1px solid var(--border) !important;
   }
   .lb-preview.hidden { display: none; }
   body[dir="rtl"] .lb-preview { text-align: right; }
-  .lb-preview-header {
-    display: flex; justify-content: space-between; align-items: center;
-    font-weight: 600; color: var(--text); margin-bottom: 4px;
-  }
-  .lb-preview-chevron { color: var(--muted); font-size: 0.75rem; }
-  body[dir="rtl"] .lb-preview-chevron { transform: scaleX(-1); }
+  #lbPreviewContent { cursor: pointer; }
   .lb-preview-sep { text-align: center; color: var(--muted2); font-size: 0.75rem; padding: 2px 0; }
 
   .flash-overlay {
@@ -646,6 +641,7 @@
       </div>
       <div class="top-row-actions">
         <button class="icon-btn" id="friendsBtn" aria-label="Friends">👥</button>
+        <button class="icon-btn" id="duelsBtn" aria-label="Duels">⚔️</button>
         <button class="icon-btn" id="leaderboardBtn" aria-label="Leaderboard">🏆</button>
         <button class="icon-btn" id="settingsBtn" aria-label="Settings">⚙️</button>
       </div>
@@ -653,12 +649,14 @@
     <div class="today-line" id="todayDisplay" style="display:none;"></div>
     <div class="today-line" id="smartTip" style="display:none;"></div>
 
-    <div class="lb-preview hidden" id="lbPreview">
-      <div class="lb-preview-header">
+    <div class="lb-preview settings-group open hidden" id="lbPreview">
+      <button type="button" class="settings-group-header">
         <span>🏆 <span id="lbPreviewTitle">Meeste tijd op 1 dag</span></span>
-        <span class="lb-preview-chevron">▸</span>
+        <span class="settings-group-chevron">▾</span>
+      </button>
+      <div class="settings-group-content" id="lbPreviewContent">
+        <div id="lbPreviewList"></div>
       </div>
-      <div id="lbPreviewList"></div>
     </div>
 
     <div class="settings-panel" id="settingsPanel">
@@ -971,6 +969,16 @@
 
       <div class="modal-list-label" id="lblFriendsList">Vrienden</div>
       <div id="friendsList"></div>
+    </div>
+  </div>
+
+  <div class="modal-overlay hidden" id="duelsOverlay">
+    <div class="modal-card">
+      <div class="modal-card-header">
+        <div class="modal-card-title" id="duelsOverviewTitle">Duels</div>
+        <button class="modal-close-btn" id="duelsCloseBtn" aria-label="Close">✕</button>
+      </div>
+      <div id="duelsScoreList"></div>
     </div>
   </div>
 
@@ -1331,7 +1339,7 @@
         notifPromptTitle:'Meldingen inschakelen?',
         notifPromptBody:'Krijg een seintje als een vriend reageert op je scorebord, of als je streak in gevaar is.',
         notifPromptYes:'Ja, graag', notifPromptNo:'Niet nu',
-        duelModeTitle:'DUELMODUS',
+        duelModeTitle:'DUELMODUS', duelsEmpty:'Nog geen duels gespeeld.',
         duelInviteBtnTitle:'Daag uit voor een duel', duelInviteModalTitle:'Duel voorstellen', duelInviteExLabel:'Kies de oefening',
         duelInviteSendBtn:'Uitnodigen', duelInviteCancelBtn:'Annuleren',
         duelWaitingText:(name)=>`Wachten op reactie van ${name}...`, duelDeclinedText:'Duel geweigerd.',
@@ -1464,7 +1472,7 @@
         notifPromptTitle:'Enable notifications?',
         notifPromptBody:'Get notified when a friend reacts to your leaderboard entry, or when your streak is at risk.',
         notifPromptYes:'Yes, please', notifPromptNo:'Not now',
-        duelModeTitle:'DUEL MODE',
+        duelModeTitle:'DUEL MODE', duelsEmpty:'No duels played yet.',
         duelInviteBtnTitle:'Challenge to a duel', duelInviteModalTitle:'Propose a duel', duelInviteExLabel:'Choose the exercise',
         duelInviteSendBtn:'Invite', duelInviteCancelBtn:'Cancel',
         duelWaitingText:(name)=>`Waiting for ${name}'s response...`, duelDeclinedText:'Duel declined.',
@@ -1596,7 +1604,7 @@
         notifPromptTitle:'Benachrichtigungen aktivieren?',
         notifPromptBody:'Erhalte eine Benachrichtigung, wenn ein Freund auf deine Bestenliste reagiert oder deine Serie in Gefahr ist.',
         notifPromptYes:'Ja, gerne', notifPromptNo:'Nicht jetzt',
-        duelModeTitle:'DUELLMODUS',
+        duelModeTitle:'DUELLMODUS', duelsEmpty:'Noch keine Duelle gespielt.',
         duelInviteBtnTitle:'Zu einem Duell herausfordern', duelInviteModalTitle:'Duell vorschlagen', duelInviteExLabel:'Übung wählen',
         duelInviteSendBtn:'Einladen', duelInviteCancelBtn:'Abbrechen',
         duelWaitingText:(name)=>`Warte auf Antwort von ${name} ...`, duelDeclinedText:'Duell abgelehnt.',
@@ -1728,7 +1736,7 @@
         notifPromptTitle:'¿Activar notificaciones?',
         notifPromptBody:'Recibe un aviso cuando un amigo reaccione a tu clasificación o cuando tu racha esté en peligro.',
         notifPromptYes:'Sí, por favor', notifPromptNo:'Ahora no',
-        duelModeTitle:'MODO DUELO',
+        duelModeTitle:'MODO DUELO', duelsEmpty:'Todavía no se ha jugado ningún duelo.',
         duelInviteBtnTitle:'Retar a un duelo', duelInviteModalTitle:'Proponer un duelo', duelInviteExLabel:'Elige el ejercicio',
         duelInviteSendBtn:'Invitar', duelInviteCancelBtn:'Cancelar',
         duelWaitingText:(name)=>`Esperando la respuesta de ${name}...`, duelDeclinedText:'Duelo rechazado.',
@@ -1860,7 +1868,7 @@
         notifPromptTitle:'Activer les notifications ?',
         notifPromptBody:'Reçois un avis quand un ami réagit à ton classement, ou quand ta série est en danger.',
         notifPromptYes:'Oui, avec plaisir', notifPromptNo:'Pas maintenant',
-        duelModeTitle:'MODE DUEL',
+        duelModeTitle:'MODE DUEL', duelsEmpty:'Aucun duel joué pour le moment.',
         duelInviteBtnTitle:'Défier en duel', duelInviteModalTitle:'Proposer un duel', duelInviteExLabel:'Choisis ton exercice',
         duelInviteSendBtn:'Inviter', duelInviteCancelBtn:'Annuler',
         duelWaitingText:(name)=>`En attente de la réponse de ${name}...`, duelDeclinedText:'Duel refusé.',
@@ -1992,7 +2000,7 @@
         notifPromptTitle:'Ativar notificações?',
         notifPromptBody:'Recebe um aviso quando um amigo reage à tua classificação, ou quando a tua sequência está em risco.',
         notifPromptYes:'Sim, por favor', notifPromptNo:'Agora não',
-        duelModeTitle:'MODO DUELO',
+        duelModeTitle:'MODO DUELO', duelsEmpty:'Ainda nenhum duelo jogado.',
         duelInviteBtnTitle:'Desafiar para um duelo', duelInviteModalTitle:'Propor um duelo', duelInviteExLabel:'Escolhe o exercício',
         duelInviteSendBtn:'Convidar', duelInviteCancelBtn:'Cancelar',
         duelWaitingText:(name)=>`A aguardar resposta de ${name}...`, duelDeclinedText:'Duelo recusado.',
@@ -2124,7 +2132,7 @@
         notifPromptTitle:'Включить уведомления?',
         notifPromptBody:'Получай уведомление, когда друг реагирует на твой результат в рейтинге, или когда твоя серия под угрозой.',
         notifPromptYes:'Да, включить', notifPromptNo:'Не сейчас',
-        duelModeTitle:'РЕЖИМ ДУЭЛИ',
+        duelModeTitle:'РЕЖИМ ДУЭЛИ', duelsEmpty:'Пока нет сыгранных дуэлей.',
         duelInviteBtnTitle:'Вызвать на дуэль', duelInviteModalTitle:'Предложить дуэль', duelInviteExLabel:'Выбери упражнение',
         duelInviteSendBtn:'Пригласить', duelInviteCancelBtn:'Отмена',
         duelWaitingText:(name)=>`Ждём ответа от ${name}...`, duelDeclinedText:'Дуэль отклонена.',
@@ -2256,7 +2264,7 @@
         notifPromptTitle:'启用通知？',
         notifPromptBody:'当好友对你的排行榜成绩做出反应，或你的连续记录面临中断时，及时提醒你。',
         notifPromptYes:'好的', notifPromptNo:'暂不',
-        duelModeTitle:'对决模式',
+        duelModeTitle:'对决模式', duelsEmpty:'还没有进行过对决。',
         duelInviteBtnTitle:'发起对决', duelInviteModalTitle:'提议对决', duelInviteExLabel:'选择项目',
         duelInviteSendBtn:'邀请', duelInviteCancelBtn:'取消',
         duelWaitingText:(name)=>`正在等待${name}的回应...`, duelDeclinedText:'对决被拒绝了。',
@@ -2388,7 +2396,7 @@
         notifPromptTitle:'सूचनाएं चालू करें?',
         notifPromptBody:'जब कोई मित्र आपके लीडरबोर्ड पर प्रतिक्रिया दे, या आपकी स्ट्रीक खतरे में हो, तो सूचना पाएं।',
         notifPromptYes:'हां, चालू करें', notifPromptNo:'अभी नहीं',
-        duelModeTitle:'द्वंद्व मोड',
+        duelModeTitle:'द्वंद्व मोड', duelsEmpty:'अभी तक कोई द्वंद्व नहीं खेला गया।',
         duelInviteBtnTitle:'द्वंद्व के लिए चुनौती दें', duelInviteModalTitle:'द्वंद्व प्रस्तावित करें', duelInviteExLabel:'व्यायाम चुनें',
         duelInviteSendBtn:'आमंत्रित करें', duelInviteCancelBtn:'रद्द करें',
         duelWaitingText:(name)=>`${name} की प्रतिक्रिया का इंतज़ार...`, duelDeclinedText:'द्वंद्व अस्वीकार किया गया।',
@@ -2520,7 +2528,7 @@
         notifPromptTitle:'تفعيل الإشعارات؟',
         notifPromptBody:'احصل على تنبيه عندما يتفاعل صديق مع نتيجتك في لوحة الصدارة، أو عندما تكون سلسلتك في خطر.',
         notifPromptYes:'نعم من فضلك', notifPromptNo:'ليس الآن',
-        duelModeTitle:'وضع المبارزة',
+        duelModeTitle:'وضع المبارزة', duelsEmpty:'لا توجد مبارزات حتى الآن.',
         duelInviteBtnTitle:'تحدَّ إلى مبارزة', duelInviteModalTitle:'اقتراح مبارزة', duelInviteExLabel:'اختر التمرين',
         duelInviteSendBtn:'دعوة', duelInviteCancelBtn:'إلغاء',
         duelWaitingText:(name)=>`في انتظار رد ${name}...`, duelDeclinedText:'تم رفض المبارزة.',
@@ -2705,6 +2713,10 @@
   const incomingRequestsList = document.getElementById('incomingRequestsList');
   const sentRequestsList = document.getElementById('sentRequestsList');
   const friendsList = document.getElementById('friendsList');
+  const duelsBtn = document.getElementById('duelsBtn');
+  const duelsOverlay = document.getElementById('duelsOverlay');
+  const duelsCloseBtn = document.getElementById('duelsCloseBtn');
+  const duelsScoreList = document.getElementById('duelsScoreList');
   const leaderboardBtn = document.getElementById('leaderboardBtn');
   const leaderboardOverlay = document.getElementById('leaderboardOverlay');
   const leaderboardCloseBtn = document.getElementById('leaderboardCloseBtn');
@@ -2720,6 +2732,7 @@
   const lbTrendLegend = document.getElementById('lbTrendLegend');
   const lbPreview = document.getElementById('lbPreview');
   const lbPreviewTitle = document.getElementById('lbPreviewTitle');
+  const lbPreviewContent = document.getElementById('lbPreviewContent');
   const lbPreviewList = document.getElementById('lbPreviewList');
   const display = document.getElementById('display');
   const phaseLabel = document.getElementById('phaseLabel');
@@ -3010,8 +3023,15 @@
       activeDuel = null;
       alert(t.ui.duelDeclinedText);
     } else if (row.status === 'active') {
-      duelWaitingOverlay.classList.add('hidden');
-      enterActiveDuel(row, activeDuel.opponentName);
+      // This UPDATE event also fires for the opponent logging their own
+      // duration (host_duration/guest_duration changing while status stays
+      // 'active') - only actually enter duel mode on the genuine
+      // pending -> active transition, or the other side's timer would get
+      // reset back to the intro step mid-run every time they finished.
+      if (activeDuel.status !== 'active') {
+        duelWaitingOverlay.classList.add('hidden');
+        enterActiveDuel(row, activeDuel.opponentName);
+      }
     } else if (row.status === 'completed') {
       revealDuelResult(row);
     }
@@ -3239,6 +3259,44 @@
   }
   duelModeCloseBtn.addEventListener('click', () => duelModeOverlay.classList.add('hidden'));
 
+  // Head-to-head overview across ALL completed duels, grouped by opponent -
+  // separate from computeDuelScore() (which only looks at one opponent at a
+  // time, for the post-duel reveal screen).
+  async function loadDuelsOverview() {
+    if (!currentUser) return;
+    const { data } = await sb.from('duels').select('host_id, guest_id, winner_id').eq('status', 'completed')
+      .or(`host_id.eq.${currentUser.id},guest_id.eq.${currentUser.id}`);
+    const rows = data || [];
+    const byOpponent = {};
+    rows.forEach((r) => {
+      const opponentId = r.host_id === currentUser.id ? r.guest_id : r.host_id;
+      if (!byOpponent[opponentId]) byOpponent[opponentId] = { mine: 0, theirs: 0, total: 0 };
+      byOpponent[opponentId].total++;
+      if (r.winner_id === currentUser.id) byOpponent[opponentId].mine++;
+      else if (r.winner_id === opponentId) byOpponent[opponentId].theirs++;
+    });
+    const opponentIds = Object.keys(byOpponent);
+    if (!opponentIds.length) {
+      duelsScoreList.innerHTML = `<div class="modal-list-empty">${t.ui.duelsEmpty}</div>`;
+      return;
+    }
+    const profiles = await fetchProfilesByIds(opponentIds);
+    const sorted = opponentIds
+      .map((id) => ({ id, name: (profiles[id] && profiles[id].username) || '?', ...byOpponent[id] }))
+      .sort((a, b) => b.total - a.total);
+    duelsScoreList.innerHTML = sorted.map((o) => `
+      <div class="modal-list-item">
+        <span class="name"><span class="avatar-mini">${avatarHtml(profiles[o.id])}</span>${o.name}</span>
+        <span class="value">${o.theirs}-${o.mine}</span>
+      </div>`).join('');
+  }
+  duelsBtn.addEventListener('click', () => {
+    settingsPanel.style.display = 'none';
+    duelsOverlay.classList.remove('hidden');
+    loadDuelsOverview();
+  });
+  duelsCloseBtn.addEventListener('click', () => duelsOverlay.classList.add('hidden'));
+
   // ====== Friends ======
   async function fetchProfilesByIds(ids) {
     if (!ids.length) return {};
@@ -3355,10 +3413,26 @@
   function renderLbExerciseOptions() {
     Array.from(lbExerciseSelect.options).forEach((opt) => { opt.textContent = exName_(opt.value); });
   }
-  let lbActiveTab = 'exercise';
+  // Remembers whichever tab/exercise was on screen when the Scorebord modal
+  // was last closed, so the home-screen preview (and the modal, next time
+  // it's opened) resumes there instead of always resetting to a fixed tab.
+  let lbActiveTab = localStorage.getItem('lbLastTab') || 'exercise';
   let lbStatsCache = null;
+  try {
+    const savedEx = localStorage.getItem('lbLastEx');
+    if (savedEx && BASE_EX_KEYS.includes(savedEx)) lbExerciseSelect.value = savedEx;
+  } catch (e) {}
   function currentLbMetric() {
     return lbActiveTab === 'exercise' ? 'exercise:' + (lbExerciseSelect.value || BASE_EX_KEYS[0]) : lbActiveTab;
+  }
+  function computeLbSorted(tab) {
+    if (tab === 'exercise') {
+      const ex = lbExerciseSelect.value || BASE_EX_KEYS[0];
+      return { sorted: lbStatsCache.map((u) => ({ ...u, value: u.records[ex] || 0 })).sort((a, b) => b.value - a.value), formatFn: format };
+    } else if (tab === 'bestday') {
+      return { sorted: lbStatsCache.map((u) => ({ ...u, value: u.best_day_seconds })).sort((a, b) => b.value - a.value), formatFn: format };
+    }
+    return { sorted: lbStatsCache.map((u) => ({ ...u, value: u.longest_streak })).sort((a, b) => b.value - a.value), formatFn: (v) => String(v) };
   }
   async function fetchReactions(toUserIds, metric) {
     if (!toUserIds.length) return { counts: {}, mine: new Set() };
@@ -3387,18 +3461,7 @@
       leaderboardList.innerHTML = `<div class="modal-list-empty">${t.ui.lbEmpty}</div>`;
       return;
     }
-    let sorted, formatFn;
-    if (lbActiveTab === 'exercise') {
-      const ex = lbExerciseSelect.value || BASE_EX_KEYS[0];
-      sorted = lbStatsCache.map((u) => ({ ...u, value: u.records[ex] || 0 })).sort((a, b) => b.value - a.value);
-      formatFn = format;
-    } else if (lbActiveTab === 'bestday') {
-      sorted = lbStatsCache.map((u) => ({ ...u, value: u.best_day_seconds })).sort((a, b) => b.value - a.value);
-      formatFn = format;
-    } else {
-      sorted = lbStatsCache.map((u) => ({ ...u, value: u.longest_streak })).sort((a, b) => b.value - a.value);
-      formatFn = (v) => String(v);
-    }
+    const { sorted, formatFn } = computeLbSorted(lbActiveTab);
     const metric = currentLbMetric();
     const reactions = await fetchReactions(sorted.filter((u) => !u.isMe).map((u) => u.userId), metric);
     renderLbRows(sorted, formatFn, metric, reactions);
@@ -3444,6 +3507,7 @@
     renderActiveLbView();
   }
   let lbActiveView = 'ranking';
+  setLbTab(lbActiveTab); // syncs the tab buttons' active state to match, even before the modal is ever opened
   function setLbView(view) {
     lbActiveView = view;
     lbViewRankingBtn.classList.toggle('active', view === 'ranking');
@@ -3525,36 +3589,48 @@
     renderActiveLbView();
     renderLbPreview();
   }
+  // Mirrors whatever tab is currently active (lbActiveTab), rather than a
+  // fixed category, so it always matches what the full Scorebord modal was
+  // last showing when it was closed - see leaderboardCloseBtn below.
   function renderLbPreview() {
     if (!lbStatsCache || lbStatsCache.length <= 1) { lbPreview.classList.add('hidden'); return; }
     lbPreview.classList.remove('hidden');
-    const sorted = lbStatsCache.map((u) => ({ ...u, value: u.best_day_seconds })).sort((a, b) => b.value - a.value);
+    lbPreviewTitle.textContent = lbMetricLabel(currentLbMetric());
+    const { sorted, formatFn } = computeLbSorted(lbActiveTab);
     const meRank = sorted.findIndex((u) => u.isMe);
-    let rows = sorted.slice(0, 3).map((u, i) => lbPreviewRowHtml(u, i)).join('');
-    if (meRank >= 3) rows += '<div class="lb-preview-sep">···</div>' + lbPreviewRowHtml(sorted[meRank], meRank);
+    let rows = sorted.slice(0, 3).map((u, i) => lbPreviewRowHtml(u, i, formatFn)).join('');
+    if (meRank >= 3) rows += '<div class="lb-preview-sep">···</div>' + lbPreviewRowHtml(sorted[meRank], meRank, formatFn);
     lbPreviewList.innerHTML = rows;
   }
-  function lbPreviewRowHtml(u, i) {
+  function lbPreviewRowHtml(u, i, formatFn) {
     return `<div class="modal-list-item${u.isMe ? ' me' : ''}">
       <span><span class="rank">${i + 1}.</span><span class="avatar-mini">${u.avatar}</span><span class="name">${u.name}</span></span>
-      <span class="value">${format(u.value)}</span>
+      <span class="value">${formatFn(u.value)}</span>
     </div>`;
   }
-  lbPreview.addEventListener('click', () => {
+  // Only the content area opens the full modal - the header (added/removed
+  // via the .settings-group-header wiring further down) just toggles the
+  // preview's own collapsed state without navigating anywhere.
+  lbPreviewContent.addEventListener('click', () => {
     settingsPanel.style.display = 'none';
     leaderboardOverlay.classList.remove('hidden');
     setLbView('ranking');
-    setLbTab('bestday');
     loadLeaderboardData();
   });
   leaderboardBtn.addEventListener('click', () => {
     settingsPanel.style.display = 'none';
     leaderboardOverlay.classList.remove('hidden');
     setLbView('ranking');
-    setLbTab('exercise');
     loadLeaderboardData();
   });
-  leaderboardCloseBtn.addEventListener('click', () => leaderboardOverlay.classList.add('hidden'));
+  leaderboardCloseBtn.addEventListener('click', () => {
+    leaderboardOverlay.classList.add('hidden');
+    try {
+      localStorage.setItem('lbLastTab', lbActiveTab);
+      if (lbActiveTab === 'exercise') localStorage.setItem('lbLastEx', lbExerciseSelect.value);
+    } catch (e) {}
+    renderLbPreview();
+  });
   lbTabExerciseBtn.addEventListener('click', () => setLbTab('exercise'));
   lbTabBestDayBtn.addEventListener('click', () => setLbTab('bestday'));
   lbTabStreakBtn.addEventListener('click', () => setLbTab('streak'));
@@ -3835,7 +3911,7 @@
     settingsPanel.style.display = opening ? 'block' : 'none';
     if (!opening) syncToCloudDebounced();
   });
-  document.querySelectorAll('.settings-group-header').forEach((header) => {
+  document.querySelectorAll('.settings-panel .settings-group-header').forEach((header) => {
     header.addEventListener('click', () => header.parentElement.classList.toggle('open'));
   });
 
