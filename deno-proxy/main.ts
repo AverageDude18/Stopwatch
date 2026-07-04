@@ -6,6 +6,11 @@
 // Also doubles as the Web Push sender, since it's the only server-side piece
 // this project has and already has the right secrets-management setup.
 //
+// Written in plain JavaScript (no type annotations) rather than TypeScript -
+// the Deno Deploy Playground's parser rejected TS generic/type syntax here
+// (e.g. `Record<string, [string, string, string]>`), so this sidesteps that
+// instead of chasing which specific construct it didn't like.
+//
 // Routes:
 //   GET  /voices        -> proxies GET  https://api.elevenlabs.io/v1/voices
 //   POST /tts/:voiceId   -> proxies POST https://api.elevenlabs.io/v1/text-to-speech/:voiceId
@@ -34,7 +39,7 @@ const VAPID_PUBLIC_KEY =
 // in response to a client request, so - unlike the reaction notification,
 // which the client builds using its own translations - the text has to live
 // here instead.
-const STREAK_MESSAGES: Record<string, [string, string, string]> = {
+const STREAK_MESSAGES = {
   nl: [
     "Laat je streak van {n} niet verloren gaan vandaag!",
     "Nog niet getraind vandaag? Je streak van {n} loopt gevaar!",
@@ -87,22 +92,22 @@ const STREAK_MESSAGES: Record<string, [string, string, string]> = {
   ],
 };
 
-function streakMessage(lang: string, tier: number, n: number): string {
-  const templates = STREAK_MESSAGES[lang] ?? STREAK_MESSAGES.nl;
+function streakMessage(lang, tier, n) {
+  const templates = STREAK_MESSAGES[lang] || STREAK_MESSAGES.nl;
   return templates[tier].replace("{n}", String(n));
 }
 
 // Intl's timeZone support handles CET/CEST DST transitions correctly, unlike
 // a fixed UTC offset would.
-function amsterdamHour(date: Date): number {
+function amsterdamHour(date) {
   const fmt = new Intl.DateTimeFormat("en-GB", { timeZone: "Europe/Amsterdam", hour: "2-digit", hour12: false });
   return parseInt(fmt.format(date), 10);
 }
-function amsterdamDateStr(date: Date): string {
+function amsterdamDateStr(date) {
   return new Intl.DateTimeFormat("en-CA", { timeZone: "Europe/Amsterdam" }).format(date);
 }
 
-function corsHeaders(): HeadersInit {
+function corsHeaders() {
   return {
     "Access-Control-Allow-Origin": ALLOWED_ORIGIN,
     "Access-Control-Allow-Methods": "GET, POST, OPTIONS",
@@ -110,9 +115,9 @@ function corsHeaders(): HeadersInit {
   };
 }
 
-function jsonResponse(body: unknown, status = 200): Response {
+function jsonResponse(body, status) {
   return new Response(JSON.stringify(body), {
-    status,
+    status: status || 200,
     headers: { ...corsHeaders(), "Content-Type": "application/json" },
   });
 }
@@ -121,42 +126,37 @@ function jsonResponse(body: unknown, status = 200): Response {
 // can't be used to spam arbitrary users by anyone who finds the URL - the
 // caller doesn't need to prove anything about to_user_id, just that they are
 // SOME logged-in user of the app.
-async function verifyAccessToken(token: string): Promise<boolean> {
+async function verifyAccessToken(token) {
   try {
     const res = await fetch(`${SUPABASE_URL}/auth/v1/user`, {
       headers: { Authorization: `Bearer ${token}`, apikey: SUPABASE_ANON_KEY },
     });
     return res.ok;
-  } catch {
+  } catch (e) {
     return false;
   }
 }
 
-async function supabaseServiceRequest(
-  path: string,
-  init: RequestInit = {},
-): Promise<Response> {
-  const serviceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? "";
+async function supabaseServiceRequest(path, init) {
+  init = init || {};
+  const serviceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") || "";
   return fetch(`${SUPABASE_URL}/rest/v1/${path}`, {
     ...init,
     headers: {
       apikey: serviceKey,
       Authorization: `Bearer ${serviceKey}`,
       "Content-Type": "application/json",
-      ...(init.headers ?? {}),
+      ...(init.headers || {}),
     },
   });
 }
 
-async function sendPushToUser(
-  userId: string,
-  payload: { title: string; body: string; url?: string },
-): Promise<void> {
+async function sendPushToUser(userId, payload) {
   const res = await supabaseServiceRequest(
     `push_subscriptions?user_id=eq.${encodeURIComponent(userId)}&select=endpoint,p256dh,auth`,
   );
   if (!res.ok) return;
-  const subs: { endpoint: string; p256dh: string; auth: string }[] = await res.json();
+  const subs = await res.json();
   const text = JSON.stringify(payload);
 
   await Promise.all(subs.map(async (sub) => {
@@ -169,7 +169,7 @@ async function sendPushToUser(
       // 404/410 means the push service considers this endpoint gone for
       // good (uninstalled, expired) - clean it up instead of retrying it
       // forever on every future notification.
-      const statusCode = (err as { statusCode?: number }).statusCode;
+      const statusCode = err && err.statusCode;
       if (statusCode === 404 || statusCode === 410) {
         await supabaseServiceRequest(
           `push_subscriptions?endpoint=eq.${encodeURIComponent(sub.endpoint)}`,
@@ -183,7 +183,7 @@ async function sendPushToUser(
 webpush.setVapidDetails(
   "mailto:idsgrunstra10@gmail.com",
   VAPID_PUBLIC_KEY,
-  Deno.env.get("VAPID_PRIVATE_KEY") ?? "",
+  Deno.env.get("VAPID_PRIVATE_KEY") || "",
 );
 
 // Runs every hour; only actually sends anything at Amsterdam-local 12:00,
@@ -192,7 +192,7 @@ webpush.setVapidDetails(
 // so that message wouldn't make sense.
 Deno.cron("streak-reminder", "0 * * * *", async () => {
   const now = new Date();
-  const tierByHour: Record<number, number> = { 12: 0, 18: 1, 22: 2 };
+  const tierByHour = { 12: 0, 18: 1, 22: 2 };
   const hour = amsterdamHour(now);
   if (!(hour in tierByHour)) return;
   const tier = tierByHour[hour];
@@ -202,12 +202,7 @@ Deno.cron("streak-reminder", "0 * * * *", async () => {
     "leaderboard_stats?select=user_id,current_streak,last_trained_date,app_language&current_streak=gt.0",
   );
   if (!res.ok) return;
-  const rows: {
-    user_id: string;
-    current_streak: number;
-    last_trained_date: string | null;
-    app_language: string;
-  }[] = await res.json();
+  const rows = await res.json();
 
   await Promise.all(
     rows
@@ -223,7 +218,7 @@ Deno.cron("streak-reminder", "0 * * * *", async () => {
 
 Deno.serve(async (req) => {
   const url = new URL(req.url);
-  const ELEVEN_API_KEY = Deno.env.get("ELEVEN_API_KEY") ?? "";
+  const ELEVEN_API_KEY = Deno.env.get("ELEVEN_API_KEY") || "";
 
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders() });
@@ -261,7 +256,7 @@ Deno.serve(async (req) => {
   }
 
   if (url.pathname === "/notify" && req.method === "POST") {
-    const authHeader = req.headers.get("Authorization") ?? "";
+    const authHeader = req.headers.get("Authorization") || "";
     const token = authHeader.replace(/^Bearer\s+/i, "");
     if (!token || !(await verifyAccessToken(token))) {
       return jsonResponse({ error: "Unauthorized" }, 401);
