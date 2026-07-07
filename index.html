@@ -5367,12 +5367,18 @@
     // already on needs the toggle flipped off/on again to actually start
     // listening. Fine for isolating this test; worth revisiting once this
     // is confirmed stable.
+    // TEMPORARY DIAGNOSTIC: recognition.start() is deliberately NOT called
+    // here right now. This isolates whether raw mic access (getUserMedia)
+    // alone hangs the page, or whether it's specifically
+    // SpeechRecognition.start() that does. Toggling this on right now
+    // should just show the permission prompt and otherwise leave the app
+    // fully usable — if it still freezes everything, the problem is mic
+    // access itself, not the recognizer.
     voiceToggleInput.addEventListener('change', async () => {
       voiceControlEnabled = voiceToggleInput.checked;
       try { localStorage.setItem('voiceControlEnabled', String(voiceControlEnabled)); } catch (e) {}
       if (voiceControlEnabled) {
         await primeMicPermission();
-        startVoiceListening();
       } else {
         stopVoiceListening();
       }
