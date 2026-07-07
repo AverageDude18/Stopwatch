@@ -1266,6 +1266,7 @@
                   'tien','elf','twaalf','dertien','veertien','vijftien','zestien',
                   'zeventien','achttien','negentien'];
     const tens = ['', '', 'twintig', 'dertig', 'veertig', 'vijftig', 'zestig', 'zeventig', 'tachtig', 'negentig'];
+    if (n === 1) return 'één';
     if (n < 20) return ones[n];
     if (n < 100) {
       const t = Math.floor(n / 10), o = n % 10;
@@ -1405,7 +1406,7 @@
           count: { desc:(n)=>`Voltooi ${n} sessies in totaal.`, congrats:(n)=>`Je hebt ${n} sessies voltooid, lekker bezig!` },
           duration: { desc:(l)=>`Houd een oefening ${l} vol.`, congrats:(l)=>`Gefeliciteerd met je eerste hold van ${l}!` },
           streak: { desc:(n)=>`Train ${n} dagen op rij.`, congrats:(n)=>`${n} dagen op rij getraind, geweldig volgehouden!` },
-          allex: { label:'Alle oefeningen', desc:'Probeer plank, deadhang én L-sit.', congrats:'Je hebt alle oefeningen geprobeerd, mooi veelzijdig!' },
+          allex: { label:'Alle oefeningen', desc:'Probeer alle 10 oefeningen.', congrats:'Je hebt alle oefeningen geprobeerd, mooi veelzijdig!' },
           special: { desc:(n,ex)=>`Doe ${n} ${ex}-sessies.`, congrats:(ex)=>`Tien ${ex}-sessies, knap werk!` },
           cumulative: { desc:(l)=>`Train in totaal ${l}.`, congrats:(l)=>`${l} totale trainingstijd bij elkaar, mooi opgebouwd!` },
           earlybird: { label:'Vroege vogel', desc:"Train vóór 8 uur 's ochtends.", congrats:'Al voor 8 uur getraind, echte vroege vogel!' },
@@ -1537,7 +1538,7 @@
           count: { desc:(n)=>`Complete ${n} sessions in total.`, congrats:(n)=>`You\u2019ve completed ${n} sessions, great work!` },
           duration: { desc:(l)=>`Hold an exercise for ${l}.`, congrats:(l)=>`Congrats on your first ${l} hold!` },
           streak: { desc:(n)=>`Train ${n} days in a row.`, congrats:(n)=>`${n} days in a row, awesome consistency!` },
-          allex: { label:'All exercises', desc:'Try plank, deadhang and L-sit.', congrats:'You\u2019ve tried every exercise, nicely versatile!' },
+          allex: { label:'All exercises', desc:'Try all 10 exercises.', congrats:'You\u2019ve tried every exercise, nicely versatile!' },
           special: { desc:(n,ex)=>`Do ${n} ${ex} sessions.`, congrats:(ex)=>`Ten ${ex} sessions, nice work!` },
           cumulative: { desc:(l)=>`Train for ${l} in total.`, congrats:(l)=>`${l} of total training time, well built up!` },
           earlybird: { label:'Early bird', desc:'Train before 8am.', congrats:'Training before 8am, true early bird!' },
@@ -1669,7 +1670,7 @@
           count: { desc:(n)=>`Absolviere insgesamt ${n} Sitzungen.`, congrats:(n)=>`Du hast ${n} Sitzungen absolviert, super gemacht!` },
           duration: { desc:(l)=>`Halte eine Übung ${l} durch.`, congrats:(l)=>`Glückwunsch zu deinem ersten Hold von ${l}!` },
           streak: { desc:(n)=>`Trainiere ${n} Tage in Folge.`, congrats:(n)=>`${n} Tage in Folge trainiert, toll durchgehalten!` },
-          allex: { label:'Alle Übungen', desc:'Probiere Plank, Deadhang und L-Sit.', congrats:'Du hast alle Übungen ausprobiert, schön vielseitig!' },
+          allex: { label:'Alle Übungen', desc:'Probiere alle 10 Übungen.', congrats:'Du hast alle Übungen ausprobiert, schön vielseitig!' },
           special: { desc:(n,ex)=>`Mach ${n} ${ex}-Sitzungen.`, congrats:(ex)=>`Zehn ${ex}-Sitzungen, starke Leistung!` },
           cumulative: { desc:(l)=>`Trainiere insgesamt ${l}.`, congrats:(l)=>`${l} gesamte Trainingszeit zusammen, gut aufgebaut!` },
           earlybird: { label:'Frühaufsteher', desc:'Trainiere vor 8 Uhr morgens.', congrats:'Schon vor 8 Uhr trainiert, echter Frühaufsteher!' },
@@ -1801,7 +1802,7 @@
           count: { desc:(n)=>`Completa ${n} sesiones en total.`, congrats:(n)=>`¡Has completado ${n} sesiones, muy bien!` },
           duration: { desc:(l)=>`Aguanta un ejercicio ${l}.`, congrats:(l)=>`¡Felicidades por tu primera espera de ${l}!` },
           streak: { desc:(n)=>`Entrena ${n} días seguidos.`, congrats:(n)=>`¡${n} días seguidos, gran constancia!` },
-          allex: { label:'Todos los ejercicios', desc:'Prueba plancha, deadhang y L-sit.', congrats:'¡Has probado todos los ejercicios, muy versátil!' },
+          allex: { label:'Todos los ejercicios', desc:'Prueba los 10 ejercicios.', congrats:'¡Has probado todos los ejercicios, muy versátil!' },
           special: { desc:(n,ex)=>`Haz ${n} sesiones de ${ex}.`, congrats:(ex)=>`¡Diez sesiones de ${ex}, gran trabajo!` },
           cumulative: { desc:(l)=>`Entrena ${l} en total.`, congrats:(l)=>`¡${l} de tiempo total de entrenamiento, bien construido!` },
           earlybird: { label:'Madrugador', desc:'Entrena antes de las 8am.', congrats:'¡Entrenando antes de las 8am, verdadero madrugador!' },
@@ -1933,7 +1934,7 @@
           count: { desc:(n)=>`Termine ${n} séances au total.`, congrats:(n)=>`Tu as terminé ${n} séances, bien joué\u00a0!` },
           duration: { desc:(l)=>`Tiens un exercice pendant ${l}.`, congrats:(l)=>`Félicitations pour ta première tenue de ${l}\u00a0!` },
           streak: { desc:(n)=>`Entraîne-toi ${n} jours de suite.`, congrats:(n)=>`${n} jours de suite, superbe régularité\u00a0!` },
-          allex: { label:'Tous les exercices', desc:'Essaie planche, deadhang et L-sit.', congrats:'Tu as essayé tous les exercices, beau polyvalence\u00a0!' },
+          allex: { label:'Tous les exercices', desc:'Essaie les 10 exercices.', congrats:'Tu as essayé tous les exercices, beau polyvalence\u00a0!' },
           special: { desc:(n,ex)=>`Fais ${n} séances de ${ex}.`, congrats:(ex)=>`Dix séances de ${ex}, joli travail\u00a0!` },
           cumulative: { desc:(l)=>`Entraîne-toi ${l} au total.`, congrats:(l)=>`${l} de temps d\u2019entraînement total, bien construit\u00a0!` },
           earlybird: { label:'Lève-tôt', desc:'Entraîne-toi avant 8h.', congrats:'Entraînement avant 8h, vrai lève-tôt\u00a0!' },
@@ -2065,7 +2066,7 @@
           count: { desc:(n)=>`Completa ${n} sessões no total.`, congrats:(n)=>`Completaste ${n} sessões, muito bem!` },
           duration: { desc:(l)=>`Aguenta um exercício ${l}.`, congrats:(l)=>`Parabéns pela tua primeira espera de ${l}!` },
           streak: { desc:(n)=>`Treina ${n} dias seguidos.`, congrats:(n)=>`${n} dias seguidos, ótima consistência!` },
-          allex: { label:'Todos os exercícios', desc:'Experimenta prancha, deadhang e L-sit.', congrats:'Experimentaste todos os exercícios, muito versátil!' },
+          allex: { label:'Todos os exercícios', desc:'Experimenta os 10 exercícios.', congrats:'Experimentaste todos os exercícios, muito versátil!' },
           special: { desc:(n,ex)=>`Faz ${n} sessões de ${ex}.`, congrats:(ex)=>`Dez sessões de ${ex}, ótimo trabalho!` },
           cumulative: { desc:(l)=>`Treina ${l} no total.`, congrats:(l)=>`${l} de tempo total de treino, bem construído!` },
           earlybird: { label:'Madrugador', desc:'Treina antes das 8h.', congrats:'Treino antes das 8h, verdadeiro madrugador!' },
@@ -2197,7 +2198,7 @@
           count: { desc:(n)=>`Заверши ${n} тренировок в общей сложности.`, congrats:(n)=>`Ты завершил ${n} тренировок, отличная работа!` },
           duration: { desc:(l)=>`Продержись в упражнении ${l}.`, congrats:(l)=>`Поздравляем с первым холдом на ${l}!` },
           streak: { desc:(n)=>`Тренируйся ${n} дней подряд.`, congrats:(n)=>`${n} дней подряд, отличная стабильность!` },
-          allex: { label:'Все упражнения', desc:'Попробуй планку, дэдхэнг и L-sit.', congrats:'Ты попробовал все упражнения, отлично!' },
+          allex: { label:'Все упражнения', desc:'Попробуй все 10 упражнений.', congrats:'Ты попробовал все упражнения, отлично!' },
           special: { desc:(n,ex)=>`Сделай ${n} тренировок ${ex}.`, congrats:(ex)=>`Десять тренировок ${ex}, отличная работа!` },
           cumulative: { desc:(l)=>`Тренируйся ${l} в общей сложности.`, congrats:(l)=>`${l} общего времени тренировок, отлично накоплено!` },
           earlybird: { label:'Ранняя пташка', desc:'Тренируйся до 8 утра.', congrats:'Тренировка до 8 утра, настоящая ранняя пташка!' },
@@ -2329,7 +2330,7 @@
           count: { desc:(n)=>`总共完成${n}次训练。`, congrats:(n)=>`你已经完成${n}次训练，很棒！` },
           duration: { desc:(l)=>`坚持一个动作${l}。`, congrats:(l)=>`祝贺你第一次坚持${l}！` },
           streak: { desc:(n)=>`连续训练${n}天。`, congrats:(n)=>`连续训练${n}天，非常自律！` },
-          allex: { label:'全部动作', desc:'尝试平板支撑、死悬垂和L-sit。', congrats:'你已经尝试了所有动作，非常全面！' },
+          allex: { label:'全部动作', desc:'尝试全部10个动作。', congrats:'你已经尝试了所有动作，非常全面！' },
           special: { desc:(n,ex)=>`完成${n}次${ex}训练。`, congrats:(ex)=>`十次${ex}训练，做得好！` },
           cumulative: { desc:(l)=>`累计训练${l}。`, congrats:(l)=>`累计训练时间达到${l}，积累得很好！` },
           earlybird: { label:'早起鸟', desc:'在早上8点前训练。', congrats:'早上8点前就训练了，真是早起鸟！' },
@@ -2461,7 +2462,7 @@
           count: { desc:(n)=>`कुल ${n} सेशन पूरे करें।`, congrats:(n)=>`आपने ${n} सेशन पूरे किए, बहुत बढ़िया!` },
           duration: { desc:(l)=>`एक व्यायाम को ${l} तक होल्ड करें।`, congrats:(l)=>`आपके पहले ${l} होल्ड की बधाई!` },
           streak: { desc:(n)=>`${n} दिन लगातार ट्रेन करें।`, congrats:(n)=>`${n} दिन लगातार, शानदार निरंतरता!` },
-          allex: { label:'सभी व्यायाम', desc:'प्लैंक, डेडहैंग और L-sit आज़माएं।', congrats:'आपने सभी व्यायाम आज़माए, बहुत बहुमुखी!' },
+          allex: { label:'सभी व्यायाम', desc:'सभी 10 व्यायाम आज़माएं।', congrats:'आपने सभी व्यायाम आज़माए, बहुत बहुमुखी!' },
           special: { desc:(n,ex)=>`${n} ${ex} सेशन करें।`, congrats:(ex)=>`दस ${ex} सेशन, बढ़िया काम!` },
           cumulative: { desc:(l)=>`कुल ${l} ट्रेन करें।`, congrats:(l)=>`कुल ${l} ट्रेनिंग समय, अच्छी तरह बनाया गया!` },
           earlybird: { label:'अर्ली बर्ड', desc:'सुबह 8 बजे से पहले ट्रेन करें।', congrats:'सुबह 8 बजे से पहले ट्रेनिंग, असली अर्ली बर्ड!' },
@@ -2593,7 +2594,7 @@
           count: { desc:(n)=>`أكمل ${n} جلسات إجمالًا.`, congrats:(n)=>`لقد أكملت ${n} جلسات، عمل رائع!` },
           duration: { desc:(l)=>`اصمد في تمرين لمدة ${l}.`, congrats:(l)=>`تهانينا على أول ثبات لك لمدة ${l}!` },
           streak: { desc:(n)=>`تدرّب ${n} أيام متتالية.`, congrats:(n)=>`${n} أيام متتالية، استمرارية رائعة!` },
-          allex: { label:'كل التمارين', desc:'جرّب البلانك والتعليق الميت وL-sit.', congrats:'لقد جربت كل التمارين، تنوع رائع!' },
+          allex: { label:'كل التمارين', desc:'جرّب كل التمارين العشرة.', congrats:'لقد جربت كل التمارين، تنوع رائع!' },
           special: { desc:(n,ex)=>`قم بـ ${n} جلسات ${ex}.`, congrats:(ex)=>`عشر جلسات ${ex}، عمل رائع!` },
           cumulative: { desc:(l)=>`تدرّب لمدة ${l} إجمالًا.`, congrats:(l)=>`${l} من إجمالي وقت التدريب، تراكم رائع!` },
           earlybird: { label:'الطائر المبكر', desc:'تدرّب قبل الساعة 8 صباحًا.', congrats:'تدربت قبل الساعة 8 صباحًا، طائر مبكر حقيقي!' },
@@ -4065,11 +4066,15 @@
   ambientSelect.addEventListener('change', () => {
     try { localStorage.setItem('ambientSound', ambientSelect.value); } catch (e) {}
   });
-  function startAmbient() {
+  async function startAmbient() {
     const kind = ambientSelect.value;
     if (kind === 'off') return;
     const ctx = getAudioCtx();
-    if (!ctx || ctx.state !== 'running') return;
+    if (!ctx) return;
+    if (ctx.state === 'suspended') {
+      try { await ctx.resume(); } catch (e) {}
+    }
+    if (ctx.state !== 'running') return;
     stopAmbient();
     const bufferSize = 2 * ctx.sampleRate;
     const buffer = ctx.createBuffer(1, bufferSize, ctx.sampleRate);
@@ -4445,7 +4450,8 @@
     { id: 'streak30', icon: '👑', cat: 'streak', n: 30, check: (list, streak) => streak >= 30 },
     { id: 'allex', icon: '🏋️', cat: 'allex', check: (list) => {
       const set = new Set(list.map(s => s.ex));
-      return set.has('plank') && set.has('deadhang') && set.has('lsit');
+      return ['plank', 'deadhang', 'lsit', 'sideplank', 'wallsit', 'hollowhold', 'superman', 'glutebridge', 'handstand', 'birddog']
+        .every((ex) => set.has(ex));
     } },
     { id: 'plank10', icon: '🧘', cat: 'special', ex: 'plank', n: 10, check: (list) => list.filter(s => s.ex === 'plank').length >= 10 },
     { id: 'deadhang10', icon: '🐒', cat: 'special', ex: 'deadhang', n: 10, check: (list) => list.filter(s => s.ex === 'deadhang').length >= 10 },
@@ -5296,7 +5302,9 @@
     voiceToggleInput.checked = voiceControlEnabled;
     recognition = new SRClass();
     recognition.continuous = true;
-    recognition.interimResults = false;
+    // Interim (non-final) results let onresult fire as soon as the engine
+    // recognizes "stop", instead of waiting ~1s for end-of-speech to finalize it.
+    recognition.interimResults = true;
     recognition.onresult = (e) => {
       const transcript = e.results[e.results.length - 1][0].transcript.toLowerCase();
       const stopWord = t.ui.stop.toLowerCase();
@@ -5308,6 +5316,16 @@
       voiceControlEnabled = voiceToggleInput.checked;
       try { localStorage.setItem('voiceControlEnabled', String(voiceControlEnabled)); } catch (e) {}
     });
+  }
+  // Requests microphone permission ahead of time (during the pre-run countdown)
+  // so recognition.start() doesn't trigger a fresh permission prompt right as
+  // the hold timer begins — that concurrent prompt was what bugged the timer.
+  async function primeMicPermission() {
+    if (!SRClass || !voiceControlEnabled || !navigator.mediaDevices) return;
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      stream.getTracks().forEach((tr) => tr.stop());
+    } catch (e) {}
   }
   function startVoiceListening() {
     if (SRClass && voiceControlEnabled) {
@@ -5329,6 +5347,17 @@
   async function prefetchCountdownAudio() {
     if (!elevenReady) return;
     const phrases = [...t.speech.countdown, userName ? t.speech.startWithName(spokenName()) : t.speech.startNoName];
+    await Promise.all(phrases.map((p) => fetchAndCacheAudioUrl(p).catch(() => {})));
+  }
+
+  // Fetches every phrase an interval session can speak (phase countdown digits,
+  // rest cue, round-go cue for every round) before the session starts, so
+  // round switches/rest don't wait on a network round trip mid-session.
+  async function prefetchIntervalAudio() {
+    if (!elevenReady) return;
+    const rounds = parseInt(roundsSelect.value, 10) || 3;
+    const phrases = [t.speech.startRoundOne, t.speech.restWord, speakNumber(1), speakNumber(2), speakNumber(3)];
+    for (let i = 2; i <= rounds; i++) phrases.push(t.speech.roundGo(speakNumber(i)));
     await Promise.all(phrases.map((p) => fetchAndCacheAudioUrl(p).catch(() => {})));
   }
 
@@ -5361,7 +5390,11 @@
     setControlsLockedForRun(true);
     shareBtn.style.display = 'none';
     status.textContent = '';
-    await prefetchCountdownAudio();
+    await Promise.all([
+      prefetchCountdownAudio(),
+      intervalMode ? prefetchIntervalAudio() : Promise.resolve(),
+      primeMicPermission(),
+    ]);
     const proceeded = await runCountdown();
     if (!proceeded) return;
     status.textContent = intervalMode ? '' : t.ui.running;
