@@ -2634,23 +2634,16 @@
   let wakeLock = null;
   let intervalMode = false;
   let timerId = null;
-  // Ticks via requestAnimationFrame instead of setInterval so the visible
-  // display stays in sync with what's actually elapsed even under heavy
-  // main-thread contention (continuous speech recognition audio processing
-  // on iOS can starve a plain setInterval callback for seconds at a time).
-  // The underlying elapsed-time math is always computed fresh from
-  // Date.now(), so it was never actually wrong — it just wasn't getting a
-  // chance to repaint until something else (like tapping Stop) gave the
-  // main thread a nudge.
+  // requestAnimationFrame was tried here and made things worse on iOS: rAF
+  // fully stops while the page isn't actively rendering (which iOS does
+  // while its mic-permission UI is up), whereas setInterval keeps going
+  // regardless. Plain setInterval, wrapped the same way so call sites don't
+  // need to care which one is underneath.
   function startTickLoop(tickFn) {
-    function frame() {
-      tickFn();
-      timerId = requestAnimationFrame(frame);
-    }
-    timerId = requestAnimationFrame(frame);
+    timerId = setInterval(tickFn, 200);
   }
   function stopTickLoop() {
-    if (timerId) cancelAnimationFrame(timerId);
+    if (timerId) clearInterval(timerId);
     timerId = null;
   }
   let elapsed = 0;
@@ -5322,10 +5315,18 @@
 
   // ====== Voice control ======
   const SRClass = window.SpeechRecognition || window.webkitSpeechRecognition;
+  // Simultaneously recording (SpeechRecognition) and speaking (TTS/ambient
+  // audio) fights over the same audio hardware on iOS in a way that kept
+  // surfacing new failures — the countdown voice lagging, the mic icon
+  // getting stuck, the display and even the voice freezing entirely. That's
+  // WebKit's audio-session handling, not something fixable from here, so
+  // voice control is left off/hidden on iOS; it works well on desktop.
+  const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent)
+    || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
   let recognition = null;
   let voiceControlEnabled = false;
   let isListeningSession = false;
-  if (SRClass) {
+  if (SRClass && !isIOS) {
     voiceToggleRow.style.display = 'flex';
     try { voiceControlEnabled = localStorage.getItem('voiceControlEnabled') === 'true'; } catch (e) {}
     voiceToggleInput.checked = voiceControlEnabled;
@@ -5391,7 +5392,7 @@
     // abort() cuts the mic off immediately; stop() waits for a final result
     // first and on iOS can leave the mic indicator (and listening) hanging
     // on for a while after Stop/Reset was pressed.
-    if (SRClass) { try { recognition.abort(); } catch (e) {} }
+    if (recognition) { try { recognition.abort(); } catch (e) {} }
   }
 
   // ====== Start / Stop / Reset ======
