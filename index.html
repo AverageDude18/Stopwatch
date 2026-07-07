@@ -5362,23 +5362,25 @@
     // lifetime of the page, whether or not a hold/interval is actually
     // running (onresult only acts on "stop" while stopBtn is enabled).
     // Deliberately NOT also auto-engaged at app load if it was already on
-    // from a previous session: that no-gesture path is what froze the whole
-    // page on iOS. Trade-off for now: a returning session with voice control
+    // from a previous session: that no-gesture path previously froze the
+    // whole page on iOS. Trade-off: a returning session with voice control
     // already on needs the toggle flipped off/on again to actually start
-    // listening. Fine for isolating this test; worth revisiting once this
-    // is confirmed stable.
-    // TEMPORARY DIAGNOSTIC: recognition.start() is deliberately NOT called
-    // here right now. This isolates whether raw mic access (getUserMedia)
-    // alone hangs the page, or whether it's specifically
-    // SpeechRecognition.start() that does. Toggling this on right now
-    // should just show the permission prompt and otherwise leave the app
-    // fully usable — if it still freezes everything, the problem is mic
-    // access itself, not the recognizer.
+    // listening.
+    //
+    // A getUserMedia-only diagnostic build (no recognition.start()) ruled
+    // out mic access itself as the freeze cause on iOS — and native iOS
+    // Dictation/Siri turned out to be broken on that test device
+    // independent of this app entirely (activates but never transcribes/
+    // responds). So recognition.start() is safe to call here again; if
+    // voice control still doesn't work for someone, check whether Siri/
+    // Dictation work at all on their device first — that's an iOS issue,
+    // not this app's.
     voiceToggleInput.addEventListener('change', async () => {
       voiceControlEnabled = voiceToggleInput.checked;
       try { localStorage.setItem('voiceControlEnabled', String(voiceControlEnabled)); } catch (e) {}
       if (voiceControlEnabled) {
         await primeMicPermission();
+        startVoiceListening();
       } else {
         stopVoiceListening();
       }
