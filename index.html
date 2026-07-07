@@ -5431,9 +5431,15 @@
     const proceeded = await runCountdown();
     if (!proceeded) return;
     status.textContent = intervalMode ? '' : t.ui.running;
+    // Start the actual hold/interval timer BEFORE touching voice listening.
+    // recognition.start() can trigger a native permission dialog that blocks
+    // the page's JS on iOS; if that ran first, the timer itself would never
+    // get going while the dialog was up (or if anything about it stalled).
+    // Starting the timer first means it's already ticking regardless of
+    // whatever voice control does afterward.
+    if (intervalMode) startInterval(); else startFree();
     startVoiceListening();
     startAmbient();
-    if (intervalMode) startInterval(); else startFree();
   });
 
   stopBtn.addEventListener('click', () => {
