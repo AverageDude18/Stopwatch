@@ -319,12 +319,13 @@
 
   .stats-divider { border: none; border-top: 1px solid var(--border); margin: 4px 0 16px; }
 
-  .ex-chart-block { margin-bottom: 12px; }
-  .ex-chart-label { font-size: 0.72rem; font-weight: 600; color: var(--muted); margin-bottom: 6px; }
   .week-chart {
     display: flex; align-items: flex-end; justify-content: space-between;
     gap: 6px; height: 56px; padding: 0 2px;
   }
+  .week-chart.big { height: 140px; gap: 10px; padding: 0 4px; }
+  .week-chart.big .week-bar { max-width: 34px; }
+  .week-chart.big .week-label { font-size: 0.72rem; }
   .week-bar-col { display: flex; flex-direction: column; align-items: center; flex: 1; height: 100%; justify-content: flex-end; }
   .week-bar {
     width: 100%; max-width: 20px; border-radius: 5px 5px 2px 2px;
@@ -929,7 +930,8 @@
       <div id="recordProgressChart" style="margin-bottom:16px;"></div>
       <hr class="stats-divider">
       <div class="stats-heading" id="lblProgress">Voortgang per oefening</div>
-      <div id="exChartsContainer"></div>
+      <select id="statsExSelect" class="ex-select" style="margin-bottom:12px;"></select>
+      <div id="exChartsContainer" class="week-chart big"></div>
       <div class="chart-detail-card empty" id="chartDetail">Tik op een staafje voor de langst volgehouden tijd die dag</div>
       <hr class="stats-divider">
       <div class="stats-heading" id="lblRecent">Recente sessies</div>
@@ -1116,6 +1118,10 @@
   ];
   const BASE_EX_KEYS = ['plank', 'deadhang', 'lsit', 'sideplank', 'wallsit', 'hollowhold', 'superman', 'glutebridge', 'handstand', 'birddog'];
   let EX_KEYS = BASE_EX_KEYS.slice();
+  // Which exercise the "Voortgang per oefening" chart is showing. Kept as a
+  // per-device preference (not synced) — same rationale as lastOpenDate.
+  let statsExercise = null;
+  try { statsExercise = localStorage.getItem('statsExercise'); } catch (e) {}
 
   // ====== Account (Supabase auth + cloud sync) ======
   // Login is required to use the app - all app state lives in localStorage
@@ -2791,6 +2797,7 @@
   const ringWrap = document.getElementById('ringWrap');
   const chartDetail = document.getElementById('chartDetail');
   const exChartsContainer = document.getElementById('exChartsContainer');
+  const statsExSelect = document.getElementById('statsExSelect');
   const confettiContainer = document.getElementById('confettiContainer');
 
   // Username lives in its own `profiles` table rather than the synced
@@ -4139,6 +4146,7 @@
     renderExName();
     updateRecordDisplay();
     renderRecordProgressChart(lastSessionsList);
+    renderExerciseCharts(lastSessionsList);
     renderBadges(lastSessionsList);
     updateSmartTip(lastSessionsList);
   });
@@ -4227,7 +4235,26 @@
     todayDisplay.textContent = `${t.ui.today}: ${todays.length} ${word}, ${format(total)} ${t.ui.total}`;
   }
 
+  // Rebuilds the exercise-picker options (needed after a language switch or
+  // when the custom exercise is added/removed), keeping the current pick if
+  // it's still valid, and persists the choice locally.
+  function populateStatsExerciseSelect() {
+    statsExSelect.innerHTML = EX_KEYS.map((k) => `<option value="${k}">${exName_(k)}</option>`).join('');
+    if (!statsExercise || !EX_KEYS.includes(statsExercise)) statsExercise = EX_KEYS[0];
+    statsExSelect.value = statsExercise;
+  }
+  statsExSelect.addEventListener('change', () => {
+    statsExercise = statsExSelect.value;
+    try { localStorage.setItem('statsExercise', statsExercise); } catch (e) {}
+    renderExerciseCharts(lastSessionsList);
+  });
+
+  // Renders a single, larger week chart for the exercise picked in
+  // statsExSelect — showing all 10 exercises as tiny charts side by side
+  // made it nearly impossible to see day-to-day differences.
   function renderExerciseCharts(list) {
+    populateStatsExerciseSelect();
+    const ex = statsExercise;
     const dayLabels = t.ui.weekdays;
     const today = new Date();
     const days = [];
@@ -4236,40 +4263,24 @@
       d.setDate(d.getDate() - i);
       days.push(d);
     }
-
-    // Build one chart block per exercise currently in EX_KEYS (all 10
-    // built-ins, plus the custom one if the user has set one). We rebuild
-    // the container's HTML each time since the exercise list itself can
-    // change (adding/removing a custom exercise, or switching language).
-    exChartsContainer.innerHTML = EX_KEYS.map((ex) => `
-      <div class="ex-chart-block">
-        <div class="ex-chart-label">${exName_(ex)}</div>
-        <div class="week-chart" data-ex-chart="${ex}"></div>
-      </div>
-    `).join('');
-
-    EX_KEYS.forEach((ex) => {
-      const container = exChartsContainer.querySelector(`[data-ex-chart="${ex}"]`);
-      if (!container) return;
-      const maxByDay = days.map((d) => {
-        const dayStr = d.toDateString();
-        const sessionsThatDay = list.filter((s) => s.ex === ex && new Date(s.ts).toDateString() === dayStr);
-        return sessionsThatDay.length ? Math.max(...sessionsThatDay.map((s) => s.dur)) : 0;
-      });
-      const scaleMax = Math.max(...maxByDay, 30);
-      container.innerHTML = days.map((d, i) => {
-        const dur = maxByDay[i];
-        const heightPct = dur > 0 ? Math.max((dur / scaleMax) * 100, 8) : 3;
-        const isToday = d.toDateString() === today.toDateString();
-        const dayLabel = isToday ? t.ui.now : dayLabels[d.getDay()];
-        const fullDateLabel = d.toLocaleDateString(t.speechLang, { weekday: 'long', day: 'numeric', month: 'short' });
-        return `<div class="week-bar-col">
-          <div class="week-bar ${dur > 0 ? 'has-data' : ''}" data-ex="${ex}" data-date="${fullDateLabel}" data-dur="${dur}"
-               style="height:${heightPct}%"></div>
-          <div class="week-label">${dayLabel}</div>
-        </div>`;
-      }).join('');
+    const maxByDay = days.map((d) => {
+      const dayStr = d.toDateString();
+      const sessionsThatDay = list.filter((s) => s.ex === ex && new Date(s.ts).toDateString() === dayStr);
+      return sessionsThatDay.length ? Math.max(...sessionsThatDay.map((s) => s.dur)) : 0;
     });
+    const scaleMax = Math.max(...maxByDay, 30);
+    exChartsContainer.innerHTML = days.map((d, i) => {
+      const dur = maxByDay[i];
+      const heightPct = dur > 0 ? Math.max((dur / scaleMax) * 100, 8) : 3;
+      const isToday = d.toDateString() === today.toDateString();
+      const dayLabel = isToday ? t.ui.now : dayLabels[d.getDay()];
+      const fullDateLabel = d.toLocaleDateString(t.speechLang, { weekday: 'long', day: 'numeric', month: 'short' });
+      return `<div class="week-bar-col">
+        <div class="week-bar ${dur > 0 ? 'has-data' : ''}" data-ex="${ex}" data-date="${fullDateLabel}" data-dur="${dur}"
+             style="height:${heightPct}%"></div>
+        <div class="week-label">${dayLabel}</div>
+      </div>`;
+    }).join('');
   }
 
   exChartsContainer.addEventListener('click', (e) => {
