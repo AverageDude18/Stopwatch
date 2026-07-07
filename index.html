@@ -5314,19 +5314,21 @@
 
   // ====== Voice control ======
   const SRClass = window.SpeechRecognition || window.webkitSpeechRecognition;
-  // Voice control is disabled on iOS/iPadOS. We tried recognition.start() at
-  // three different points — right after the pre-run countdown, deferred
-  // 400ms after that, and once at app load to keep listening continuously —
-  // and it hung the page every single time, with both interimResults on and
-  // off. That rules out timing as the cause: calling SpeechRecognition on
-  // this platform is what hangs, not when it's called, and there's no more
-  // JS-side repositioning left to try. Works fine on desktop/Android.
+  // Every previous iOS test that hung the page also auto-engaged the mic
+  // with no user gesture in the current call stack (right after the
+  // countdown, or unconditionally at app load). Only that no-gesture,
+  // app-load variant was confirmed to freeze the whole page (unclickable).
+  // Engaging strictly from the Settings toggle's own 'change' handler — a
+  // real, deliberate tap — has NOT actually been isolated and tested on its
+  // own yet, so re-enabling this on iOS with that one change is worth
+  // trying before writing it off entirely. interimResults stays off on iOS
+  // for now so we're only testing one variable at a time.
   const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent)
     || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
   let recognition = null;
   let voiceControlEnabled = false;
   let isListeningSession = false;
-  if (SRClass && !isIOS) {
+  if (SRClass) {
     voiceToggleRow.style.display = 'flex';
     try { voiceControlEnabled = localStorage.getItem('voiceControlEnabled') === 'true'; } catch (e) {}
     voiceToggleInput.checked = voiceControlEnabled;
@@ -5334,9 +5336,10 @@
     recognition.continuous = true;
     // Interim (non-final) results let onresult fire as soon as the engine
     // recognizes "stop", instead of waiting for the recognizer to decide the
-    // phrase is finished. Safe here since this whole block is desktop/
-    // Android only now (see isIOS note above).
-    recognition.interimResults = true;
+    // phrase is finished. Kept off on iOS for now (see isIOS note above) —
+    // once continuous background listening is confirmed stable there,
+    // this is the next thing to try flipping back on for speed.
+    recognition.interimResults = !isIOS;
     recognition.onresult = (e) => {
       const transcript = e.results[e.results.length - 1][0].transcript.toLowerCase();
       const stopWord = t.ui.stop.toLowerCase();
@@ -5354,14 +5357,16 @@
       }
     };
     recognition.onend = () => { if (isListeningSession) { try { recognition.start(); } catch (e) {} } };
-    // The mic is engaged ONCE — here, and at app startup below if voice
-    // control was already on — and then just keeps listening continuously
-    // for the lifetime of the app, whether or not a hold/interval is
-    // actually running (onresult only acts on "stop" while stopBtn is
-    // enabled). On iOS specifically, engaging the mic turned out to be the
-    // one thing that reliably hitched/froze the page; doing it once here
-    // instead of on every single Start means a Start never has to touch the
-    // mic at all, matching how this always worked fine on desktop.
+    // The mic is engaged ONCE, right here from this 'change' event — a real
+    // user tap — and then just keeps listening continuously for the
+    // lifetime of the page, whether or not a hold/interval is actually
+    // running (onresult only acts on "stop" while stopBtn is enabled).
+    // Deliberately NOT also auto-engaged at app load if it was already on
+    // from a previous session: that no-gesture path is what froze the whole
+    // page on iOS. Trade-off for now: a returning session with voice control
+    // already on needs the toggle flipped off/on again to actually start
+    // listening. Fine for isolating this test; worth revisiting once this
+    // is confirmed stable.
     voiceToggleInput.addEventListener('change', async () => {
       voiceControlEnabled = voiceToggleInput.checked;
       try { localStorage.setItem('voiceControlEnabled', String(voiceControlEnabled)); } catch (e) {}
