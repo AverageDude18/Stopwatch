@@ -5141,7 +5141,6 @@
   function finishInterval() {
     stopTickLoop();
     releaseWakeLock();
-    stopVoiceListening();
     stopAmbient();
     pulseFeedback([120, 60, 120, 60, 250]);
     speak(t.speech.trainingDone(spokenName()));
@@ -5354,16 +5353,25 @@
       }
     };
     recognition.onend = () => { if (isListeningSession) { try { recognition.start(); } catch (e) {} } };
-    // Ask for mic permission right here, the moment voice control is turned
-    // on in Settings — a deliberate, non-time-critical moment — instead of
-    // during every single Start click. That way a Start only ever has to
-    // call recognition.start() on an already-granted permission, never wait
-    // on a fresh prompt.
-    voiceToggleInput.addEventListener('change', () => {
+    // The mic is engaged ONCE — here, and at app startup below if voice
+    // control was already on — and then just keeps listening continuously
+    // for the lifetime of the app, whether or not a hold/interval is
+    // actually running (onresult only acts on "stop" while stopBtn is
+    // enabled). On iOS specifically, engaging the mic turned out to be the
+    // one thing that reliably hitched/froze the page; doing it once here
+    // instead of on every single Start means a Start never has to touch the
+    // mic at all, matching how this always worked fine on desktop.
+    voiceToggleInput.addEventListener('change', async () => {
       voiceControlEnabled = voiceToggleInput.checked;
       try { localStorage.setItem('voiceControlEnabled', String(voiceControlEnabled)); } catch (e) {}
-      if (voiceControlEnabled) primeMicPermission();
+      if (voiceControlEnabled) {
+        await primeMicPermission();
+        startVoiceListening();
+      } else {
+        stopVoiceListening();
+      }
     });
+    if (voiceControlEnabled) startVoiceListening();
   }
   // Requests mic permission once, outside of the Start flow (see the Settings
   // toggle above). Deliberately does NOT also prime SpeechRecognition itself
@@ -5461,13 +5469,10 @@
     // get going while the dialog was up (or if anything about it stalled).
     // Starting the timer first means it's already ticking regardless of
     // whatever voice control does afterward.
+    // Voice listening (if enabled) is already running continuously in the
+    // background — see the Voice control section — so Start never needs to
+    // touch the mic itself.
     if (intervalMode) startInterval(); else startFree();
-    // Deferred to its own tick, a beat after the timer is already visibly
-    // running: engaging the mic (audio session hardware switch) can itself
-    // cause a brief hitch on iOS, so give the timer's first render a chance
-    // to land first instead of bundling it into the same synchronous burst
-    // as everything else Start does.
-    setTimeout(() => { if (!stopBtn.disabled) startVoiceListening(); }, 400);
     startAmbient();
   });
 
@@ -5478,7 +5483,6 @@
     audioPlayer.pause();
     resetSpeechQueue();
     releaseWakeLock();
-    stopVoiceListening();
     stopAmbient();
     startBtn.disabled = false;
     stopBtn.disabled = true;
@@ -5493,7 +5497,6 @@
     audioPlayer.pause();
     resetSpeechQueue();
     releaseWakeLock();
-    stopVoiceListening();
     stopAmbient();
     startBtn.disabled = false;
     stopBtn.disabled = true;
