@@ -5314,18 +5314,19 @@
 
   // ====== Voice control ======
   const SRClass = window.SpeechRecognition || window.webkitSpeechRecognition;
-  // iOS/iPadOS Safari runs speech recognition on-device (SFSpeechRecognizer);
-  // continuously decoding interim results turned out to be too heavy for it
-  // running alongside TTS/ambient audio (countdown voice lagging, mic not
-  // releasing, the session eventually freezing). Desktop/Android browsers
-  // use cloud-based recognition and handled interim results fine, so the
-  // faster path is kept there and only iOS falls back to the slower one.
+  // Voice control is disabled on iOS/iPadOS. We tried recognition.start() at
+  // three different points — right after the pre-run countdown, deferred
+  // 400ms after that, and once at app load to keep listening continuously —
+  // and it hung the page every single time, with both interimResults on and
+  // off. That rules out timing as the cause: calling SpeechRecognition on
+  // this platform is what hangs, not when it's called, and there's no more
+  // JS-side repositioning left to try. Works fine on desktop/Android.
   const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent)
     || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
   let recognition = null;
   let voiceControlEnabled = false;
   let isListeningSession = false;
-  if (SRClass) {
+  if (SRClass && !isIOS) {
     voiceToggleRow.style.display = 'flex';
     try { voiceControlEnabled = localStorage.getItem('voiceControlEnabled') === 'true'; } catch (e) {}
     voiceToggleInput.checked = voiceControlEnabled;
@@ -5333,9 +5334,9 @@
     recognition.continuous = true;
     // Interim (non-final) results let onresult fire as soon as the engine
     // recognizes "stop", instead of waiting for the recognizer to decide the
-    // phrase is finished — but see the isIOS note above for why iOS doesn't
-    // get this.
-    recognition.interimResults = !isIOS;
+    // phrase is finished. Safe here since this whole block is desktop/
+    // Android only now (see isIOS note above).
+    recognition.interimResults = true;
     recognition.onresult = (e) => {
       const transcript = e.results[e.results.length - 1][0].transcript.toLowerCase();
       const stopWord = t.ui.stop.toLowerCase();
@@ -5371,7 +5372,6 @@
         stopVoiceListening();
       }
     });
-    if (voiceControlEnabled) startVoiceListening();
   }
   // Requests mic permission once, outside of the Start flow (see the Settings
   // toggle above). Deliberately does NOT also prime SpeechRecognition itself
