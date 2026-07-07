@@ -5321,22 +5321,52 @@
       const stopWord = t.ui.stop.toLowerCase();
       if ((transcript.includes(stopWord) || transcript.includes('stop')) && !stopBtn.disabled) stopBtn.click();
     };
-    recognition.onerror = () => {};
+    recognition.onerror = (e) => {
+      // If permission was denied (or the platform blocks it outright), stop
+      // trying — retrying every session just re-triggers OS prompts/lag on
+      // iOS for a feature that will never work until the user re-enables it.
+      if (e.error === 'not-allowed' || e.error === 'service-not-allowed') {
+        voiceControlEnabled = false;
+        isListeningSession = false;
+        voiceToggleInput.checked = false;
+        try { localStorage.setItem('voiceControlEnabled', 'false'); } catch (err) {}
+      }
+    };
     recognition.onend = () => { if (isListeningSession) { try { recognition.start(); } catch (e) {} } };
     voiceToggleInput.addEventListener('change', () => {
       voiceControlEnabled = voiceToggleInput.checked;
       try { localStorage.setItem('voiceControlEnabled', String(voiceControlEnabled)); } catch (e) {}
     });
   }
-  // Requests microphone permission ahead of time (during the pre-run countdown)
-  // so recognition.start() doesn't trigger a fresh permission prompt right as
-  // the hold timer begins — that concurrent prompt was what bugged the timer.
+  // Requests microphone/speech-recognition permission ahead of time (during
+  // the pre-run countdown) so nothing prompts right as the hold timer begins
+  // — that concurrent prompt was what bugged/lagged the timer, especially on
+  // iOS. Two separate things can each trigger their own OS prompt: raw mic
+  // access (getUserMedia) and, on iOS Safari, SpeechRecognition itself gates
+  // behind its own "Speech Recognition" permission. A disposable recognizer
+  // instance is used for the latter so it can't interfere with the real
+  // `recognition` object's isListeningSession/onend restart logic.
   async function primeMicPermission() {
-    if (!SRClass || !voiceControlEnabled || !navigator.mediaDevices) return;
-    try {
-      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-      stream.getTracks().forEach((tr) => tr.stop());
-    } catch (e) {}
+    if (!SRClass || !voiceControlEnabled) return;
+    if (navigator.mediaDevices) {
+      try {
+        const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+        stream.getTracks().forEach((tr) => tr.stop());
+      } catch (e) {}
+    }
+    await new Promise((resolve) => {
+      let done = false;
+      const finish = () => { if (!done) { done = true; resolve(); } };
+      try {
+        const primer = new SRClass();
+        primer.lang = t.speechLang;
+        primer.onstart = () => { try { primer.stop(); } catch (e) {} };
+        primer.onend = finish;
+        primer.onerror = finish;
+        primer.start();
+        setTimeout(finish, 3000);
+      } catch (e) { finish(); }
+    });
   }
   function startVoiceListening() {
     if (SRClass && voiceControlEnabled) {
