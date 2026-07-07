@@ -2634,6 +2634,25 @@
   let wakeLock = null;
   let intervalMode = false;
   let timerId = null;
+  // Ticks via requestAnimationFrame instead of setInterval so the visible
+  // display stays in sync with what's actually elapsed even under heavy
+  // main-thread contention (continuous speech recognition audio processing
+  // on iOS can starve a plain setInterval callback for seconds at a time).
+  // The underlying elapsed-time math is always computed fresh from
+  // Date.now(), so it was never actually wrong — it just wasn't getting a
+  // chance to repaint until something else (like tapping Stop) gave the
+  // main thread a nudge.
+  function startTickLoop(tickFn) {
+    function frame() {
+      tickFn();
+      timerId = requestAnimationFrame(frame);
+    }
+    timerId = requestAnimationFrame(frame);
+  }
+  function stopTickLoop() {
+    if (timerId) cancelAnimationFrame(timerId);
+    timerId = null;
+  }
   let elapsed = 0;
   let currentTone = 'motiverend';
   let voiceSpeed = 1;
@@ -5059,7 +5078,7 @@
     matchRecordAnnounced = false;
     startTime = Date.now() - elapsed * 1000;
     lastAnnounced = elapsed - (elapsed % parseInt(intervalSelect.value, 10));
-    timerId = setInterval(freeTick, 200);
+    startTickLoop(freeTick);
   }
   function stopFree() { status.textContent = t.ui.stoppedAt + ' ' + format(elapsed); }
   const MIN_SESSION_SEC = 3; // shorter than this = treated as an accidental tap, not saved
@@ -5127,8 +5146,7 @@
   }
 
   function finishInterval() {
-    clearInterval(timerId);
-    timerId = null;
+    stopTickLoop();
     releaseWakeLock();
     stopVoiceListening();
     stopAmbient();
@@ -5289,7 +5307,7 @@
     phaseStartTime = Date.now();
     lastCountdownAt = null;
     speak(t.speech.startRoundOne);
-    timerId = setInterval(intervalTick, 200);
+    startTickLoop(intervalTick);
   }
 
   function setControlsLockedForRun(locked) {
@@ -5452,7 +5470,7 @@
 
   stopBtn.addEventListener('click', () => {
     countdownCancelled = true;
-    clearInterval(timerId); timerId = null;
+    stopTickLoop();
     window.speechSynthesis.cancel();
     audioPlayer.pause();
     resetSpeechQueue();
@@ -5467,7 +5485,7 @@
   });
 
   resetBtn.addEventListener('click', () => {
-    clearInterval(timerId); timerId = null;
+    stopTickLoop();
     window.speechSynthesis.cancel();
     audioPlayer.pause();
     resetSpeechQueue();
