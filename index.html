@@ -5333,40 +5333,33 @@
       }
     };
     recognition.onend = () => { if (isListeningSession) { try { recognition.start(); } catch (e) {} } };
+    // Ask for mic permission right here, the moment voice control is turned
+    // on in Settings — a deliberate, non-time-critical moment — instead of
+    // during every single Start click. That way a Start only ever has to
+    // call recognition.start() on an already-granted permission, never wait
+    // on a fresh prompt.
     voiceToggleInput.addEventListener('change', () => {
       voiceControlEnabled = voiceToggleInput.checked;
       try { localStorage.setItem('voiceControlEnabled', String(voiceControlEnabled)); } catch (e) {}
+      if (voiceControlEnabled) primeMicPermission();
     });
   }
-  // Requests microphone/speech-recognition permission ahead of time (during
-  // the pre-run countdown) so nothing prompts right as the hold timer begins
-  // — that concurrent prompt was what bugged/lagged the timer, especially on
-  // iOS. Two separate things can each trigger their own OS prompt: raw mic
-  // access (getUserMedia) and, on iOS Safari, SpeechRecognition itself gates
-  // behind its own "Speech Recognition" permission. A disposable recognizer
-  // instance is used for the latter so it can't interfere with the real
-  // `recognition` object's isListeningSession/onend restart logic.
+  // Requests mic permission once, outside of the Start flow (see the Settings
+  // toggle above). Deliberately does NOT also prime SpeechRecognition itself
+  // via a start/stop cycle — that added an unreliable multi-second wait to
+  // every session on iOS instead of removing one.
+  //
+  // Note: iOS installed-to-homescreen (standalone) PWAs are known to not
+  // persist getUserMedia grants between app launches the way a normal Safari
+  // tab does, so the OS prompt can still reappear on a fresh launch even with
+  // this in place — that's a WebKit platform limitation, not something we
+  // can fix from JS.
   async function primeMicPermission() {
-    if (!SRClass || !voiceControlEnabled) return;
-    if (navigator.mediaDevices) {
-      try {
-        const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-        stream.getTracks().forEach((tr) => tr.stop());
-      } catch (e) {}
-    }
-    await new Promise((resolve) => {
-      let done = false;
-      const finish = () => { if (!done) { done = true; resolve(); } };
-      try {
-        const primer = new SRClass();
-        primer.lang = t.speechLang;
-        primer.onstart = () => { try { primer.stop(); } catch (e) {} };
-        primer.onend = finish;
-        primer.onerror = finish;
-        primer.start();
-        setTimeout(finish, 3000);
-      } catch (e) { finish(); }
-    });
+    if (!SRClass || !navigator.mediaDevices) return;
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      stream.getTracks().forEach((tr) => tr.stop());
+    } catch (e) {}
   }
   function startVoiceListening() {
     if (SRClass && voiceControlEnabled) {
@@ -5434,7 +5427,6 @@
     await Promise.all([
       prefetchCountdownAudio(),
       intervalMode ? prefetchIntervalAudio() : Promise.resolve(),
-      primeMicPermission(),
     ]);
     const proceeded = await runCountdown();
     if (!proceeded) return;
