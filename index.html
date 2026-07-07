@@ -5370,7 +5370,10 @@
   }
   function stopVoiceListening() {
     isListeningSession = false;
-    if (SRClass) { try { recognition.stop(); } catch (e) {} }
+    // abort() cuts the mic off immediately; stop() waits for a final result
+    // first and on iOS can leave the mic indicator (and listening) hanging
+    // on for a while after Stop/Reset was pressed.
+    if (SRClass) { try { recognition.abort(); } catch (e) {} }
   }
 
   // ====== Start / Stop / Reset ======
@@ -5438,7 +5441,12 @@
     // Starting the timer first means it's already ticking regardless of
     // whatever voice control does afterward.
     if (intervalMode) startInterval(); else startFree();
-    startVoiceListening();
+    // Deferred to its own tick, a beat after the timer is already visibly
+    // running: engaging the mic (audio session hardware switch) can itself
+    // cause a brief hitch on iOS, so give the timer's first render a chance
+    // to land first instead of bundling it into the same synchronous burst
+    // as everything else Start does.
+    setTimeout(() => { if (!stopBtn.disabled) startVoiceListening(); }, 400);
     startAmbient();
   });
 
