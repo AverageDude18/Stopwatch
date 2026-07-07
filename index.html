@@ -5315,26 +5315,23 @@
 
   // ====== Voice control ======
   const SRClass = window.SpeechRecognition || window.webkitSpeechRecognition;
-  // Simultaneously recording (SpeechRecognition) and speaking (TTS/ambient
-  // audio) fights over the same audio hardware on iOS in a way that kept
-  // surfacing new failures — the countdown voice lagging, the mic icon
-  // getting stuck, the display and even the voice freezing entirely. That's
-  // WebKit's audio-session handling, not something fixable from here, so
-  // voice control is left off/hidden on iOS; it works well on desktop.
-  const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent)
-    || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
   let recognition = null;
   let voiceControlEnabled = false;
   let isListeningSession = false;
-  if (SRClass && !isIOS) {
+  if (SRClass) {
     voiceToggleRow.style.display = 'flex';
     try { voiceControlEnabled = localStorage.getItem('voiceControlEnabled') === 'true'; } catch (e) {}
     voiceToggleInput.checked = voiceControlEnabled;
     recognition = new SRClass();
     recognition.continuous = true;
-    // Interim (non-final) results let onresult fire as soon as the engine
-    // recognizes "stop", instead of waiting ~1s for end-of-speech to finalize it.
-    recognition.interimResults = true;
+    // interimResults was briefly set to true to make "stop" detection
+    // faster, but continuous interim decoding turned out to be too heavy
+    // for iOS's on-device recognizer running alongside TTS/ambient audio —
+    // it correlated with the countdown voice lagging, the mic not
+    // releasing, and eventually the whole session freezing there. Back to
+    // false (only fires once a phrase is finalized) since it worked
+    // reliably on iOS before that change.
+    recognition.interimResults = false;
     recognition.onresult = (e) => {
       const transcript = e.results[e.results.length - 1][0].transcript.toLowerCase();
       const stopWord = t.ui.stop.toLowerCase();
