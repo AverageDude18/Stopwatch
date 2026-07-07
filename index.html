@@ -5315,6 +5315,14 @@
 
   // ====== Voice control ======
   const SRClass = window.SpeechRecognition || window.webkitSpeechRecognition;
+  // iOS/iPadOS Safari runs speech recognition on-device (SFSpeechRecognizer);
+  // continuously decoding interim results turned out to be too heavy for it
+  // running alongside TTS/ambient audio (countdown voice lagging, mic not
+  // releasing, the session eventually freezing). Desktop/Android browsers
+  // use cloud-based recognition and handled interim results fine, so the
+  // faster path is kept there and only iOS falls back to the slower one.
+  const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent)
+    || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
   let recognition = null;
   let voiceControlEnabled = false;
   let isListeningSession = false;
@@ -5324,14 +5332,11 @@
     voiceToggleInput.checked = voiceControlEnabled;
     recognition = new SRClass();
     recognition.continuous = true;
-    // interimResults was briefly set to true to make "stop" detection
-    // faster, but continuous interim decoding turned out to be too heavy
-    // for iOS's on-device recognizer running alongside TTS/ambient audio —
-    // it correlated with the countdown voice lagging, the mic not
-    // releasing, and eventually the whole session freezing there. Back to
-    // false (only fires once a phrase is finalized) since it worked
-    // reliably on iOS before that change.
-    recognition.interimResults = false;
+    // Interim (non-final) results let onresult fire as soon as the engine
+    // recognizes "stop", instead of waiting for the recognizer to decide the
+    // phrase is finished — but see the isIOS note above for why iOS doesn't
+    // get this.
+    recognition.interimResults = !isIOS;
     recognition.onresult = (e) => {
       const transcript = e.results[e.results.length - 1][0].transcript.toLowerCase();
       const stopWord = t.ui.stop.toLowerCase();
